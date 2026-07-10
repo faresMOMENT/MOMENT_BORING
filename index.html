@@ -229,6 +229,42 @@
       line-height: 1.45;
     }
 
+    .auth-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f0f1ec;
+    }
+
+    .auth-switch button {
+      min-height: 36px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .auth-switch button.active {
+      background: #fff;
+      color: var(--green);
+      box-shadow: 0 2px 10px rgba(38, 43, 36, .08);
+    }
+
+    .login-status {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .login-status.error {
+      color: #a83a2a;
+    }
+
     .settings-shell {
       display: grid;
       gap: 14px;
@@ -1907,17 +1943,22 @@
       <section class="login-page active" id="loginPage">
         <form class="login-card" id="loginForm">
           <div class="section-kicker">Shared Field Workspace</div>
-          <h1>Sign in</h1>
-          <p>Every login opens the same shared project list and boring-log work saved in this browser.</p>
+          <h1 id="authTitle">Sign in</h1>
+          <p id="authHelp">Every login opens the same shared project list and boring-log work saved in Supabase.</p>
+          <div class="auth-switch" aria-label="Authentication mode">
+            <button class="active" type="button" data-auth-mode="login">Login</button>
+            <button type="button" data-auth-mode="signup">Sign Up</button>
+          </div>
           <div class="field">
-            <label>Name or Email</label>
-            <input id="loginName" autocomplete="username" placeholder="e.g. fares@moment.com" required>
+            <label>Email</label>
+            <input id="loginName" type="email" autocomplete="username" placeholder="e.g. fares@moment.com" required>
           </div>
           <div class="field">
             <label>Password</label>
-            <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Demo password" required>
+            <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password" required minlength="6">
           </div>
-          <button class="primary" type="submit">Login</button>
+          <button class="primary" type="submit" id="authSubmitButton">Login</button>
+          <div class="login-status" id="loginStatus"></div>
         </form>
       </section>
 
@@ -2399,6 +2440,7 @@
     const storageKey = "boringLogAppState";
     const sessionKey = "boringLogCurrentUser";
     const passwordKey = "boringLogCurrentPassword";
+    const accessTokenKey = "boringLogSupabaseAccessToken";
     const syncKey = "boringLogLastSync";
     const supabaseUrl = "https://fuivzblvhjuuzhygdeln.supabase.co";
     const supabaseKey = "sb_publishable_Kcy_SCyyVSeYWRJLLcV1IA_I1dHFSYe";
@@ -2417,6 +2459,8 @@
     const mobileTitle = document.querySelector(".mobile-title");
     let currentUser = localStorage.getItem(sessionKey) || "";
     let currentPassword = localStorage.getItem(passwordKey) || "";
+    let currentAccessToken = localStorage.getItem(accessTokenKey) || "";
+    let authMode = "login";
 
     function newId() {
       return crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2433,6 +2477,22 @@
       document.querySelector("#syncStatus").textContent = message;
     }
 
+    function setLoginStatus(message, isError = false) {
+      const status = document.querySelector("#loginStatus");
+      status.textContent = message;
+      status.classList.toggle("error", isError);
+    }
+
+    function readableSupabaseError(error) {
+      const message = String(error?.message || error || "Unknown Supabase error");
+      try {
+        const parsed = JSON.parse(message);
+        return parsed.message || parsed.details || message;
+      } catch {
+        return message.length > 180 ? `${message.slice(0, 180)}...` : message;
+      }
+    }
+
     function setAuthenticated(userName, password = currentPassword) {
       currentUser = userName || "";
       currentPassword = currentUser ? password : "";
@@ -2442,6 +2502,8 @@
       } else {
         localStorage.removeItem(sessionKey);
         localStorage.removeItem(passwordKey);
+        localStorage.removeItem(accessTokenKey);
+        currentAccessToken = "";
       }
       document.querySelector("#signedInUser").textContent = currentUser;
       document.querySelector("#userChip").classList.toggle("active", Boolean(currentUser));
@@ -2457,6 +2519,48 @@
       homeBrand.hidden = false;
       mobileTitle.hidden = true;
       updateSettingsView();
+    }
+
+    function setAuthMode(mode) {
+      authMode = mode;
+      document.querySelectorAll("[data-auth-mode]").forEach(button => {
+        button.classList.toggle("active", button.dataset.authMode === mode);
+      });
+      document.querySelector("#authTitle").textContent = mode === "signup" ? "Create account" : "Sign in";
+      document.querySelector("#authHelp").textContent = mode === "signup"
+        ? "Create a Supabase account. After signing up, everyone can open the shared project workspace."
+        : "Every login opens the same shared project list and boring-log work saved in Supabase.";
+      document.querySelector("#authSubmitButton").textContent = mode === "signup" ? "Sign Up" : "Login";
+      setLoginStatus("");
+    }
+
+    async function supabaseAuth(path, body) {
+      const response = await fetch(`${supabaseUrl}/auth/v1/${path}`, {
+        method: "POST",
+        headers: {
+          apikey: supabaseKey,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+      if (!response.ok) throw new Error(data.msg || data.message || text || `Auth failed (${response.status})`);
+      return data;
+    }
+
+    async function signUpAccount(email, password) {
+      return supabaseAuth("signup", { email, password });
+    }
+
+    async function loginAccount(email, password) {
+      return supabaseAuth("token?grant_type=password", { email, password });
+    }
+
+    function storeAuthSession(data, email, password) {
+      currentAccessToken = data.access_token || data.session?.access_token || "";
+      if (currentAccessToken) localStorage.setItem(accessTokenKey, currentAccessToken);
+      setAuthenticated(email, password);
     }
 
     function exportState() {
@@ -2504,7 +2608,7 @@
         ...options,
         headers: {
           apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
+          Authorization: `Bearer ${currentAccessToken || supabaseKey}`,
           "Content-Type": "application/json",
           Prefer: "return=representation",
           ...(options.headers || {})
@@ -2512,7 +2616,7 @@
       });
       if (!response.ok) {
         const detail = await response.text();
-        throw new Error(detail || `Supabase request failed (${response.status})`);
+        throw new Error(detail || `Supabase request failed (${response.status} ${response.statusText})`);
       }
       return response.status === 204 ? null : response.json();
     }
@@ -2532,7 +2636,7 @@
 
     async function saveCloudState() {
       saveState();
-      await supabaseRequest(supabaseTable, {
+      await supabaseRequest(`${supabaseTable}?on_conflict=id`, {
         method: "POST",
         headers: { Prefer: "resolution=merge-duplicates,return=representation" },
         body: JSON.stringify({
@@ -2552,7 +2656,7 @@
       try {
         await saveCloudState();
       } catch (error) {
-        setSyncStatus("Supabase sync failed. Create table field_app_state with id text primary key, state jsonb, updated_at timestamptz, updated_by text.");
+        setSyncStatus(`Supabase sync failed: ${readableSupabaseError(error)}`);
         console.error(error);
       }
     }
@@ -3276,12 +3380,28 @@
       });
     });
 
+    document.querySelectorAll("[data-auth-mode]").forEach(button => {
+      button.addEventListener("click", () => setAuthMode(button.dataset.authMode));
+    });
+
     document.querySelector("#loginForm").addEventListener("submit", async event => {
       event.preventDefault();
       const userName = document.querySelector("#loginName").value.trim();
       const password = document.querySelector("#loginPassword").value;
       if (!userName) return;
-      setAuthenticated(userName, password);
+      setLoginStatus(authMode === "signup" ? "Creating Supabase account..." : "Signing in...");
+      try {
+        const authData = authMode === "signup" ? await signUpAccount(userName, password) : await loginAccount(userName, password);
+        if (authMode === "signup" && !authData.access_token && !authData.session?.access_token) {
+          setLoginStatus("Account created. Check your email to confirm, then log in.");
+          setAuthMode("login");
+          return;
+        }
+        storeAuthSession(authData, userName, password);
+      } catch (error) {
+        setLoginStatus(readableSupabaseError(error), true);
+        return;
+      }
       setSyncStatus("Loading shared Supabase data...");
       try {
         const loaded = await loadCloudState();
@@ -3291,7 +3411,7 @@
           renderProjects();
         }
       } catch (error) {
-        setSyncStatus("Supabase load failed. Using local saved data.");
+        setSyncStatus(`Supabase load failed: ${readableSupabaseError(error)}`);
         console.error(error);
         renderRows();
         renderProjects();
@@ -3830,7 +3950,7 @@
     setAuthenticated(currentUser);
     if (currentUser) {
       loadCloudState().catch(error => {
-        setSyncStatus("Supabase load failed. Using local saved data.");
+        setSyncStatus(`Supabase load failed: ${readableSupabaseError(error)}`);
         console.error(error);
       });
     }
