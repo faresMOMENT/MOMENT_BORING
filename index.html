@@ -1,0 +1,3839 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Boring Log</title>
+  <style>
+    :root {
+      --bg: #f6f7f2;
+      --panel: #ffffff;
+      --line: #d8d9d0;
+      --line-dark: #b8baad;
+      --ink: #272b24;
+      --muted: #73796d;
+      --green: #2f6f18;
+      --green-soft: #edf5e8;
+      --orange: #ae5a14;
+      --orange-soft: #fff1df;
+      --blue-soft: #e5f8fb;
+      --shadow: 0 10px 28px rgba(38, 43, 36, .1);
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 15px;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .5;
+    }
+
+    .app {
+      min-height: 100vh;
+      padding-bottom: 76px;
+    }
+
+    .app.login-mode {
+      display: block;
+      padding-bottom: 0;
+    }
+
+    .app.login-mode .desktop-sidebar,
+    .app.login-mode .bottom-nav,
+    .app.login-mode .project-chip {
+      display: none;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      height: 58px;
+      padding: 8px 12px;
+      background: rgba(255, 255, 252, .96);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(10px);
+    }
+
+    .topbar.home-mode .back-button {
+      display: none;
+    }
+
+    .brand {
+      display: grid;
+      min-width: 0;
+      line-height: 1.05;
+    }
+
+    .brand strong {
+      color: var(--green);
+      font-size: 15px;
+      letter-spacing: .02em;
+    }
+
+    .brand span,
+    .eyebrow,
+    label,
+    .section-kicker {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .project-chip {
+      margin-left: auto;
+      min-width: 0;
+      max-width: 54%;
+      overflow: hidden;
+      padding: 7px 10px;
+      color: var(--green);
+      border: 1px solid #86a96f;
+      border-radius: 7px;
+      background: #f5faf0;
+      font-family: var(--mono);
+      font-size: 11px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .user-chip {
+      display: none;
+      min-width: 0;
+      padding: 7px 10px;
+      color: #4f574c;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      font-family: var(--mono);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .user-chip.active {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .top-link {
+      display: none;
+      min-height: 34px;
+      align-items: center;
+      padding: 0 10px;
+      color: var(--green);
+      border: 1px solid #cbd9bf;
+      border-radius: 7px;
+      background: #fff;
+      font-size: 12px;
+      text-decoration: none;
+    }
+
+    .top-link.active {
+      display: inline-flex;
+    }
+
+    #signedInUser {
+      padding: 0;
+      color: inherit;
+      border: 0;
+      background: transparent;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .text-button {
+      padding: 0;
+      color: var(--green);
+      border: 0;
+      background: transparent;
+      font: inherit;
+      font-weight: 800;
+    }
+
+    .icon-button {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      flex: 0 0 auto;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--panel);
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .login-page {
+      min-height: calc(100vh - 58px);
+      display: none;
+      place-items: center;
+      padding: 24px 14px;
+    }
+
+    .login-page.active {
+      display: grid;
+    }
+
+    .login-card {
+      display: grid;
+      gap: 16px;
+      width: min(100%, 430px);
+      padding: 24px;
+      border: 1px solid #d8dece;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .login-card h1 {
+      font-size: 32px;
+    }
+
+    .login-card p {
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .settings-shell {
+      display: grid;
+      gap: 14px;
+      padding: 18px 14px;
+    }
+
+    .settings-card {
+      display: grid;
+      gap: 14px;
+      max-width: 720px;
+      padding: 18px;
+      border: 1px solid #d9dbd1;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 5px 18px rgba(38, 43, 36, .06);
+    }
+
+    .settings-row {
+      display: grid;
+      gap: 6px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .settings-row:last-child {
+      border-bottom: 0;
+    }
+
+    .section {
+      padding: 18px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .home-shell {
+      display: grid;
+      gap: 16px;
+      padding: 16px 14px 22px;
+    }
+
+    .home-hero {
+      display: grid;
+      gap: 14px;
+      padding: 22px 18px;
+      border: 1px solid #d8dece;
+      border-radius: 14px;
+      background:
+        linear-gradient(135deg, rgba(237, 245, 232, .95), rgba(255, 255, 255, .96)),
+        repeating-linear-gradient(90deg, rgba(47, 111, 24, .06) 0 1px, transparent 1px 24px);
+      box-shadow: var(--shadow);
+    }
+
+    .home-hero h1 {
+      max-width: 720px;
+      font-size: clamp(26px, 5vw, 40px);
+      line-height: 1.08;
+    }
+
+    .home-hero p {
+      max-width: 620px;
+      color: #5f665b;
+      line-height: 1.5;
+    }
+
+    .home-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .home-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .home-panel {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid #d9dbd1;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .92);
+      box-shadow: 0 5px 18px rgba(38, 43, 36, .06);
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-title h2 {
+      font-size: 18px;
+    }
+
+    .start-card {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border: 1px solid #cbd9bf;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #ffffff, #f4f8ef);
+    }
+
+    .project-card {
+      display: grid;
+      gap: 16px;
+      padding: 18px;
+      border: 1px solid #cfd9c5;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #ffffff 0%, #f3f8ee 100%);
+      box-shadow: var(--shadow);
+    }
+
+    .project-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .project-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .project-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 58px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      box-shadow: 0 3px 12px rgba(38, 43, 36, .05);
+      text-align: left;
+    }
+
+    .project-row button {
+      min-height: 34px;
+      padding: 0 10px;
+      border-radius: 7px;
+      font-size: 12px;
+    }
+
+    .project-row.active {
+      border-color: #6f984f;
+      background: #f1f8e9;
+    }
+
+    .project-row strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .manual-project {
+      display: none;
+      gap: 10px;
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px dashed #cf8a50;
+      border-radius: 8px;
+      background: #fff8ef;
+    }
+
+    .manual-project.active {
+      display: grid;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 24px;
+      line-height: 1.08;
+    }
+
+    h2 {
+      font-size: 19px;
+      line-height: 1.18;
+    }
+
+    h3 {
+      font-size: 15px;
+    }
+
+    .meta-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 20px;
+      padding: 2px 7px;
+      border: 1px solid #79a860;
+      border-radius: 4px;
+      color: var(--green);
+      background: #f7fff0;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .stat {
+      min-height: 74px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 9px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .primary {
+      min-height: 44px;
+      padding: 0 16px;
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      background: var(--green);
+      font-weight: 800;
+    }
+
+    .secondary {
+      min-height: 42px;
+      padding: 0 14px;
+      color: var(--orange);
+      border: 1px dashed #cf8a50;
+      border-radius: 7px;
+      background: #fff8ef;
+      font-weight: 800;
+    }
+
+    .danger {
+      min-height: 42px;
+      padding: 0 14px;
+      color: #8f1d17;
+      border: 1px solid #e5b5ad;
+      border-radius: 8px;
+      background: #fff3f1;
+      font-weight: 800;
+    }
+
+    .danger.compact {
+      min-height: 34px;
+      padding: 0 10px;
+    }
+
+    .empty-state {
+      display: grid;
+      gap: 10px;
+      padding: 18px;
+      color: var(--muted);
+      border: 1px dashed #c8cabe;
+      border-radius: 10px;
+      background: #fffef9;
+      text-align: center;
+    }
+
+    .tools-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .tool-card {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      min-height: 78px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      box-shadow: 0 3px 12px rgba(38, 43, 36, .05);
+      color: inherit;
+      text-align: left;
+      text-decoration: none;
+    }
+
+    .tool-icon {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: var(--orange-soft);
+      color: var(--orange);
+      font-weight: 900;
+    }
+
+    .tool-card:nth-child(2) .tool-icon { background: #e7f4eb; color: #25824c; }
+    .tool-card:nth-child(3) .tool-icon { background: #e8eeff; color: #4267d7; }
+    .tool-card:nth-child(4) .tool-icon { background: #f1e8fb; color: #8d4cd0; }
+    .tool-card:nth-child(5) .tool-icon { background: #e5f3f7; color: #237d96; }
+
+    .tool-card small,
+    .tiny {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .boring-selector {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: #f7f8f3;
+    }
+
+    .boring-pill,
+    .tab {
+      flex: 0 0 auto;
+      min-height: 40px;
+      padding: 0 14px;
+      color: var(--ink);
+      border: 1px solid transparent;
+      border-radius: 7px;
+      background: transparent;
+      font-weight: 800;
+    }
+
+    .boring-pill {
+      min-width: 86px;
+      border-color: #7fa665;
+      color: var(--green);
+      background: var(--green-soft);
+      text-align: left;
+    }
+
+    .boring-pill.active {
+      color: #fff;
+      border-color: var(--green);
+      background: var(--green);
+    }
+
+    #boringSelector,
+    #desktopBoringList {
+      display: flex;
+      gap: 8px;
+    }
+
+    #desktopBoringList {
+      display: grid;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 9px 12px 10px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .tab.active {
+      color: #fff;
+      background: var(--green);
+    }
+
+    .count {
+      display: inline-grid;
+      place-items: center;
+      min-width: 20px;
+      min-height: 20px;
+      margin-left: 4px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, .08);
+      font-size: 11px;
+    }
+
+    .tab.active .count {
+      color: var(--green);
+      background: #dfeecf;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--line);
+      background: #eff1ea;
+    }
+
+    .panel-header .tiny {
+      margin-left: auto;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field.required label::before {
+      content: "* ";
+      color: var(--green);
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 12px;
+      color: var(--ink);
+      border: 1px solid var(--line-dark);
+      border-radius: 7px;
+      background: var(--panel);
+      outline-color: #88af6b;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .section-band {
+      padding: 11px 14px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: #fff4e7;
+    }
+
+    .groundwater {
+      background: var(--blue-soft);
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid #bedce0;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, .5);
+    }
+
+    .switch {
+      width: 34px;
+      height: 20px;
+      border: 0;
+      border-radius: 999px;
+      background: #b9b9b1;
+      position: relative;
+    }
+
+    .switch::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .list {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+    }
+
+    .row-card {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr) 22px;
+      gap: 10px;
+      align-items: center;
+      min-height: 64px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .entry-card {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .entry-card summary {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr) 22px;
+      gap: 10px;
+      align-items: center;
+      min-height: 64px;
+      padding: 10px;
+      list-style: none;
+      cursor: pointer;
+    }
+
+    .entry-card summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .entry-card[open] summary {
+      border-bottom: 1px solid var(--line);
+      background: #fafbf6;
+    }
+
+    .entry-editor {
+      display: grid;
+      gap: 12px;
+      padding: 12px;
+      background: #fffdf8;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .mini-grid .wide {
+      grid-column: 1 / -1;
+    }
+
+    .sample-grid {
+      grid-template-columns: repeat(4, minmax(68px, 1fr));
+      align-items: end;
+    }
+
+    .sample-grid input,
+    .sample-grid select {
+      min-height: 36px;
+      padding: 7px 9px;
+    }
+
+    .sample-grid label {
+      font-size: 10px;
+      letter-spacing: .06em;
+    }
+
+    .generated-note {
+      padding: 10px;
+      border: 1px solid #dfd7c8;
+      border-radius: 7px;
+      background: #fff9ee;
+      color: #4f554b;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .pattern {
+      width: 36px;
+      height: 36px;
+      border: 1px solid #e5d7a7;
+      border-radius: 5px;
+    }
+
+    .soil-graphic {
+      background-color: #fff6cf;
+      background-image: radial-gradient(#bd8d25 1.4px, transparent 1.4px);
+      background-size: 8px 8px;
+    }
+
+    .graphic-sand {
+      background-color: #fff2bd;
+      background-image: radial-gradient(#b77c13 1.3px, transparent 1.3px);
+      background-size: 7px 7px;
+    }
+
+    .graphic-silty-sand {
+      background-color: #fff2bd;
+      background-image:
+        radial-gradient(#b77c13 1.2px, transparent 1.2px),
+        linear-gradient(45deg, rgba(100, 107, 94, .24) 1px, transparent 1px);
+      background-size: 7px 7px, 10px 10px;
+    }
+
+    .graphic-clayey-sand {
+      background-color: #f8e5bf;
+      background-image:
+        radial-gradient(#b77c13 1.2px, transparent 1.2px),
+        linear-gradient(0deg, rgba(121, 75, 48, .24) 2px, transparent 2px);
+      background-size: 7px 7px, 100% 9px;
+    }
+
+    .graphic-silt {
+      background-color: #eeeedf;
+      background-image: linear-gradient(45deg, rgba(100, 107, 94, .45) 1px, transparent 1px);
+      background-size: 7px 7px;
+    }
+
+    .graphic-clay {
+      background-color: #ead7c8;
+      background-image: linear-gradient(0deg, rgba(121, 75, 48, .35) 2px, transparent 2px);
+      background-size: 100% 8px;
+    }
+
+    .graphic-gravel {
+      background-color: #eee8d1;
+      background-image: radial-gradient(ellipse at center, #8c7a52 2.3px, transparent 2.6px);
+      background-size: 11px 9px;
+    }
+
+    .graphic-gravel-sand {
+      background-color: #f7e9bc;
+      background-image:
+        radial-gradient(ellipse at center, #8c7a52 2.2px, transparent 2.5px),
+        radial-gradient(#b77c13 1.1px, transparent 1.2px);
+      background-size: 12px 10px, 7px 7px;
+    }
+
+    .graphic-mix {
+      background-color: #f4e7bf;
+      background-image:
+        radial-gradient(#b77c13 1.1px, transparent 1.2px),
+        linear-gradient(45deg, rgba(100, 107, 94, .28) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(121, 75, 48, .20) 2px, transparent 2px);
+      background-size: 7px 7px, 10px 10px, 100% 12px;
+    }
+
+    .sample-type {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: #ffe4c3;
+      color: var(--orange);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .row-main {
+      min-width: 0;
+    }
+
+    .row-title {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+      font-weight: 900;
+    }
+
+    .row-desc {
+      margin-top: 3px;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .soil,
+    .nval {
+      display: inline-flex;
+      align-items: center;
+      min-height: 18px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .soil {
+      color: var(--green);
+      background: #ddefc9;
+    }
+
+    .nval {
+      color: #fff;
+      background: var(--orange);
+    }
+
+    .add-wide {
+      width: calc(100% - 24px);
+      margin: 8px 12px 18px;
+    }
+
+    .output-layout {
+      display: grid;
+      gap: 12px;
+      padding: 12px;
+    }
+
+    .options {
+      display: grid;
+      gap: 8px;
+    }
+
+    .check-row,
+    .option-card {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .check {
+      display: grid;
+      place-items: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      color: #fff;
+      background: var(--green);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .preview {
+      min-height: 420px;
+      overflow: auto;
+      padding: 22px 14px;
+      border: 1px solid var(--line);
+      background: #eceee8;
+    }
+
+    .paper {
+      width: min(100%, 560px);
+      min-height: 560px;
+      margin: 0 auto;
+      padding: 18px;
+      background: #fff;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, .15);
+    }
+
+    .paper-rule {
+      height: 4px;
+      margin-bottom: 16px;
+      background: var(--green);
+    }
+
+    .paper-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .paper-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 9px;
+    }
+
+    .paper-grid div {
+      min-height: 34px;
+      padding: 6px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .log-preview {
+      display: grid;
+      grid-template-columns: 54px 1fr;
+      gap: 10px;
+      margin-top: 14px;
+      font-size: 9px;
+    }
+
+    .log-column {
+      height: 330px;
+      border: 1px solid #dbc88a;
+      background-color: #fff6cf;
+      background-image: radial-gradient(#bd8d25 1.5px, transparent 1.5px);
+      background-size: 7px 7px;
+    }
+
+    .log-lines {
+      background-image: linear-gradient(#ececec 1px, transparent 1px);
+      background-size: 100% 22px;
+    }
+
+    .paper-section {
+      margin-top: 14px;
+      font-family: var(--mono);
+      font-size: 9px;
+      line-height: 1.35;
+    }
+
+    .paper-row {
+      padding: 6px 0;
+      border-bottom: 1px solid #eeeeea;
+    }
+
+    .boring-sheet {
+      border: 2px solid #191d18;
+      color: #182018;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10px;
+      line-height: 1.18;
+    }
+
+    .sheet-head {
+      display: grid;
+      grid-template-columns: 1.2fr 1.55fr 1.2fr;
+      border-bottom: 2px solid #191d18;
+    }
+
+    .sheet-head > div,
+    .sheet-info > div,
+    .sheet-col-head > div,
+    .sheet-row > div {
+      padding: 6px;
+      border-right: 1px solid #191d18;
+    }
+
+    .sheet-head > div:last-child,
+    .sheet-info > div:nth-child(even),
+    .sheet-col-head > div:last-child,
+    .sheet-row > div:last-child {
+      border-right: 0;
+    }
+
+    .sheet-title {
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-align: center;
+    }
+
+    .sheet-brand strong {
+      display: block;
+      font-size: 13px;
+    }
+
+    .sheet-project strong {
+      display: block;
+      font-size: 12px;
+    }
+
+    .sheet-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 2px solid #191d18;
+    }
+
+    .sheet-info > div {
+      border-bottom: 1px solid #191d18;
+    }
+
+    .sheet-info > div:nth-last-child(-n + 2) {
+      border-bottom: 0;
+    }
+
+    .sheet-table {
+      min-width: 520px;
+    }
+
+    .sheet-col-head,
+    .sheet-row {
+      display: grid;
+      grid-template-columns: 52px 54px 42px minmax(160px, 1fr) 94px;
+    }
+
+    .sheet-col-head {
+      font-weight: 800;
+      text-align: center;
+      border-bottom: 1px solid #191d18;
+      background: #f3f3ef;
+    }
+
+    .sheet-row {
+      min-height: 82px;
+      border-bottom: 1px solid #191d18;
+    }
+
+    .sheet-row:last-child {
+      border-bottom: 0;
+    }
+
+    .sheet-depth,
+    .sheet-uscs {
+      font-weight: 800;
+    }
+
+    .sheet-graphic {
+      min-height: 70px;
+      border-left: 1px solid #191d18;
+      border-right: 1px solid #191d18;
+    }
+
+    .sample-line {
+      padding-bottom: 5px;
+      margin-bottom: 5px;
+      border-bottom: 1px solid #cfcfc8;
+    }
+
+    .sample-line:last-child {
+      padding-bottom: 0;
+      margin-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .sheet-footer {
+      padding: 12px 0 0;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      line-height: 1.7;
+    }
+
+    .format-drawer {
+      display: grid;
+      gap: 8px;
+    }
+
+    .compaction-shell,
+    .files-shell {
+      display: grid;
+      gap: 14px;
+      padding: 12px;
+    }
+
+    .compaction-sheet {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .compaction-days {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .compaction-days select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 9px 10px;
+    }
+
+    .compaction-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      padding-bottom: 10px;
+      border-bottom: 3px solid var(--green);
+    }
+
+    .compaction-top h1 {
+      margin-top: 4px;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .compaction-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .compaction-table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .compaction-table th,
+    .compaction-table td {
+      padding: 5px;
+      border: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .compaction-table th {
+      color: #59636a;
+      background: #eff1ea;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .compaction-table input,
+    .compaction-table select,
+    .compaction-table textarea {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: #fbfcfa;
+      padding: 5px;
+      font: inherit;
+    }
+
+    .compaction-table textarea {
+      min-height: 34px;
+      resize: vertical;
+    }
+
+    .readonly-cell {
+      display: block;
+      min-height: 30px;
+      padding: 6px 5px;
+      border-radius: 6px;
+      background: #f3f4ef;
+      color: #30362e;
+    }
+
+    .compaction-map {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fbfcfa;
+    }
+
+    .map-tools {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .map-stage {
+      position: relative;
+      min-height: 220px;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      border: 1px dashed #bcc4ba;
+      border-radius: 8px;
+      background: #f0f1ec;
+      color: var(--muted);
+      cursor: crosshair;
+    }
+
+    .map-stage img {
+      display: block;
+      width: 100%;
+      max-height: 420px;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .map-marker {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      min-width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border: 2px solid #fff;
+      border-radius: 999px;
+      background: var(--orange);
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 11px;
+      box-shadow: 0 3px 10px rgba(0,0,0,.22);
+      pointer-events: none;
+    }
+
+    .marker-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .marker-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      padding: 7px 9px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      font-size: 12px;
+    }
+
+    .pass {
+      color: var(--green);
+    }
+
+    .fail {
+      color: #a83a2a;
+    }
+
+    .file-upload-card,
+    .file-card {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 3px 12px rgba(38, 43, 36, .05);
+    }
+
+    .file-card {
+      grid-template-columns: 56px minmax(0, 1fr) auto;
+      align-items: start;
+    }
+
+    .file-thumb {
+      display: grid;
+      place-items: center;
+      width: 56px;
+      height: 56px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f0f1ec;
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .file-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .file-meta {
+      display: grid;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .option-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .option-card.active {
+      border-color: #80aa62;
+      background: #f1f8e9;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 30;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      min-height: 66px;
+      border-top: 1px solid var(--line);
+      background: rgba(255, 255, 255, .97);
+      backdrop-filter: blur(10px);
+    }
+
+    .nav-item {
+      display: grid;
+      place-items: center;
+      gap: 2px;
+      padding: 7px 4px 6px;
+      color: #60655c;
+      border: 0;
+      background: transparent;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .nav-icon {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 26px;
+      border-radius: 999px;
+      font-size: 17px;
+    }
+
+    .nav-item.active {
+      color: var(--green);
+    }
+
+    .nav-item.active .nav-icon {
+      background: #dcebcf;
+    }
+
+    .mobile-title {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .mobile-title strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mobile-title span {
+      display: block;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .desktop-sidebar {
+      display: none;
+    }
+
+    /* Typography pass: keep the field-tool UI calm instead of overly bold. */
+    h1,
+    h2,
+    h3,
+    .brand strong,
+    .project-row strong,
+    .row-title,
+    .sheet-title,
+    .sheet-col-head,
+    .sheet-depth,
+    .sheet-uscs,
+    .sheet-brand strong,
+    .sheet-project strong,
+    .stat strong,
+    .paper-title,
+    .tool-icon,
+    .sample-type,
+    .soil,
+    .nval,
+    .check {
+      font-weight: 600;
+    }
+
+    label,
+    .section-kicker,
+    .badge,
+    .tab,
+    .boring-pill,
+    .primary,
+    .secondary,
+    .danger,
+    .nav-item,
+    .mobile-title span,
+    .stat span,
+    .text-button {
+      font-weight: 500;
+    }
+
+    @media (max-width: 760px) {
+      .compaction-shell,
+      .files-shell {
+        padding: 8px;
+      }
+
+      .compaction-sheet {
+        gap: 9px;
+        padding: 10px;
+        border-radius: 8px;
+      }
+
+      .compaction-top {
+        display: grid;
+      }
+
+      .compaction-days {
+        grid-template-columns: 1fr;
+      }
+
+      .compaction-top h1 {
+        font-size: 20px;
+      }
+
+      .compaction-sheet .field input,
+      .compaction-sheet .field select,
+      .compaction-sheet .field textarea {
+        min-height: 36px;
+        padding: 8px 9px;
+      }
+
+      .compaction-table {
+        min-width: 0;
+        font-size: 11px;
+      }
+
+      .compaction-table-wrap {
+        overflow-x: visible;
+        border: 0;
+        background: transparent;
+      }
+
+      .compaction-table,
+      .compaction-table thead,
+      .compaction-table tbody,
+      .compaction-table tr,
+      .compaction-table td {
+        display: block;
+      }
+
+      .compaction-table thead {
+        display: none;
+      }
+
+      .compaction-table tr {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #fff;
+      }
+
+      .compaction-table td {
+        padding: 0;
+        border: 0;
+      }
+
+      .compaction-table td::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 4px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 500;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+      }
+
+      .compaction-table td:nth-child(2),
+      .compaction-table td:nth-child(11),
+      .compaction-table td:nth-child(12) {
+        grid-column: 1 / -1;
+      }
+
+      .compaction-table td:nth-child(12)::before {
+        display: none;
+      }
+
+      .compaction-table td:nth-child(12) .danger {
+        width: 100%;
+      }
+
+      .compaction-table input,
+      .compaction-table select,
+      .compaction-table textarea,
+      .readonly-cell {
+        min-height: 36px;
+      }
+
+      .map-stage {
+        min-height: 180px;
+      }
+    }
+
+    @media (max-width: 430px) {
+      h1 {
+        font-size: 22px;
+      }
+
+      .home-hero h1 {
+        font-size: 32px;
+      }
+
+      .project-chip {
+        display: none;
+      }
+
+      .project-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .section {
+        padding-inline: 12px;
+      }
+
+      .compaction-shell,
+      .files-shell {
+        padding: 8px;
+      }
+
+      .compaction-sheet {
+        gap: 9px;
+        padding: 10px;
+        border-radius: 8px;
+      }
+
+      .compaction-top {
+        display: grid;
+      }
+
+      .compaction-top h1 {
+        font-size: 20px;
+      }
+
+      .compaction-sheet .field input,
+      .compaction-sheet .field select,
+      .compaction-sheet .field textarea {
+        min-height: 36px;
+        padding: 8px 9px;
+      }
+
+      .compaction-table {
+        min-width: 0;
+        font-size: 11px;
+      }
+
+      .compaction-table-wrap {
+        overflow-x: visible;
+        border: 0;
+        background: transparent;
+      }
+
+      .compaction-table,
+      .compaction-table thead,
+      .compaction-table tbody,
+      .compaction-table tr,
+      .compaction-table td {
+        display: block;
+      }
+
+      .compaction-table thead {
+        display: none;
+      }
+
+      .compaction-table tr {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #fff;
+      }
+
+      .compaction-table td {
+        padding: 0;
+        border: 0;
+      }
+
+      .compaction-table td::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 4px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 500;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+      }
+
+      .compaction-table td:nth-child(2),
+      .compaction-table td:nth-child(11),
+      .compaction-table td:nth-child(12) {
+        grid-column: 1 / -1;
+      }
+
+      .compaction-table td:nth-child(12)::before {
+        display: none;
+      }
+
+      .compaction-table td:nth-child(12) .danger {
+        width: 100%;
+      }
+
+      .compaction-table input,
+      .compaction-table select,
+      .compaction-table textarea,
+      .readonly-cell {
+        min-height: 36px;
+      }
+
+      .compaction-table th,
+      .compaction-table td {
+        padding: 4px;
+      }
+
+      .compaction-table td {
+        padding: 0;
+      }
+
+      .map-stage {
+        min-height: 180px;
+      }
+
+      .project-card {
+        padding: 14px;
+      }
+
+      .tool-card {
+        grid-template-columns: 38px minmax(0, 1fr) 18px;
+      }
+    }
+
+    @media (min-width: 760px) {
+      .app {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr);
+        padding-bottom: 0;
+      }
+
+      .topbar {
+        grid-column: 1 / -1;
+      }
+
+      .desktop-sidebar {
+        display: grid;
+        align-content: start;
+        gap: 12px;
+        min-height: calc(100vh - 58px);
+        padding: 16px 12px;
+        border-right: 1px solid var(--line);
+        background: #f0f1ec;
+      }
+
+      .page-wrap {
+        min-width: 0;
+      }
+
+      .stats {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .home-actions {
+        grid-template-columns: max-content max-content;
+      }
+
+      .home-grid {
+        grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+        align-items: start;
+      }
+
+      .tools-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .workspace {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .field.wide,
+      .section-band,
+      .groundwater .toggle-row {
+        grid-column: 1 / -1;
+      }
+
+      .row-card {
+        grid-template-columns: 42px minmax(0, 1fr) 22px;
+      }
+
+      .output-layout {
+        grid-template-columns: 220px minmax(520px, 1fr) 220px;
+        align-items: start;
+      }
+
+      .bottom-nav {
+        display: none;
+      }
+    }
+
+    @media (min-width: 1120px) {
+      .tools-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .tool-card {
+        grid-template-columns: 42px minmax(0, 1fr);
+      }
+
+      .tool-card > span:last-child {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar home-mode" id="topbar">
+      <button class="icon-button back-button" type="button" title="Back" hidden>&lt;</button>
+      <div class="brand home-brand">
+        <strong>MOMENT</strong>
+        <span>Field Tools</span>
+      </div>
+      <div class="mobile-title" hidden>
+        <span>Boring Log</span>
+        <strong>Select a project</strong>
+      </div>
+      <a class="top-link" id="inventoryTopLink" href="lab-inventory.html" target="_blank" rel="noopener">Sample Inventory</a>
+      <div class="project-chip" id="activeProjectChip">No active project</div>
+      <div class="user-chip" id="userChip">
+        <button id="signedInUser" type="button" title="Open settings"></button>
+        <button class="text-button" type="button" id="logoutButton">Logout</button>
+      </div>
+    </header>
+
+    <aside class="desktop-sidebar">
+      <div class="section-kicker">01 Projects</div>
+      <input type="search" value="" placeholder="Search projects or jobs...">
+      <div id="desktopBoringList"></div>
+      <button class="secondary" type="button" data-add-boring>+ Add Boring</button>
+      <button class="primary" type="button">Generate PDF</button>
+    </aside>
+
+    <div class="page-wrap">
+      <section class="login-page active" id="loginPage">
+        <form class="login-card" id="loginForm">
+          <div class="section-kicker">Shared Field Workspace</div>
+          <h1>Sign in</h1>
+          <p>Every login opens the same shared project list and boring-log work saved in this browser.</p>
+          <div class="field">
+            <label>Name or Email</label>
+            <input id="loginName" autocomplete="username" placeholder="e.g. fares@moment.com" required>
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Demo password" required>
+          </div>
+          <button class="primary" type="submit">Login</button>
+        </form>
+      </section>
+
+      <section class="page" id="settingsPage">
+        <div class="settings-shell">
+          <div class="settings-card">
+            <div>
+              <div class="section-kicker">Account Settings</div>
+              <h1>Settings</h1>
+            </div>
+            <div class="settings-row">
+              <label>Email / Login</label>
+              <input id="settingsEmail" readonly>
+            </div>
+            <div class="settings-row">
+              <label>Password</label>
+              <input id="settingsPassword" readonly>
+            </div>
+            <div class="settings-row">
+              <label>Shared Data Sync</label>
+              <div class="meta-line">
+                <span id="syncStatus">Not synced yet</span>
+                <span>Projects, borings, layers, and samples use shared browser storage.</span>
+              </div>
+              <button class="primary" type="button" id="syncDataButton">Sync Data</button>
+            </div>
+            <button class="secondary" type="button" id="settingsHomeButton">Back to Home</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="homePage">
+        <div class="home-shell">
+          <section class="home-hero">
+            <div class="section-kicker">Boring Log Dashboard</div>
+            <h1>Start a field log from a project.</h1>
+            <p>Select an imported project or add one manually, then create boring logs, samples, layers, and a PDF-style output from the same workspace.</p>
+            <div class="home-actions">
+              <button class="primary" type="button" id="hubspotButton">Pull Projects</button>
+              <button class="secondary" type="button" id="manualProjectButton">+ Add manual project</button>
+            </div>
+          </section>
+
+          <div class="home-grid">
+            <section class="home-panel">
+              <div class="panel-title">
+                <div>
+                  <div class="section-kicker">Projects</div>
+                  <h2>Available work</h2>
+                </div>
+                <span class="badge" id="projectCountBadge">0</span>
+              </div>
+              <form class="manual-project" id="manualProjectForm">
+                <div class="field">
+                  <label>Paste Project Text</label>
+                  <textarea id="projectPasteBox" placeholder="Paste project info here, then click Auto Fill. Example labels: Project No, Project Name, Address, Client, Contact."></textarea>
+                </div>
+                <button class="secondary" type="button" id="autoFillProjectButton">Auto Fill</button>
+                <div class="field"><label>Project No.</label><input id="newProjectNo" placeholder="e.g. 262CA37RGA-701"></div>
+                <div class="field"><label>Project Name</label><input id="newProjectName" placeholder="Project name"></div>
+                <div class="field"><label>Address</label><input id="newProjectAddress" placeholder="Street, city, state"></div>
+                <div class="field"><label>Client / Contact</label><input id="newProjectClient" placeholder="Client name"></div>
+                <button class="primary" type="submit">Add Project</button>
+              </form>
+              <div class="project-list" id="projectList"></div>
+            </section>
+
+            <section class="home-panel">
+              <div class="panel-title">
+                <div>
+                  <div class="section-kicker">Selected Project</div>
+                  <h2>Field tools</h2>
+                </div>
+                <span class="badge" id="activeBoringBadge">None</span>
+              </div>
+              <div class="start-card">
+                <div>
+                  <h1 id="activeProjectTitle">No project selected</h1>
+                  <div class="meta-line" style="margin-top:10px">
+                    <span id="activeProjectNo">No project number</span>
+                    <span id="activeProjectClient">No client</span>
+                  </div>
+                </div>
+                <div class="stats">
+                  <div class="stat"><strong id="boringCount">0</strong><span>Borings</span></div>
+                  <div class="stat"><strong id="compactionCount">0</strong><span>Compaction</span></div>
+                  <div class="stat"><strong>0</strong><span>Daily Logs</span></div>
+                  <div class="stat"><strong>0</strong><span>Inspections</span></div>
+                </div>
+                <button class="primary" type="button" id="startBoringButton">Start Boring Log</button>
+              </div>
+              <div class="tools-grid">
+                <button class="tool-card" type="button" data-open-workspace>
+                  <span class="tool-icon">BL</span>
+                  <span><h3>Boring Log</h3><small id="boringToolCount">0 logs</small></span>
+                  <span>&gt;</span>
+                </button>
+                <button class="tool-card" type="button" data-open-compact>
+                  <span class="tool-icon">CP</span>
+                  <span><h3>Compaction</h3><small id="compactionToolCount">0 tests</small></span>
+                  <span>&gt;</span>
+                </button>
+                <button class="tool-card" type="button">
+                  <span class="tool-icon">DL</span>
+                  <span><h3>Daily Log</h3><small>No records yet</small></span>
+                  <span>&gt;</span>
+                </button>
+                <button class="tool-card" type="button">
+                  <span class="tool-icon">IN</span>
+                  <span><h3>Inspection</h3><small>No records yet</small></span>
+                  <span>&gt;</span>
+                </button>
+                <a class="tool-card" href="lab-inventory.html" target="_blank" rel="noopener">
+                  <span class="tool-icon">SI</span>
+                  <span><h3>Sample Inventory</h3><small>Synced with boring logs</small></span>
+                  <span>&gt;</span>
+                </a>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="workspacePage">
+        <div class="boring-selector">
+          <div id="boringSelector"></div>
+          <button class="secondary" type="button" data-add-boring>+ Add Boring</button>
+          <button class="danger" type="button" id="deleteBoringButton">Delete Boring</button>
+        </div>
+
+        <nav class="tabs" aria-label="Boring log tabs">
+          <button class="tab active" type="button" data-tab="info">Info</button>
+          <button class="tab" type="button" data-tab="layers">Layers <span class="count">0</span></button>
+          <button class="tab" type="button" data-tab="samples">Samples <span class="count">0</span></button>
+          <button class="tab" type="button" data-tab="output">Output</button>
+          <button class="tab" type="button" data-tab="files">Files</button>
+        </nav>
+
+        <article class="tab-panel" data-panel="info">
+          <div class="panel-header">
+            <span class="section-kicker">01 Setup</span>
+            <span class="tiny">Online</span>
+          </div>
+          <div class="form-grid">
+            <div class="field required wide">
+              <label>Boring ID</label>
+              <input id="boringIdInput" data-info-field="id" placeholder="e.g. B-1">
+            </div>
+            <div class="field required">
+              <label>Date</label>
+              <input type="date" data-info-field="date">
+            </div>
+            <div class="field required">
+              <label>Logger / Driller</label>
+              <input data-info-field="loggerDriller" placeholder="Logger / drilling company">
+            </div>
+            <div class="field wide">
+              <label>Project Title</label>
+              <input data-info-field="projectTitle" placeholder="Project title">
+            </div>
+            <div class="field">
+              <label>Surface Elev. (ft)</label>
+              <input data-info-field="surfaceElevation" placeholder="-">
+            </div>
+            <div class="field required">
+              <label>Total Depth (ft)</label>
+              <input data-info-field="totalDepth" placeholder="e.g. 50">
+            </div>
+          </div>
+
+          <div class="section-band"><span class="section-kicker">02 Drilling Equipment</span></div>
+          <div class="form-grid">
+            <div class="field wide">
+              <label>Drill Method</label>
+              <select data-info-field="drillMethod"><option></option><option>Air Rotary</option><option>Hollow Stem Auger</option><option>Mud Rotary</option><option>Hand Auger</option><option>Other</option></select>
+            </div>
+            <div class="field">
+              <label>Rig Type</label>
+              <input data-info-field="rigType" placeholder="Rig / hammer">
+            </div>
+            <div class="field">
+              <label>Borehole Diam.</label>
+              <input data-info-field="boreholeDiameter" placeholder="e.g. 6 in">
+            </div>
+            <div class="field">
+              <label>Casing Size</label>
+              <input data-info-field="casingSize" placeholder="e.g. 4 in">
+            </div>
+            <div class="field">
+              <label>Start Time</label>
+              <input data-info-field="startTime" placeholder="e.g. 07:30">
+            </div>
+          </div>
+
+          <div class="section-band"><span class="section-kicker">03 Termination</span></div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Planned Depth Reached?</label>
+              <select data-info-field="plannedDepthReached">
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+            <div class="field wide">
+              <label>Termination Notes / Reason</label>
+              <textarea data-info-field="terminationNotes" placeholder="If planned depth was not reached, note refusal, obstruction, access, groundwater, safety, or other reason."></textarea>
+            </div>
+            <button class="primary" type="button" id="saveInfoButton">Save Info & Continue</button>
+          </div>
+
+          <div class="section-band groundwater"><span class="section-kicker">04 Groundwater</span></div>
+          <div class="form-grid groundwater">
+            <div class="toggle-row">
+              <button class="switch" type="button" title="Toggle groundwater"></button>
+              <div>
+                <strong>Not Encountered (N/E)</strong>
+                <div class="tiny">Toggle if no groundwater was found</div>
+              </div>
+            </div>
+            <div class="field">
+              <label>Depth (ft)</label>
+              <input data-info-field="groundwaterDepth" placeholder="Depth">
+            </div>
+            <div class="field">
+              <label>Time</label>
+              <input data-info-field="groundwaterTime" placeholder="Time">
+            </div>
+            <div class="field wide">
+              <label>Method</label>
+              <select data-info-field="groundwaterMethod"><option></option><option>During drilling</option><option>After drilling</option><option>Not encountered</option><option>Other</option></select>
+            </div>
+          </div>
+        </article>
+
+        <article class="tab-panel" data-panel="layers" hidden>
+          <div class="panel-header">
+            <span class="section-kicker">Graphic Log</span>
+            <span class="tiny">0 ft covered - 0 layers</span>
+          </div>
+          <div class="list" id="layersList"></div>
+          <button class="secondary add-wide" type="button" data-add-layer>+ Add Layer</button>
+        </article>
+
+        <article class="tab-panel" data-panel="samples" hidden>
+          <div class="panel-header">
+            <span class="section-kicker">0 samples</span>
+            <span class="tiny">N = 12</span>
+          </div>
+          <div class="list" id="samplesList"></div>
+          <button class="secondary add-wide" type="button" data-add-sample>+ Add Sample</button>
+        </article>
+
+        <article class="tab-panel" data-panel="output" hidden>
+          <div class="panel-header">
+            <span class="section-kicker">Live Preview</span>
+            <span class="tiny">Letter (8.5x11")</span>
+          </div>
+          <div class="output-layout">
+            <div class="options">
+              <div class="section-kicker">Sections to Include</div>
+              <div class="check-row"><span class="check">x</span><span><strong>Project Header</strong><br><small>Project name included</small></span></div>
+              <div class="check-row"><span class="check">x</span><span><strong>Boring ID</strong><br><small id="outputBoringId">No boring</small></span></div>
+              <div class="check-row"><span class="check">x</span><span><strong>SPT Samples + N-values</strong><br><small id="outputSampleCount">0 samples</small></span></div>
+              <div class="check-row"><span class="check">x</span><span><strong>Groundwater Info</strong><br><small id="outputGroundwater">-</small></span></div>
+            </div>
+            <div class="preview">
+              <div class="paper">
+                <div class="boring-sheet">
+                  <div class="sheet-head">
+                    <div class="sheet-brand"><strong>MOMENT ENGINEERING</strong>Geotechnical Laboratory</div>
+                    <div class="sheet-title" id="sheetTitle">LOG OF BORING</div>
+                    <div class="sheet-project">Project No.<strong id="sheetProjectNo">-</strong></div>
+                  </div>
+                  <div class="sheet-info">
+                    <div><strong>Project:</strong> <span id="sheetProjectName">-</span></div>
+                    <div><strong>Date:</strong> <span id="sheetDate">-</span></div>
+                    <div><strong>Logger:</strong> <span id="sheetLogger">-</span></div>
+                    <div><strong>Driller:</strong> <span id="sheetDriller">-</span></div>
+                    <div><strong>Drill method:</strong> <span id="sheetDrillMethod">-</span></div>
+                    <div><strong>Rig / hammer:</strong> <span id="sheetRig">-</span></div>
+                    <div><strong>Surface elevation:</strong> <span id="sheetSurfaceElevation">-</span></div>
+                    <div><strong>Total depth:</strong> <span id="sheetTotalDepth">-</span></div>
+                    <div><strong>Borehole diameter:</strong> <span id="sheetBoreholeDiameter">-</span></div>
+                    <div><strong>Groundwater:</strong> <span id="sheetGroundwater">-</span></div>
+                  </div>
+                  <div class="sheet-table">
+                    <div class="sheet-col-head">
+                      <div>Depth</div>
+                      <div>Graphic</div>
+                      <div>USCS</div>
+                      <div>Material description</div>
+                      <div>Samples /<br>Blows / N</div>
+                    </div>
+                    <div id="sheetRows"></div>
+                  </div>
+                </div>
+                <div class="sheet-footer">
+                  <div><strong>Termination:</strong> <span id="sheetTermination">-</span></div>
+                  <div><strong>Groundwater method / stabilized reading:</strong> <span id="sheetGroundwaterMethod">-</span></div>
+                  <div><strong>Notes:</strong> <span id="sheetNotes">-</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="format-drawer">
+              <div class="section-kicker">Format Options</div>
+              <button class="option-card active" type="button"><span class="check">x</span><span><strong>Firm Letterhead</strong><br><small>Logo + branding header</small></span></button>
+              <button class="option-card" type="button"><span></span><span><strong>Minimal</strong><br><small>Clean single-line header</small></span></button>
+              <button class="option-card" type="button"><span></span><span><strong>ASTM Standard</strong><br><small>Full field-grid, D1586</small></span></button>
+              <button class="primary" type="button">Generate PDF</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="tab-panel" data-panel="files" hidden>
+          <div class="panel-header"><span class="section-kicker">Project Files</span><span class="tiny">Site plans, photos, and test locations</span></div>
+          <div class="files-shell">
+            <form class="file-upload-card" id="fileUploadForm">
+              <div class="section-kicker">Upload File</div>
+              <input id="projectFileInput" type="file" accept="image/*,.pdf,.png,.jpg,.jpeg,.heic,.txt,.doc,.docx">
+              <div class="form-grid">
+                <div class="field">
+                  <label>Site / Area</label>
+                  <input id="fileSite" placeholder="e.g. Building pad, driveway, north wall">
+                </div>
+                <div class="field">
+                  <label>Test Location</label>
+                  <input id="fileTestLocation" placeholder="e.g. Test 1 near grid A-3">
+                </div>
+                <div class="field wide">
+                  <label>Notes</label>
+                  <textarea id="fileNotes" placeholder="Describe where the file was taken, which compaction test it supports, or what it shows."></textarea>
+                </div>
+              </div>
+              <button class="primary" type="submit">Add File</button>
+            </form>
+            <div class="list" id="projectFilesList"></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="page" id="compactionPage">
+        <div class="compaction-shell">
+          <div class="panel-header">
+            <span class="section-kicker">Compaction Test</span>
+            <span class="tiny" id="compactionProjectLabel">No project selected</span>
+          </div>
+          <div class="compaction-days">
+            <label class="field">Compaction Day
+              <select id="compactionDaySelect"></select>
+            </label>
+            <button class="secondary" type="button" id="newCompactionDayButton">+ New Day</button>
+          </div>
+          <div class="compaction-sheet">
+            <div class="compaction-top">
+              <div>
+                <div class="brand"><strong>MOMENT</strong><span>Engineering</span></div>
+                <h1>Compaction Test</h1>
+              </div>
+              <button class="secondary" type="button" id="printCompactionButton">Print / Save PDF</button>
+            </div>
+            <section class="compaction-map">
+              <div class="map-tools">
+                <div>
+                  <div class="section-kicker">Site Plan / Test Markings</div>
+                  <div class="tiny">Upload a site image, then tap/click where each compaction test was done.</div>
+                </div>
+                <input id="compactionMapInput" type="file" accept="image/*">
+              </div>
+              <div class="map-stage" id="compactionMapStage">Upload a site plan or photo to mark test locations.</div>
+              <div class="marker-list" id="compactionMarkerList"></div>
+            </section>
+            <div class="form-grid">
+              <div class="field"><label>Job No.</label><input data-compaction-field="jobNo"></div>
+              <div class="field"><label>Job Location</label><input data-compaction-field="jobLocation"></div>
+              <div class="field"><label>Client / Owner</label><input data-compaction-field="clientOwner"></div>
+              <div class="field"><label>Project Name</label><input data-compaction-field="projectName"></div>
+              <div class="field wide"><label>General Location of Fill / Purpose of Fill</label><input data-compaction-field="fillPurpose" placeholder="General location of fill / structure to be supported"></div>
+              <div class="field"><label>Date</label><input type="date" data-compaction-field="date"></div>
+              <div class="field"><label>Day</label><input data-compaction-field="day" placeholder="e.g. Friday"></div>
+              <div class="field"><label>Scope of Work</label><input data-compaction-field="scope"></div>
+              <div class="field"><label>Soil Engineer / Technician</label><input data-compaction-field="technician"></div>
+              <div class="field"><label>Weather</label><input data-compaction-field="weather"></div>
+              <div class="field"><label>Grading Contractor</label><input data-compaction-field="gradingContractor"></div>
+              <div class="field"><label>Equipment Used</label><input data-compaction-field="equipment"></div>
+              <div class="field"><label>General Contractor</label><input data-compaction-field="generalContractor"></div>
+              <div class="field"><label>Soil Type Number</label><input data-compaction-field="soilTypeNumber"></div>
+              <div class="field wide"><label>Soil Description</label><input data-compaction-field="soilDescription" placeholder="e.g. well graded sand"></div>
+              <div class="field"><label>Max. Density (PCF)</label><input data-compaction-field="maxDensity" inputmode="decimal"></div>
+              <div class="field"><label>Opt. Moisture Content (%)</label><input data-compaction-field="optMoisture" inputmode="decimal"></div>
+              <div class="field"><label>Required Compaction (%)</label><input data-compaction-field="requiredCompaction" inputmode="decimal"></div>
+            </div>
+            <div class="compaction-table-wrap">
+              <table class="compaction-table">
+                <thead>
+                  <tr>
+                    <th>Test No.</th>
+                    <th>Test Location</th>
+                    <th>Elev. (ft)</th>
+                    <th>Depth of Fill</th>
+                    <th>Soil Type</th>
+                    <th>Moisture (%)</th>
+                    <th>Dry Density</th>
+                    <th>Rel. Compaction</th>
+                    <th>Test Type</th>
+                    <th>Pass / Fail</th>
+                    <th>Notes</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="compactionRows"></tbody>
+              </table>
+            </div>
+            <button class="secondary add-wide" type="button" id="addCompactionRow">+ Add Test Row</button>
+            <div class="field">
+              <label>Supplementary notes, drawings, test location map, etc.</label>
+              <textarea data-compaction-field="notes" placeholder="Add site notes or references to uploaded files."></textarea>
+            </div>
+            <div class="form-grid">
+              <div class="field"><label>Prepared By</label><input data-compaction-field="preparedBy"></div>
+              <div class="field"><label>Hours Charged</label><input data-compaction-field="hoursCharged" placeholder="Minimum 4 hrs."></div>
+              <div class="field"><label>Approved By</label><input data-compaction-field="approvedBy"></div>
+              <div class="field"><label>Client / Contractor</label><input data-compaction-field="clientContractor"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Tool navigation">
+      <button class="nav-item active" type="button" data-tool="boring"><span class="nav-icon">BL</span><span>Boring</span></button>
+      <button class="nav-item" type="button" data-tool="compact"><span class="nav-icon">CP</span><span>Compact</span></button>
+      <button class="nav-item" type="button" data-tool="daily"><span class="nav-icon">DL</span><span>Daily</span></button>
+      <button class="nav-item" type="button" data-tool="inspect"><span class="nav-icon">IN</span><span>Inspect</span></button>
+    </nav>
+  </main>
+
+  <script>
+    const layerOptions = {
+      uscs: [
+        "GW", "GP", "GM", "GC", "GW-GM", "GW-GC", "GP-GM", "GP-GC",
+        "SW", "SP", "SM", "SC", "SW-SM", "SW-SC", "SP-SM", "SP-SC",
+        "ML", "CL", "OL", "MH", "CH", "OH", "CL-ML", "PT"
+      ],
+      color: [
+        "Brown", "Dark brown", "Light brown", "Medium brown", "Reddish brown", "Yellowish brown",
+        "Grayish brown", "Olive brown", "Tan", "Beige", "Buff", "Yellow tan",
+        "Gray", "Dark gray", "Light gray", "Blue gray", "Greenish gray", "Olive gray",
+        "Black", "White", "Off-white", "Red", "Reddish tan", "Orange brown",
+        "Yellow", "Pale yellow", "Olive", "Mottled brown/gray", "Mottled red/gray"
+      ],
+      moisture: ["Dry", "Slightly Moist", "Moist", "Wet", "Saturated"],
+      density: ["Very Loose", "Loose", "Medium Dense", "Dense", "Very Dense"],
+      grain: ["Fine Grain", "Fine to medium Grain", "Medium Grain", "Coarse Grain", "Fine to coarse Grain"]
+    };
+
+    const projects = [];
+    let activeProjectId = null;
+
+    function starterLayer() {
+      return {
+        from: "0",
+        to: "5",
+        uscs: "SM",
+        color: "Light brown",
+        moisture: "Moist",
+        density: "Medium Dense",
+        grain: "Fine to medium Grain",
+        additional: ""
+      };
+    }
+
+    const borings = [];
+    const compactionReports = [];
+    const projectFiles = [];
+    let activeBoringId = null;
+    let activeCompactionId = null;
+    let layers = [];
+    let samples = [];
+    const storageKey = "boringLogAppState";
+    const sessionKey = "boringLogCurrentUser";
+    const passwordKey = "boringLogCurrentPassword";
+    const syncKey = "boringLogLastSync";
+    const supabaseUrl = "https://fuivzblvhjuuzhygdeln.supabase.co";
+    const supabaseKey = "sb_publishable_Kcy_SCyyVSeYWRJLLcV1IA_I1dHFSYe";
+    const supabaseTable = "field_app_state";
+    const supabaseStateId = "moment-shared-state";
+
+    const loginPage = document.querySelector("#loginPage");
+    const appShell = document.querySelector(".app");
+    const homePage = document.querySelector("#homePage");
+    const workspacePage = document.querySelector("#workspacePage");
+    const compactionPage = document.querySelector("#compactionPage");
+    const settingsPage = document.querySelector("#settingsPage");
+    const topbar = document.querySelector("#topbar");
+    const backButton = document.querySelector(".back-button");
+    const homeBrand = document.querySelector(".home-brand");
+    const mobileTitle = document.querySelector(".mobile-title");
+    let currentUser = localStorage.getItem(sessionKey) || "";
+    let currentPassword = localStorage.getItem(passwordKey) || "";
+
+    function newId() {
+      return crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function updateSettingsView() {
+      document.querySelector("#settingsEmail").value = currentUser;
+      document.querySelector("#settingsPassword").value = currentPassword;
+      const lastSync = localStorage.getItem(syncKey);
+      document.querySelector("#syncStatus").textContent = lastSync ? `Last synced: ${lastSync}` : "Not synced yet";
+    }
+
+    function setSyncStatus(message) {
+      document.querySelector("#syncStatus").textContent = message;
+    }
+
+    function setAuthenticated(userName, password = currentPassword) {
+      currentUser = userName || "";
+      currentPassword = currentUser ? password : "";
+      if (currentUser) {
+        localStorage.setItem(sessionKey, currentUser);
+        localStorage.setItem(passwordKey, currentPassword);
+      } else {
+        localStorage.removeItem(sessionKey);
+        localStorage.removeItem(passwordKey);
+      }
+      document.querySelector("#signedInUser").textContent = currentUser;
+      document.querySelector("#userChip").classList.toggle("active", Boolean(currentUser));
+      document.querySelector("#inventoryTopLink").classList.toggle("active", Boolean(currentUser));
+      appShell.classList.toggle("login-mode", !currentUser);
+      loginPage.classList.toggle("active", !currentUser);
+      homePage.classList.toggle("active", Boolean(currentUser));
+      workspacePage.classList.remove("active");
+      compactionPage.classList.remove("active");
+      settingsPage.classList.remove("active");
+      topbar.classList.add("home-mode");
+      backButton.hidden = true;
+      homeBrand.hidden = false;
+      mobileTitle.hidden = true;
+      updateSettingsView();
+    }
+
+    function exportState() {
+      return {
+        projects,
+        activeProjectId,
+        borings,
+        activeBoringId,
+        activeCompactionId,
+        compactionReports,
+        projectFiles
+      };
+    }
+
+    function applyState(stored = {}) {
+      projects.splice(0, projects.length, ...(Array.isArray(stored.projects) ? stored.projects : []));
+      borings.splice(0, borings.length, ...(Array.isArray(stored.borings) ? stored.borings : []));
+      compactionReports.splice(0, compactionReports.length, ...(Array.isArray(stored.compactionReports) ? stored.compactionReports : []));
+      projectFiles.splice(0, projectFiles.length, ...(Array.isArray(stored.projectFiles) ? stored.projectFiles : []));
+      activeProjectId = stored.activeProjectId || null;
+      activeBoringId = stored.activeBoringId || null;
+      activeCompactionId = stored.activeCompactionId || null;
+      if (!projects.some(project => project.id === activeProjectId)) activeProjectId = projects[0]?.id || null;
+      borings.forEach(boring => {
+        if (!boring.projectId && activeProjectId) boring.projectId = activeProjectId;
+        (boring.samples || []).forEach(sample => {
+          if (!sample.id) sample.id = newId();
+        });
+      });
+      if (!borings.some(boring => boring.id === activeBoringId)) activeBoringId = boringsForActiveProject()[0]?.id || null;
+      if (activeBoringId && activeProjectId && activeBoring()?.projectId !== activeProjectId) activeBoringId = boringsForActiveProject()[0]?.id || null;
+      if (!compactionReports.some(report => report.id === activeCompactionId && report.projectId === activeProjectId)) activeCompactionId = compactionForActiveProject().at(-1)?.id || null;
+      const boring = activeBoring();
+      layers = boring?.layers || [];
+      samples = boring?.samples || [];
+    }
+
+    function saveState() {
+      const state = exportState();
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    async function supabaseRequest(path, options = {}) {
+      const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
+        ...options,
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation",
+          ...(options.headers || {})
+        }
+      });
+      if (!response.ok) {
+        const detail = await response.text();
+        throw new Error(detail || `Supabase request failed (${response.status})`);
+      }
+      return response.status === 204 ? null : response.json();
+    }
+
+    async function loadCloudState() {
+      const rows = await supabaseRequest(`${supabaseTable}?id=eq.${encodeURIComponent(supabaseStateId)}&select=state,updated_at&limit=1`);
+      const record = rows?.[0];
+      if (!record?.state) return false;
+      applyState(record.state);
+      localStorage.setItem(storageKey, JSON.stringify(exportState()));
+      localStorage.setItem(syncKey, `Cloud loaded: ${new Date(record.updated_at || Date.now()).toLocaleString()}`);
+      renderRows();
+      renderProjects();
+      updateSettingsView();
+      return true;
+    }
+
+    async function saveCloudState() {
+      saveState();
+      await supabaseRequest(supabaseTable, {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+        body: JSON.stringify({
+          id: supabaseStateId,
+          state: exportState(),
+          updated_at: new Date().toISOString(),
+          updated_by: currentUser || "unknown"
+        })
+      });
+      const stamp = new Date().toLocaleString();
+      localStorage.setItem(syncKey, `Cloud saved: ${stamp}`);
+      updateSettingsView();
+    }
+
+    async function syncData() {
+      setSyncStatus("Syncing with Supabase...");
+      try {
+        await saveCloudState();
+      } catch (error) {
+        setSyncStatus("Supabase sync failed. Create table field_app_state with id text primary key, state jsonb, updated_at timestamptz, updated_by text.");
+        console.error(error);
+      }
+    }
+
+    function loadState() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(storageKey) || "{}");
+        applyState(stored);
+      } catch {
+        localStorage.removeItem(storageKey);
+      }
+    }
+
+    function activeBoring() {
+      return borings.find(boring => boring.id === activeBoringId) || null;
+    }
+
+    function boringsForActiveProject() {
+      return activeProjectId ? borings.filter(boring => boring.projectId === activeProjectId) : [];
+    }
+
+    function compactionForActiveProject() {
+      return activeProjectId ? compactionReports.filter(report => report.projectId === activeProjectId) : [];
+    }
+
+    function filesForActiveProject() {
+      return activeProjectId ? projectFiles.filter(file => file.projectId === activeProjectId) : [];
+    }
+
+    function blankCompaction(project = activeProject()) {
+      return {
+        id: newId(),
+        projectId: activeProjectId,
+        jobNo: project?.number || "",
+        jobLocation: project?.address || "",
+        clientOwner: project?.client || "",
+        projectName: project?.name || project?.address || "",
+        fillPurpose: "",
+        date: "",
+        day: "",
+        scope: "",
+        technician: currentUser || "",
+        weather: "",
+        gradingContractor: "",
+        equipment: "",
+        generalContractor: "",
+        soilTypeNumber: "1",
+        soilDescription: "",
+        maxDensity: "",
+        optMoisture: "",
+        requiredCompaction: "90",
+        notes: "",
+        preparedBy: currentUser || "",
+        hoursCharged: "Minimum 4 hrs.",
+        approvedBy: "",
+        clientContractor: "",
+        siteMapName: "",
+        siteMapDataUrl: "",
+        markers: [],
+        tests: []
+      };
+    }
+
+    function activeCompaction() {
+      if (!activeProjectId) return null;
+      let report = compactionReports.find(item => item.projectId === activeProjectId && item.id === activeCompactionId);
+      if (!report) report = compactionReports.filter(item => item.projectId === activeProjectId).at(-1) || null;
+      if (!report) {
+        report = blankCompaction();
+        compactionReports.push(report);
+      }
+      activeCompactionId = report.id;
+      if (!Array.isArray(report.tests)) report.tests = [];
+      if (!Array.isArray(report.markers)) report.markers = [];
+      return report;
+    }
+
+    function selectProject(projectId) {
+      activeProjectId = projectId;
+      activeCompactionId = compactionForActiveProject().at(-1)?.id || null;
+      const projectBorings = boringsForActiveProject();
+      useBoring(projectBorings[0]?.id || null);
+      saveState();
+      renderProjects();
+    }
+
+    function useBoring(id) {
+      const boring = borings.find(item => item.id === id) || null;
+      if (!boring) {
+        activeBoringId = null;
+        layers = [];
+        samples = [];
+        renderBoringShell();
+        renderRows();
+        saveState();
+        return;
+      }
+      activeBoringId = boring.id;
+      layers = boring.layers;
+      samples = boring.samples;
+      renderBoringShell();
+      renderRows();
+      saveState();
+    }
+
+    function nextBoringId() {
+      const projectBorings = boringsForActiveProject();
+      let next = projectBorings.length + 1;
+      while (projectBorings.some(boring => boring.id === `B-${next}`)) next += 1;
+      return `B-${next}`;
+    }
+
+    function blankInfo(id) {
+      return {
+        id,
+        date: "",
+        loggerDriller: "",
+        projectTitle: "",
+        surfaceElevation: "",
+        totalDepth: "",
+        drillMethod: "",
+        rigType: "",
+        boreholeDiameter: "",
+        casingSize: "",
+        startTime: "",
+        plannedDepthReached: "yes",
+        terminationNotes: "",
+        groundwaterDepth: "",
+        groundwaterTime: "",
+        groundwaterMethod: ""
+      };
+    }
+
+    function createBoring() {
+      const id = nextBoringId();
+      const boring = {
+        id,
+        projectId: activeProjectId,
+        info: blankInfo(id),
+        layers: [],
+        samples: []
+      };
+      borings.push(boring);
+      useBoring(id);
+      saveState();
+      return boring;
+    }
+
+    function infoReady(boring = activeBoring()) {
+      if (!boring) return false;
+      const info = boring.info;
+      const hasRequired = Boolean(info.id.trim() && info.date.trim() && info.loggerDriller.trim() && info.totalDepth.trim());
+      const hasTerminationReason = info.plannedDepthReached !== "no" || Boolean(info.terminationNotes.trim());
+      return hasRequired && hasTerminationReason;
+    }
+
+    function infoGate(kind) {
+      return `<div class="empty-state"><h3>Complete boring info first</h3><p>Fill Boring ID, Date, Logger / Driller, Total Depth, and termination status before starting ${kind}.</p><button class="primary" type="button" data-jump-info>Go to Info</button></div>`;
+    }
+
+    function renderBoringShell() {
+      const boring = activeBoring();
+      const projectBorings = boringsForActiveProject();
+      const boringButtons = projectBorings.map(boringItem => `
+        <button class="boring-pill ${boringItem.id === activeBoringId ? "active" : ""}" type="button" data-boring-id="${esc(boringItem.id)}">${esc(boringItem.id)}</button>
+      `).join("") || `<div class="tiny">No borings yet.</div>`;
+
+      document.querySelector("#boringSelector").innerHTML = boringButtons;
+      document.querySelector("#desktopBoringList").innerHTML = boringButtons;
+      document.querySelector("#activeBoringBadge").textContent = boring?.id || "None";
+      document.querySelector("#boringCount").textContent = projectBorings.length;
+      document.querySelector("#boringToolCount").textContent = `${projectBorings.length} ${projectBorings.length === 1 ? "log" : "logs"}`;
+      document.querySelector("#outputBoringId").textContent = boring?.id || "No boring";
+      document.querySelector("#outputSampleCount").textContent = `${samples.length} samples`;
+      document.querySelector("#sheetTitle").textContent = boring ? `LOG OF BORING ${boring.id}` : "LOG OF BORING";
+      document.querySelector('[data-tab="layers"] .count').textContent = layers.length;
+      document.querySelector('[data-tab="samples"] .count').textContent = samples.length;
+      const lastLayer = layers[layers.length - 1];
+      document.querySelector('[data-panel="layers"] .panel-header .tiny').textContent = `${lastLayer?.to || 0} ft covered - ${layers.length} layers`;
+      document.querySelector('[data-panel="samples"] .panel-header .section-kicker').textContent = `${samples.length} samples`;
+      document.querySelector("#deleteBoringButton").disabled = !boring;
+      document.querySelector('[data-tab="layers"]').disabled = Boolean(boring) && !infoReady(boring);
+      document.querySelector('[data-tab="samples"]').disabled = Boolean(boring) && !infoReady(boring);
+      document.querySelector("[data-add-layer]").disabled = !infoReady(boring);
+      document.querySelector("[data-add-sample]").disabled = !infoReady(boring);
+
+      document.querySelectorAll("[data-info-field]").forEach(input => {
+        const field = input.dataset.infoField;
+        input.disabled = !boring;
+        input.value = boring ? (boring.info[field] ?? "") : "";
+      });
+    }
+
+    function activeProject() {
+      return projects.find(project => project.id === activeProjectId) || null;
+    }
+
+    function projectDisplay(project) {
+      if (!project) return "Choose or add a project";
+      return [project.client, project.address].filter(Boolean).join(" - ") || project.name || project.number;
+    }
+
+    function renderProjects() {
+      const list = document.querySelector("#projectList");
+      list.innerHTML = projects.length ? projects.map(project => `
+        <div class="project-row ${project.id === activeProjectId ? "active" : ""}" data-project-id="${project.id}">
+          <span>
+            <strong>${esc(projectDisplay(project))}</strong>
+            <small class="tiny">${esc(project.number || "No project no.")} - ${esc(project.name || "Untitled project")}</small>
+          </span>
+          <span class="badge">${project.id === activeProjectId ? "Active" : esc(project.source || "Open")}</span>
+          <button class="secondary compact" type="button" data-open-project="${project.id}">Open</button>
+          <button class="danger compact" type="button" data-delete-project="${project.id}">Delete</button>
+        </div>
+      `).join("") : `<div class="empty-state"><h3>No projects yet</h3><p>Pull projects from your integration or add the first project manually.</p></div>`;
+
+      const project = activeProject();
+      document.querySelector("#projectCountBadge").textContent = projects.length;
+      document.querySelector("#activeProjectTitle").textContent = projectDisplay(project);
+      document.querySelector("#activeProjectNo").textContent = project?.number || "No project number";
+      document.querySelector("#activeProjectClient").textContent = project?.client || "No client";
+      document.querySelector("#activeProjectChip").textContent = project ? `Active project: ${project.number || project.name}` : "No active project";
+      document.querySelector(".mobile-title strong").textContent = projectDisplay(project);
+      renderOutput();
+      renderCompaction();
+      renderProjectFiles();
+    }
+
+    function compactionPercent(test, report = activeCompaction()) {
+      const maxDensity = Number(report?.maxDensity);
+      const dryDensity = Number(test?.dryDensity);
+      if (!Number.isFinite(maxDensity) || maxDensity <= 0 || !Number.isFinite(dryDensity)) return "";
+      return ((dryDensity / maxDensity) * 100).toFixed(1);
+    }
+
+    function passFail(test, report = activeCompaction()) {
+      const percent = Number(compactionPercent(test, report));
+      const required = Number(report?.requiredCompaction || 90);
+      if (!Number.isFinite(percent)) return "";
+      return percent >= required ? "Pass" : "Fail";
+    }
+
+    function nextCompactionTestNumber() {
+      const used = compactionForActiveProject()
+        .flatMap(report => Array.isArray(report.tests) ? report.tests : [])
+        .map(test => Number(test.testNo))
+        .filter(Number.isFinite);
+      return used.length ? Math.max(...used) + 1 : 1;
+    }
+
+    function defaultCompactionTest(report) {
+      const next = nextCompactionTestNumber();
+      return {
+        id: newId(),
+        testNo: String(next),
+        testLocation: "",
+        elevation: "",
+        fillDepth: "",
+        soilType: report.soilTypeNumber || "1",
+        moisture: "",
+        dryDensity: "",
+        testType: "NG",
+        notes: ""
+      };
+    }
+
+    function createCompactionDay() {
+      if (!activeProjectId) return null;
+      const previous = activeCompaction();
+      const next = blankCompaction();
+      if (previous) {
+        [
+          "jobNo", "jobLocation", "clientOwner", "projectName", "fillPurpose", "scope",
+          "technician", "gradingContractor", "equipment", "generalContractor", "soilTypeNumber",
+          "soilDescription", "maxDensity", "optMoisture", "requiredCompaction",
+          "preparedBy", "hoursCharged", "approvedBy", "clientContractor"
+        ].forEach(field => { next[field] = previous[field] || next[field] || ""; });
+        next.siteMapName = previous.siteMapName || "";
+        next.siteMapDataUrl = previous.siteMapDataUrl || "";
+        next.markers = [];
+      }
+      next.date = "";
+      next.day = "";
+      next.weather = "";
+      next.notes = "";
+      next.tests = [];
+      compactionReports.push(next);
+      activeCompactionId = next.id;
+      return next;
+    }
+
+    function renderCompactionDayOptions() {
+      const select = document.querySelector("#compactionDaySelect");
+      const reports = compactionForActiveProject();
+      select.disabled = !activeProjectId || reports.length === 0;
+      select.innerHTML = reports.length ? reports.map((report, index) => {
+        const labelDate = report.date ? report.date : `Day ${index + 1}`;
+        const count = Array.isArray(report.tests) ? report.tests.length : 0;
+        return `<option value="${esc(report.id)}" ${report.id === activeCompactionId ? "selected" : ""}>${esc(labelDate)} - ${count} test${count === 1 ? "" : "s"}</option>`;
+      }).join("") : `<option>No compaction days yet</option>`;
+    }
+
+    function renderCompaction() {
+      const report = activeProjectId ? activeCompaction() : null;
+      document.querySelector("#compactionProjectLabel").textContent = activeProject() ? projectDisplay(activeProject()) : "No project selected";
+      document.querySelector("#compactionCount").textContent = compactionForActiveProject().reduce((total, item) => total + (item.tests?.length || 0), 0);
+      document.querySelector("#compactionToolCount").textContent = `${compactionForActiveProject().reduce((total, item) => total + (item.tests?.length || 0), 0)} tests`;
+      renderCompactionDayOptions();
+
+      document.querySelectorAll("[data-compaction-field]").forEach(input => {
+        const field = input.dataset.compactionField;
+        input.disabled = !report;
+        input.value = report ? (report[field] ?? "") : "";
+      });
+
+      const rows = document.querySelector("#compactionRows");
+      if (!report) {
+        rows.innerHTML = `<tr><td colspan="12">Select or add a project before entering compaction tests.</td></tr>`;
+        renderCompactionMap(null);
+        return;
+      }
+      rows.innerHTML = report.tests.length ? report.tests.map((test, index) => {
+        const result = passFail(test, report);
+        const percent = compactionPercent(test, report);
+        return `
+          <tr data-compaction-row="${index}">
+            <td data-label="Test No."><input data-compaction-test-field="testNo" value="${esc(test.testNo)}"></td>
+            <td data-label="Test Location"><input data-compaction-test-field="testLocation" value="${esc(test.testLocation)}" placeholder="e.g. Pad south side"></td>
+            <td data-label="Elev."><input data-compaction-test-field="elevation" value="${esc(test.elevation)}" placeholder="e.g. -24 in"></td>
+            <td data-label="Depth"><input data-compaction-test-field="fillDepth" value="${esc(test.fillDepth)}" placeholder="e.g. 12 in"></td>
+            <td data-label="Soil Type"><input data-compaction-test-field="soilType" value="${esc(test.soilType)}"></td>
+            <td data-label="Moisture"><input data-compaction-test-field="moisture" value="${esc(test.moisture)}" inputmode="decimal"></td>
+            <td data-label="Dry Density"><input data-compaction-test-field="dryDensity" value="${esc(test.dryDensity)}" inputmode="decimal"></td>
+            <td data-label="Rel. Compaction"><span class="readonly-cell">${percent ? `${percent}%` : "-"}</span></td>
+            <td data-label="Test Type"><select data-compaction-test-field="testType">${selectOptions(["NG", "Sand Cone", "Drive Cylinder", "Other"], test.testType)}</select></td>
+            <td data-label="Pass / Fail"><span class="readonly-cell ${result === "Pass" ? "pass" : result === "Fail" ? "fail" : ""}">${result || "-"}</span></td>
+            <td data-label="Notes"><textarea data-compaction-test-field="notes" placeholder="Notes / retest / correction">${esc(test.notes)}</textarea></td>
+            <td data-label="Actions"><button class="danger compact" type="button" data-delete-compaction-row="${index}">Delete</button></td>
+          </tr>
+        `;
+      }).join("") : `<tr><td colspan="12">No test rows yet. Add the first compaction test row.</td></tr>`;
+      renderCompactionMap(report);
+    }
+
+    function renderCompactionMap(report = activeCompaction()) {
+      const stage = document.querySelector("#compactionMapStage");
+      const list = document.querySelector("#compactionMarkerList");
+      if (!report?.siteMapDataUrl) {
+        stage.innerHTML = "Upload a site plan or photo to mark test locations.";
+        list.innerHTML = "";
+        return;
+      }
+      stage.innerHTML = `
+        <img src="${esc(report.siteMapDataUrl)}" alt="${esc(report.siteMapName || "Compaction site map")}">
+        ${(report.markers || []).map((marker, index) => `<span class="map-marker" style="left:${marker.x}%;top:${marker.y}%">${esc(marker.label || String(index + 1))}</span>`).join("")}
+      `;
+      list.innerHTML = (report.markers || []).length ? report.markers.map((marker, index) => `
+        <div class="marker-row">
+          <span><strong>${esc(marker.label || `Test ${index + 1}`)}</strong> <span class="tiny">${Number(marker.x).toFixed(1)}%, ${Number(marker.y).toFixed(1)}%</span></span>
+          <button class="danger compact" type="button" data-delete-marker="${index}">Delete</button>
+        </div>
+      `).join("") : `<div class="tiny">No markings yet. Tap the image to add one.</div>`;
+    }
+
+    function renderProjectFiles() {
+      const container = document.querySelector("#projectFilesList");
+      const files = filesForActiveProject();
+      container.innerHTML = files.length ? files.map(file => `
+        <div class="file-card">
+          <a class="file-thumb" href="${esc(file.dataUrl)}" target="_blank" rel="noopener">
+            ${file.type?.startsWith("image/") ? `<img src="${esc(file.dataUrl)}" alt="">` : "FILE"}
+          </a>
+          <div>
+            <strong>${esc(file.name)}</strong>
+            <div class="file-meta">
+              <span>Site: ${esc(file.site || "Not entered")}</span>
+              <span>Test location: ${esc(file.testLocation || "Not entered")}</span>
+              <span>${esc(file.notes || "No notes")}</span>
+              <span>${esc(file.addedAt || "")}</span>
+            </div>
+          </div>
+          <button class="danger compact" type="button" data-delete-file="${esc(file.id)}">Delete</button>
+        </div>
+      `).join("") : `<div class="empty-state"><h3>No files yet</h3><p>Upload site plans, photos, or sketches and label where each compaction test was performed.</p></div>`;
+    }
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      })[char]);
+    }
+
+    function selectOptions(options, selected) {
+      return options.map(option => `<option ${option === selected ? "selected" : ""}>${esc(option)}</option>`).join("");
+    }
+
+    function materialFromUscs(uscs = "") {
+      const code = uscs.toUpperCase();
+      const base = {
+        GW: "Well-Graded Gravel",
+        GP: "Poorly-Graded Gravel",
+        GM: "Silty Gravel",
+        GC: "Clayey Gravel",
+        SW: "Well-Graded Sand",
+        SP: "Poorly-Graded Sand",
+        SM: "Silty Sand",
+        SC: "Clayey Sand",
+        ML: "Silt",
+        CL: "Lean Clay",
+        OL: "Organic Silt/Clay",
+        MH: "Elastic Silt",
+        CH: "Fat Clay",
+        OH: "Organic Clay",
+        PT: "Peat"
+      };
+      if (base[code]) return base[code];
+      if (code === "CL-ML") return "Silty Clay";
+      if (code.includes("-")) {
+        return code.split("-").map(part => base[part] || part).join(" with ");
+      }
+      return "Soil";
+    }
+
+    function layerNote(layer) {
+      return `${layer.color} ${materialFromUscs(layer.uscs)}, ${layer.moisture}, ${layer.density}, ${layer.grain}`;
+    }
+
+    function graphicClass(uscs = "") {
+      const code = uscs.toUpperCase();
+      if (code.includes("-")) return "graphic-mix";
+      if (code.startsWith("GW") || code.startsWith("GP")) {
+        if (code.includes("S") || code.includes("M") || code.includes("C")) return "graphic-gravel-sand";
+        return "graphic-gravel";
+      }
+      if (code.startsWith("GM") || code.startsWith("GC")) return "graphic-gravel-sand";
+      if (code === "SM" || code.includes("-SM")) return "graphic-silty-sand";
+      if (code === "SC" || code.includes("-SC")) return "graphic-clayey-sand";
+      if (code.startsWith("SW") || code.startsWith("SP")) return "graphic-sand";
+      if (code.startsWith("ML") || code.startsWith("MH")) return "graphic-silt";
+      if (code.startsWith("CL") || code.startsWith("CH")) return "graphic-clay";
+      return "graphic-mix";
+    }
+
+    function fullLayerNote(layer) {
+      return [layerNote(layer), layer.additional].filter(Boolean).join(". ");
+    }
+
+    function sampleN(sample) {
+      const second = Number(sample.blows[1]) || 0;
+      const third = Number(sample.blows[2]) || 0;
+      return second + third;
+    }
+
+    function densityFromN(n) {
+      if (n <= 4) return "Very Loose";
+      if (n <= 10) return "Loose";
+      if (n <= 30) return "Medium Dense";
+      if (n <= 50) return "Dense";
+      return "Very Dense";
+    }
+
+    function samplesInLayer(layer) {
+      const from = Number(layer.from);
+      const to = Number(layer.to);
+      return samples.filter(sample => {
+        const depth = Number(sample.depth);
+        return Number.isFinite(depth) && depth >= from && depth <= to;
+      });
+    }
+
+    function layerForDepth(depthValue) {
+      const depth = Number(depthValue);
+      if (!Number.isFinite(depth)) return null;
+      return layers.find(layer => {
+        const from = Number(layer.from);
+        const to = Number(layer.to);
+        return Number.isFinite(from) && Number.isFinite(to) && depth >= from && depth <= to;
+      }) || null;
+    }
+
+    function sampleUscs(sample) {
+      return layerForDepth(sample.depth)?.uscs || "";
+    }
+
+    function sampleNotesInLayer(layer) {
+      return samplesInLayer(layer)
+        .filter(sample => sample.notes.trim())
+        .map(sample => `Sample note ${sample.depth || "-"} ft: ${sample.notes.trim()}`);
+    }
+
+    function currentOpenState() {
+      return {
+        layers: [...document.querySelectorAll('#layersList details[open]')]
+          .map(detail => Number(detail.querySelector(".entry-editor")?.dataset.index))
+          .filter(Number.isFinite),
+        samples: [...document.querySelectorAll('#samplesList details[open]')]
+          .map(detail => Number(detail.querySelector(".entry-editor")?.dataset.index))
+          .filter(Number.isFinite)
+      };
+    }
+
+    function renderRows(openState = currentOpenState()) {
+      renderBoringShell();
+      if (!activeBoring()) {
+        document.querySelector("#layersList").innerHTML = `<div class="empty-state"><h3>No boring selected</h3><p>Add a boring log to start entering layers.</p></div>`;
+        document.querySelector("#samplesList").innerHTML = `<div class="empty-state"><h3>No boring selected</h3><p>Add a boring log to start entering samples.</p></div>`;
+        renderOutput();
+        return;
+      }
+
+      if (!infoReady()) {
+        document.querySelector("#layersList").innerHTML = infoGate("layers");
+        document.querySelector("#samplesList").innerHTML = infoGate("samples");
+        renderOutput();
+        return;
+      }
+
+      document.querySelector("#layersList").innerHTML = layers.map((layer, index) => `
+        <details class="entry-card" ${openState.layers.includes(index) ? "open" : ""}>
+          <summary>
+            <span class="pattern soil-graphic ${graphicClass(layer.uscs)}"></span>
+            <span class="row-main">
+              <span class="row-title">${esc(layer.from)}-${esc(layer.to)} ft <span class="soil">${esc(layer.uscs)}</span></span>
+              <span class="row-desc">${esc(fullLayerNote(layer))}</span>
+            </span>
+            <span>v</span>
+          </summary>
+          <div class="entry-editor" data-kind="layer" data-index="${index}">
+            <div class="mini-grid">
+              <div class="field"><label>From (ft)</label><input data-field="from" value="${esc(layer.from)}"></div>
+              <div class="field"><label>To (ft)</label><input data-field="to" value="${esc(layer.to)}"></div>
+              <div class="field"><label>USCS</label><select data-field="uscs">${selectOptions(layerOptions.uscs, layer.uscs)}</select></div>
+              <div class="field"><label>Color</label><select data-field="color">${selectOptions(layerOptions.color, layer.color)}</select></div>
+              <div class="field"><label>Moisture</label><select data-field="moisture">${selectOptions(layerOptions.moisture, layer.moisture)}</select></div>
+              <div class="field"><label>Density</label><select data-field="density">${selectOptions(layerOptions.density, layer.density)}</select></div>
+              <div class="field wide"><label>Grain / Plasticity</label><select data-field="grain">${selectOptions(layerOptions.grain.concat(layer.grain).filter((v, i, a) => a.indexOf(v) === i), layer.grain)}</select></div>
+            </div>
+            <div class="field">
+              <label>Auto-generated description</label>
+              <div class="generated-note">${esc(layerNote(layer))}</div>
+            </div>
+            <div class="field">
+              <label>Additional layer notes</label>
+              <textarea data-field="additional" placeholder="Add field observations, inclusions, groundwater changes, odor, debris, cementation...">${esc(layer.additional)}</textarea>
+            </div>
+            <button class="danger" type="button" data-delete-layer="${index}">Delete Layer</button>
+          </div>
+        </details>
+      `).join("") || `<div class="empty-state"><h3>No layers yet</h3><p>Add the first soil layer from scratch.</p></div>`;
+
+      document.querySelector("#samplesList").innerHTML = samples.map((sample, index) => `
+        <details class="entry-card" ${openState.samples.includes(index) ? "open" : ""}>
+          <summary>
+            <span class="sample-type">${esc(sample.type)}</span>
+            <span class="row-main">
+              <span class="row-title">#${esc(sample.number)} @ ${esc(sample.depth)} ft <span class="soil">N=${sampleN(sample)}</span></span>
+              <span class="row-desc">${esc(sample.blows.join("/"))} - N=${sampleN(sample)} - ${esc(densityFromN(sampleN(sample)))} - Rec: ${esc(sample.recovery || "-")} - ${esc(sampleUscs(sample) || "-")} ${sample.notes ? "- " + esc(sample.notes) : ""}</span>
+            </span>
+            <span>v</span>
+          </summary>
+          <div class="entry-editor" data-kind="sample" data-index="${index}">
+            <div class="mini-grid sample-grid">
+              <div class="field"><label>Sample Type</label><select data-field="type">${selectOptions(["SS", "RC", "SPT", "Bulk", "Grab"], sample.type)}</select></div>
+              <div class="field"><label>Sample #</label><input data-field="number" value="${esc(sample.number)}"></div>
+              <div class="field"><label>Depth (ft)</label><input data-field="depth" value="${esc(sample.depth)}"></div>
+              <div class="field"><label>USCS</label><input value="${esc(sampleUscs(sample) || "Set layer depth")}" readonly></div>
+              <div class="field"><label>Blow 1</label><input data-field="blow0" inputmode="numeric" value="${esc(sample.blows[0])}"></div>
+              <div class="field"><label>Blow 2</label><input data-field="blow1" inputmode="numeric" value="${esc(sample.blows[1])}"></div>
+              <div class="field"><label>Blow 3</label><input data-field="blow2" inputmode="numeric" value="${esc(sample.blows[2])}"></div>
+              <div class="field"><label>N-value</label><input value="${sampleN(sample)}" readonly></div>
+              <div class="field"><label>Recovery</label><input data-field="recovery" placeholder="e.g. 12 in / 18 in" value="${esc(sample.recovery)}"></div>
+              <div class="field"><label>Density</label><input value="${esc(densityFromN(sampleN(sample)))}" readonly></div>
+              <div class="field wide"><label>Sample Notes</label><textarea data-field="notes" placeholder="Moisture, odor, refusal, poor recovery, roots, gravel, debris, color changes...">${esc(sample.notes)}</textarea></div>
+            </div>
+            <button class="danger" type="button" data-delete-sample="${index}">Delete Sample</button>
+          </div>
+        </details>
+      `).join("") || `<div class="empty-state"><h3>No samples yet</h3><p>Add samples as you collect blow counts.</p></div>`;
+
+      renderOutput();
+    }
+
+    function renderOutput() {
+      const project = activeProject();
+      const boring = activeBoring();
+      const info = boring?.info || blankInfo("");
+      document.querySelector("#sheetProjectNo").textContent = project?.number || "-";
+      document.querySelector("#sheetProjectName").textContent = info.projectTitle || project?.name || "-";
+      document.querySelector("#sheetDate").textContent = info.date || "-";
+      const loggerParts = info.loggerDriller.split("/").map(part => part.trim());
+      document.querySelector("#sheetLogger").textContent = loggerParts[0] || "-";
+      document.querySelector("#sheetDriller").textContent = loggerParts[1] || "-";
+      document.querySelector("#sheetDrillMethod").textContent = info.drillMethod || "-";
+      document.querySelector("#sheetRig").textContent = info.rigType || "-";
+      document.querySelector("#sheetSurfaceElevation").textContent = info.surfaceElevation || "-";
+      document.querySelector("#sheetTotalDepth").textContent = info.totalDepth ? `${info.totalDepth} ft` : "-";
+      document.querySelector("#sheetBoreholeDiameter").textContent = info.boreholeDiameter || "-";
+      const groundwater = info.groundwaterDepth ? `${info.groundwaterDepth} ft${info.groundwaterTime ? " at " + info.groundwaterTime : ""}` : "-";
+      document.querySelector("#sheetGroundwater").textContent = groundwater;
+      document.querySelector("#outputGroundwater").textContent = groundwater;
+      document.querySelector("#sheetGroundwaterMethod").textContent = [info.groundwaterMethod, info.date].filter(Boolean).join(" - ") || "-";
+      document.querySelector("#sheetTermination").textContent = info.plannedDepthReached === "no" ? "Planned depth not reached" : "Planned depth reached";
+      document.querySelector("#sheetNotes").textContent = info.terminationNotes || "-";
+
+      if (!boring) {
+        document.querySelector("#sheetRows").innerHTML = `
+          <div class="sheet-row">
+            <div>-</div>
+            <div class="sheet-graphic soil-graphic graphic-mix"></div>
+            <div>-</div>
+            <div>Add a boring log to begin the boring record.</div>
+            <div>-</div>
+          </div>
+        `;
+        return;
+      }
+
+      document.querySelector("#sheetRows").innerHTML = layers.map(layer => {
+        const layerSamples = samplesInLayer(layer);
+        const materialNotes = [fullLayerNote(layer), ...sampleNotesInLayer(layer)].filter(Boolean).map(esc).join("<br>");
+        const sampleHtml = layerSamples.length ? layerSamples.map(sample => `
+          <div class="sample-line">
+            ${esc(sample.type)} @ ${esc(sample.depth)} ft<br>
+            <strong>Blows:</strong> ${esc(sample.blows.join("/"))}<br>
+            <strong>N:</strong> ${sampleN(sample)}<br>
+            ${esc(densityFromN(sampleN(sample)))}
+          </div>
+        `).join("") : "-";
+
+        return `
+          <div class="sheet-row">
+            <div class="sheet-depth">${esc(layer.from)}-${esc(layer.to)} ft</div>
+            <div class="sheet-graphic soil-graphic ${graphicClass(layer.uscs)}"></div>
+            <div class="sheet-uscs">${esc(layer.uscs)}</div>
+            <div>${materialNotes}</div>
+            <div>${sampleHtml}</div>
+          </div>
+        `;
+      }).join("") || `
+        <div class="sheet-row">
+          <div>-</div>
+          <div class="sheet-graphic soil-graphic graphic-mix"></div>
+          <div>-</div>
+          <div>Add layers to build the material description.</div>
+          <div>-</div>
+        </div>
+      `;
+    }
+
+    function updateEntry(target) {
+      const editor = target.closest(".entry-editor");
+      if (!editor) return;
+
+      const index = Number(editor.dataset.index);
+      const field = target.dataset.field;
+      if (editor.dataset.kind === "layer") {
+        layers[index][field] = target.value;
+      } else {
+        if (field.startsWith("blow")) {
+          samples[index].blows[Number(field.replace("blow", ""))] = target.value;
+        } else {
+          samples[index][field] = target.value;
+        }
+      }
+
+      saveState();
+      renderRows();
+    }
+
+    function setPage(page) {
+      if (!currentUser) {
+        setAuthenticated("");
+        return;
+      }
+      const inWorkspace = page === "workspace";
+      const inCompaction = page === "compaction";
+      const inSettings = page === "settings";
+      loginPage.classList.remove("active");
+      homePage.classList.toggle("active", !inWorkspace && !inCompaction && !inSettings);
+      workspacePage.classList.toggle("active", inWorkspace);
+      compactionPage.classList.toggle("active", inCompaction);
+      settingsPage.classList.toggle("active", inSettings);
+      topbar.classList.toggle("home-mode", !inWorkspace && !inCompaction);
+      backButton.hidden = !inWorkspace && !inCompaction;
+      homeBrand.hidden = inWorkspace || inCompaction;
+      mobileTitle.hidden = !inWorkspace && !inCompaction;
+      document.querySelector(".mobile-title span").textContent = inCompaction ? "Compaction" : "Boring Log";
+      document.querySelectorAll(".nav-item").forEach(nav => nav.classList.toggle("active", nav.dataset.tool === (inCompaction ? "compact" : "boring")));
+      if (inCompaction) renderCompaction();
+      if (inSettings) updateSettingsView();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function setTab(tabName) {
+      if ((tabName === "layers" || tabName === "samples") && activeBoring() && !infoReady()) {
+        tabName = "info";
+      }
+      document.querySelectorAll(".tab").forEach(tab => {
+        tab.classList.toggle("active", tab.dataset.tab === tabName);
+      });
+      document.querySelectorAll(".tab-panel").forEach(panel => {
+        panel.hidden = panel.dataset.panel !== tabName;
+      });
+    }
+
+    document.querySelectorAll("[data-open-workspace]").forEach(button => {
+      button.addEventListener("click", () => setPage("workspace"));
+    });
+
+    document.querySelectorAll("[data-open-compact]").forEach(button => {
+      button.addEventListener("click", () => {
+        if (!activeProjectId) {
+          alert("Select or add a project before starting compaction tests.");
+          return;
+        }
+        setPage("compaction");
+      });
+    });
+
+    document.querySelector("#loginForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const userName = document.querySelector("#loginName").value.trim();
+      const password = document.querySelector("#loginPassword").value;
+      if (!userName) return;
+      setAuthenticated(userName, password);
+      setSyncStatus("Loading shared Supabase data...");
+      try {
+        const loaded = await loadCloudState();
+        if (!loaded) {
+          setSyncStatus("No cloud data yet. Click Sync Data after adding projects.");
+          renderRows();
+          renderProjects();
+        }
+      } catch (error) {
+        setSyncStatus("Supabase load failed. Using local saved data.");
+        console.error(error);
+        renderRows();
+        renderProjects();
+      }
+    });
+
+    document.querySelector("#logoutButton").addEventListener("click", () => {
+      setAuthenticated("");
+    });
+
+    document.querySelector("#signedInUser").addEventListener("click", () => {
+      setPage("settings");
+    });
+
+    document.querySelector("#syncDataButton").addEventListener("click", async () => {
+      await syncData();
+    });
+
+    document.querySelector("#settingsHomeButton").addEventListener("click", () => {
+      setPage("home");
+    });
+
+    document.querySelector("#startBoringButton").addEventListener("click", () => {
+      if (!activeProjectId) {
+        alert("Select or add a project before starting a boring log.");
+        return;
+      }
+      if (!activeBoring()) createBoring();
+      setPage("workspace");
+      setTab("info");
+    });
+
+    backButton.addEventListener("click", () => setPage("home"));
+
+    document.querySelector("#manualProjectButton").addEventListener("click", () => {
+      document.querySelector("#manualProjectForm").classList.toggle("active");
+    });
+
+    function lineValue(lines, patterns) {
+      for (const pattern of patterns) {
+        const found = lines.find(line => pattern.test(line));
+        if (found) return found.replace(pattern, "").replace(/^[:#\-\s]+/, "").trim();
+      }
+      return "";
+    }
+
+    function labeledValue(lines, labels) {
+      const labelPattern = labels.map(label => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+")).join("|");
+      for (let index = 0; index < lines.length; index += 1) {
+        const match = lines[index].match(new RegExp(`^(?:${labelPattern})\\s*(?:[:#-]\\s*)?(.*)$`, "i"));
+        if (!match) continue;
+        const value = match[1].trim();
+        if (value) return value;
+        const next = lines[index + 1] || "";
+        if (next && !new RegExp(`^(?:${labelPattern})\\b`, "i").test(next)) return next.trim();
+      }
+      return "";
+    }
+
+    function looksLikeAddress(value) {
+      return /\d{1,6}\s+.*\b(st|street|ave|avenue|rd|road|dr|drive|way|blvd|boulevard|lane|ln|ct|court|place|pl|circle|cir|terrace|ter|trail|trl|pkwy|parkway|hwy|highway)\b/i.test(value)
+        || /\d{1,6}\s+.*,?\s+[^,]+,?\s+[A-Z]{2}\s*\d{5}?\b/i.test(value);
+    }
+
+    function cleanAddress(value) {
+      const withoutLabel = String(value || "")
+        .replace(/^(project address|site address|job location|project location|location|address)\s*[:#-]?\s*/i, "")
+        .replace(/\b(?:project|job)\s*(?:no\.?|number|#)?\s*[:#-]?\s*[A-Z0-9]{3,}[A-Z0-9-]*-\d{2,}\b/ig, "")
+        .replace(/\b[A-Z0-9]{3,}[A-Z0-9-]*-\d{2,}\b/g, "")
+        .trim();
+      const parts = withoutLabel.split(/\s+(?:-|–|\|)\s+/).map(part => part.trim()).filter(Boolean);
+      const addressPart = parts.find(looksLikeAddress) || withoutLabel;
+      const streetStart = addressPart.match(/\d{1,6}\s+.+$/);
+      return (streetStart ? streetStart[0] : addressPart).replace(/\s+/g, " ").trim();
+    }
+
+    function extractAddress(lines) {
+      const labeled = labeledValue(lines, ["Project Address", "Site Address", "Job Location", "Project Location", "Address"]);
+      if (labeled && looksLikeAddress(labeled)) return cleanAddress(labeled);
+      const candidate = lines.find(line => looksLikeAddress(line));
+      return candidate ? cleanAddress(candidate) : "";
+    }
+
+    function cleanClientName(value) {
+      return value
+        .replace(/\b(project|job|site|address|location|no\.?|number)\b/ig, "")
+        .replace(/\b[A-Z0-9]{3,}[A-Z0-9-]*-\d{2,}\b/ig, "")
+        .replace(/^[:#\-\s]+|[:#\-\s]+$/g, "")
+        .trim();
+    }
+
+    function parseProjectText(text) {
+      const lines = text
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean);
+      const joined = lines.join(" ");
+      const projectNumber = labeledValue(lines, ["Project No.", "Project No", "Project Number", "Project #", "Job No.", "Job No", "Job Number", "Job #", "Number"])
+        || (joined.match(/\b[A-Z0-9]{3,}[A-Z0-9-]*-\d{2,}\b/i)?.[0] || "");
+      const name = labeledValue(lines, ["Project Name", "Project Title", "Title", "Name"]);
+      let client = labeledValue(lines, ["Client Name", "Client", "Contact Name", "Contact", "Customer Name", "Customer", "Owner Name", "Owner", "Homeowner", "Prepared For", "Bill To", "Attention", "Attn"]);
+      const address = extractAddress(lines);
+
+      if (!client) {
+        const clientAddressLine = lines.find(line => line.includes(" - ") && looksLikeAddress(line));
+        if (clientAddressLine) client = cleanClientName(clientAddressLine.split(" - ")[0]);
+      }
+
+      if (!client && name && name.includes(" - ")) {
+        const firstPart = name.split(" - ")[0];
+        if (!looksLikeAddress(firstPart)) client = cleanClientName(firstPart);
+      }
+
+      if (!client && address) {
+        const addressIndex = joined.indexOf(address);
+        if (addressIndex > 0) {
+          const beforeAddress = cleanClientName(joined.slice(0, addressIndex));
+          if (beforeAddress && beforeAddress.split(/\s+/).length <= 5) client = beforeAddress;
+        }
+      }
+
+      return { projectNumber, name, address, client };
+    }
+
+    function fillIfEmpty(selector, value) {
+      const input = document.querySelector(selector);
+      if (!input.value.trim() && value) input.value = value;
+    }
+
+    function fillParsedValue(selector, value) {
+      if (value) document.querySelector(selector).value = value;
+    }
+
+    document.querySelector("#autoFillProjectButton").addEventListener("click", () => {
+      const parsed = parseProjectText(document.querySelector("#projectPasteBox").value);
+      fillParsedValue("#newProjectNo", parsed.projectNumber);
+      fillParsedValue("#newProjectName", parsed.name);
+      fillParsedValue("#newProjectAddress", parsed.address);
+      fillParsedValue("#newProjectClient", parsed.client);
+    });
+
+    document.querySelector("#manualProjectForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const project = {
+        id: `manual-${Date.now()}`,
+        number: document.querySelector("#newProjectNo").value.trim(),
+        name: document.querySelector("#newProjectName").value.trim(),
+        address: document.querySelector("#newProjectAddress").value.trim(),
+        client: document.querySelector("#newProjectClient").value.trim(),
+        source: "Manual"
+      };
+      projects.push(project);
+      activeProjectId = project.id;
+      activeBoringId = null;
+      layers = [];
+      samples = [];
+      event.target.reset();
+      document.querySelector("#projectPasteBox").value = "";
+      event.target.classList.remove("active");
+      saveState();
+      renderRows();
+      renderProjects();
+    });
+
+    document.querySelector("#projectList").addEventListener("click", event => {
+      const deleteButton = event.target.closest("[data-delete-project]");
+      if (deleteButton) {
+        const project = projects.find(item => item.id === deleteButton.dataset.deleteProject);
+        if (!project) return;
+        if (!confirm(`Delete project ${projectDisplay(project)}?`)) return;
+        const index = projects.findIndex(item => item.id === project.id);
+        projects.splice(index, 1);
+        for (let boringIndex = borings.length - 1; boringIndex >= 0; boringIndex -= 1) {
+          if (borings[boringIndex].projectId === project.id) borings.splice(boringIndex, 1);
+        }
+        for (let compactionIndex = compactionReports.length - 1; compactionIndex >= 0; compactionIndex -= 1) {
+          if (compactionReports[compactionIndex].projectId === project.id) compactionReports.splice(compactionIndex, 1);
+        }
+        for (let fileIndex = projectFiles.length - 1; fileIndex >= 0; fileIndex -= 1) {
+          if (projectFiles[fileIndex].projectId === project.id) projectFiles.splice(fileIndex, 1);
+        }
+        if (activeProjectId === project.id) activeProjectId = projects[index]?.id || projects[index - 1]?.id || null;
+        const nextProjectBorings = boringsForActiveProject();
+        activeBoringId = nextProjectBorings[0]?.id || null;
+        const nextBoring = activeBoring();
+        layers = nextBoring?.layers || [];
+        samples = nextBoring?.samples || [];
+        saveState();
+        renderRows();
+        renderProjects();
+        return;
+      }
+
+      const openButton = event.target.closest("[data-open-project]");
+      const row = event.target.closest("[data-project-id]");
+      const projectId = openButton?.dataset.openProject || row?.dataset.projectId;
+      if (!projectId) return;
+      selectProject(projectId);
+    });
+
+    document.querySelector("#hubspotButton").addEventListener("click", () => {
+      alert("Project import is ready for a HubSpot or GitHub connection when credentials are added.");
+    });
+
+    document.querySelectorAll("#boringSelector, #desktopBoringList").forEach(list => {
+      list.addEventListener("click", event => {
+        const button = event.target.closest("[data-boring-id]");
+        if (!button) return;
+        useBoring(button.dataset.boringId);
+      });
+    });
+
+    document.querySelectorAll("[data-add-boring]").forEach(button => {
+      button.addEventListener("click", () => {
+        if (!activeProjectId) {
+          alert("Select or add a project before adding a boring log.");
+          return;
+        }
+        createBoring();
+        setPage("workspace");
+        setTab("info");
+      });
+    });
+
+    document.querySelector("#boringIdInput").addEventListener("change", event => {
+      const cleanId = event.target.value.trim() || activeBoringId;
+      const duplicate = borings.some(boring => boring.id === cleanId && boring.id !== activeBoringId);
+      if (duplicate) {
+        event.target.value = activeBoringId;
+        alert("That boring ID already exists.");
+        return;
+      }
+      const boring = activeBoring();
+      if (!boring) return;
+      boring.id = cleanId;
+      boring.info.id = cleanId;
+      activeBoringId = cleanId;
+      saveState();
+      renderRows();
+    });
+
+    document.querySelector('[data-panel="info"]').addEventListener("change", event => {
+      const field = event.target.dataset.infoField;
+      const boring = activeBoring();
+      if (!field || !boring) return;
+      boring.info[field] = event.target.value;
+      if (field === "id") return;
+      saveState();
+      renderBoringShell();
+      renderOutput();
+    });
+
+    document.querySelector("#saveInfoButton").addEventListener("click", () => {
+      const boring = activeBoring();
+      if (!boring) {
+        createBoring();
+      }
+      saveState();
+      renderRows();
+      if (infoReady()) {
+        setTab("layers");
+      } else {
+        alert("Please fill Boring ID, Date, Logger / Driller, Total Depth, and termination reason if planned depth was not reached.");
+      }
+    });
+
+    document.querySelector("#deleteBoringButton").addEventListener("click", () => {
+      const boring = activeBoring();
+      if (!boring) return;
+      const confirmed = confirm(`Delete boring log ${boring.id}?`);
+      if (!confirmed) return;
+      const index = borings.findIndex(item => item.id === boring.id);
+      borings.splice(index, 1);
+      const next = borings[index] || borings[index - 1] || null;
+      useBoring(next?.id || null);
+      saveState();
+      setTab("info");
+    });
+
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => setTab(tab.dataset.tab));
+    });
+
+    document.querySelector("#layersList").addEventListener("change", event => updateEntry(event.target));
+    document.querySelector("#samplesList").addEventListener("change", event => updateEntry(event.target));
+
+    document.querySelector("#compactionPage").addEventListener("input", event => {
+      const report = activeCompaction();
+      if (!report) return;
+      const field = event.target.dataset.compactionField;
+      if (field) {
+        report[field] = event.target.value;
+        if (field === "date") {
+          const date = new Date(`${event.target.value}T00:00:00`);
+          if (!Number.isNaN(date.getTime()) && !report.day) {
+            report.day = date.toLocaleDateString(undefined, { weekday: "long" });
+            document.querySelector('[data-compaction-field="day"]').value = report.day;
+          }
+        }
+        saveState();
+        return;
+      }
+      const testField = event.target.dataset.compactionTestField;
+      const row = event.target.closest("[data-compaction-row]");
+      if (!testField || !row) return;
+      report.tests[Number(row.dataset.compactionRow)][testField] = event.target.value;
+      saveState();
+    });
+
+    document.querySelector("#compactionPage").addEventListener("change", event => {
+      if (!event.target.dataset.compactionTestField && !event.target.dataset.compactionField) return;
+      const report = activeCompaction();
+      if (!report) return;
+      const testField = event.target.dataset.compactionTestField;
+      const row = event.target.closest("[data-compaction-row]");
+      if (testField && row) report.tests[Number(row.dataset.compactionRow)][testField] = event.target.value;
+      const field = event.target.dataset.compactionField;
+      if (field) report[field] = event.target.value;
+      saveState();
+      renderCompaction();
+    });
+
+    document.querySelector("#addCompactionRow").addEventListener("click", () => {
+      if (!activeProjectId) {
+        alert("Select or add a project before adding compaction tests.");
+        return;
+      }
+      const report = activeCompaction();
+      report.tests.push(defaultCompactionTest(report));
+      saveState();
+      renderCompaction();
+    });
+
+    document.querySelector("#newCompactionDayButton").addEventListener("click", () => {
+      if (!activeProjectId) {
+        alert("Select or add a project before adding compaction tests.");
+        return;
+      }
+      createCompactionDay();
+      saveState();
+      renderCompaction();
+    });
+
+    document.querySelector("#compactionDaySelect").addEventListener("change", event => {
+      activeCompactionId = event.target.value;
+      saveState();
+      renderCompaction();
+    });
+
+    document.querySelector("#compactionRows").addEventListener("click", event => {
+      const button = event.target.closest("[data-delete-compaction-row]");
+      if (!button) return;
+      const report = activeCompaction();
+      report.tests.splice(Number(button.dataset.deleteCompactionRow), 1);
+      saveState();
+      renderCompaction();
+    });
+
+    document.querySelector("#printCompactionButton").addEventListener("click", () => window.print());
+
+    document.querySelector("#compactionMapInput").addEventListener("change", event => {
+      const file = event.target.files?.[0];
+      const report = activeCompaction();
+      if (!file || !report) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        report.siteMapName = file.name;
+        report.siteMapDataUrl = reader.result;
+        report.markers = [];
+        saveState();
+        renderCompactionMap(report);
+      };
+      reader.readAsDataURL(file);
+      event.target.value = "";
+    });
+
+    document.querySelector("#compactionMapStage").addEventListener("click", event => {
+      const report = activeCompaction();
+      if (!report?.siteMapDataUrl) return;
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 100;
+      const y = ((event.clientY - rect.top) / rect.height) * 100;
+      const defaultLabel = String((report.markers?.length || 0) + 1);
+      const label = prompt("Marker label or test number", defaultLabel);
+      if (label === null) return;
+      if (!Array.isArray(report.markers)) report.markers = [];
+      report.markers.push({ id: newId(), label: label.trim() || defaultLabel, x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
+      saveState();
+      renderCompactionMap(report);
+    });
+
+    document.querySelector("#compactionMarkerList").addEventListener("click", event => {
+      const button = event.target.closest("[data-delete-marker]");
+      if (!button) return;
+      const report = activeCompaction();
+      if (!report?.markers) return;
+      report.markers.splice(Number(button.dataset.deleteMarker), 1);
+      saveState();
+      renderCompactionMap(report);
+    });
+
+    document.querySelector("#fileUploadForm").addEventListener("submit", event => {
+      event.preventDefault();
+      if (!activeProjectId) {
+        alert("Select or add a project before adding files.");
+        return;
+      }
+      const file = document.querySelector("#projectFileInput").files?.[0];
+      if (!file) {
+        alert("Choose a file to upload.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        projectFiles.push({
+          id: newId(),
+          projectId: activeProjectId,
+          name: file.name,
+          type: file.type || "file",
+          size: file.size,
+          dataUrl: reader.result,
+          site: document.querySelector("#fileSite").value.trim(),
+          testLocation: document.querySelector("#fileTestLocation").value.trim(),
+          notes: document.querySelector("#fileNotes").value.trim(),
+          addedAt: new Date().toLocaleString()
+        });
+        event.target.reset();
+        saveState();
+        renderProjectFiles();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.querySelector("#projectFilesList").addEventListener("click", event => {
+      const button = event.target.closest("[data-delete-file]");
+      if (!button) return;
+      const index = projectFiles.findIndex(file => file.id === button.dataset.deleteFile);
+      if (index < 0) return;
+      projectFiles.splice(index, 1);
+      saveState();
+      renderProjectFiles();
+    });
+
+    document.querySelector("#layersList").addEventListener("click", event => {
+      if (event.target.closest("[data-jump-info]")) {
+        setTab("info");
+        return;
+      }
+      const button = event.target.closest("[data-delete-layer]");
+      if (!button) return;
+      const index = Number(button.dataset.deleteLayer);
+      layers.splice(index, 1);
+      saveState();
+      renderRows();
+    });
+
+    document.querySelector("#samplesList").addEventListener("click", event => {
+      if (event.target.closest("[data-jump-info]")) {
+        setTab("info");
+        return;
+      }
+      const button = event.target.closest("[data-delete-sample]");
+      if (!button) return;
+      const index = Number(button.dataset.deleteSample);
+      samples.splice(index, 1);
+      saveState();
+      renderRows();
+    });
+
+    document.querySelector("[data-add-layer]").addEventListener("click", () => {
+      if (!activeBoring()) createBoring();
+      if (!infoReady()) {
+        setTab("info");
+        return;
+      }
+      const last = layers[layers.length - 1] || { to: "0" };
+      layers.push({
+        from: last.to,
+        to: String(Number(last.to) + 5),
+        uscs: "SM",
+        color: "Light brown",
+        moisture: "Moist",
+        density: "Medium Dense",
+        grain: "Fine to medium Grain",
+        additional: ""
+      });
+      saveState();
+      renderRows();
+      setTab("layers");
+    });
+
+    document.querySelector("[data-add-sample]").addEventListener("click", () => {
+      if (!activeBoring()) createBoring();
+      if (!infoReady()) {
+        setTab("info");
+        return;
+      }
+      const nextNumber = String(samples.length + 1);
+      samples.push({
+        id: newId(),
+        type: "SS",
+        number: nextNumber,
+        depth: "",
+        blows: ["", "", ""],
+        recovery: "",
+        uscs: "",
+        notes: ""
+      });
+      saveState();
+      renderRows();
+      setTab("samples");
+    });
+
+    document.querySelectorAll(".nav-item").forEach(item => {
+      item.addEventListener("click", () => {
+        if (item.dataset.tool === "boring") {
+          setPage("workspace");
+          return;
+        }
+        if (item.dataset.tool === "compact") {
+          if (!activeProjectId) {
+            alert("Select or add a project before starting compaction tests.");
+            setPage("home");
+            return;
+          }
+          setPage("compaction");
+          return;
+        }
+        alert("That tool is still a placeholder.");
+      });
+    });
+
+    loadState();
+    renderRows();
+    renderProjects();
+    setAuthenticated(currentUser);
+    if (currentUser) {
+      loadCloudState().catch(error => {
+        setSyncStatus("Supabase load failed. Using local saved data.");
+        console.error(error);
+      });
+    }
+  </script>
+</body>
+</html>

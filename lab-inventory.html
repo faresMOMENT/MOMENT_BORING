@@ -1,0 +1,900 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moment Engineering Sample Inventory</title>
+  <style>
+    :root {
+      --bg: #f6f7f2;
+      --ink: #272b24;
+      --muted: #73796d;
+      --line: #d8d9d0;
+      --panel: #fff;
+      --accent: #2f6f18;
+      --accent-dark: #2f6f18;
+      --soft: #edf5e8;
+      --bag: #ae5a14;
+      --bag-soft: #fff1df;
+      --shadow: 0 10px 28px rgba(38, 43, 36, .1);
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--sans); color: var(--ink); background: var(--bg); font-size: 15px; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .app-shell { min-height: 100vh; display: grid; grid-template-columns: 250px minmax(0, 1fr); }
+
+    .sidebar {
+      position: sticky; top: 0; height: 100vh; overflow: auto; padding: 22px 16px;
+      background: #f0f1ec; border-right: 1px solid var(--line);
+    }
+    .brand h1 { margin: 0; color: var(--accent); font-size: 20px; font-weight: 600; }
+    .brand p { margin: 8px 0 20px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .sidebar-title { margin: 18px 10px 8px; color: var(--muted); font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; }
+    .tabs, .side-links { display: grid; gap: 7px; }
+    .tab, .side-links a, .side-links button {
+      width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      border: 1px solid transparent; border-radius: 8px; background: transparent; color: #5f686f;
+      padding: 9px 10px; text-align: left; text-decoration: none; font-size: 13px; font-weight: 500;
+    }
+    .tab.active { color: var(--accent-dark); background: var(--soft); border-color: #86a96f; }
+    .tab.bag-tab.active { color: #b86418; background: var(--bag-soft); border-color: #f5d5b4; }
+    .tab-count { min-width: 28px; padding: 3px 8px; border-radius: 999px; background: #f0f0ed; color: #6f777d; font-size: 12px; text-align: center; }
+    .tab.active .tab-count { background: #fff; color: inherit; }
+    .side-links { margin-top: 4px; }
+    .side-links button { justify-content: flex-start; }
+
+    .page { min-width: 0; padding: 24px 28px 72px; display: grid; gap: 20px; align-content: start; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    h1, h2, h3 { margin: 0; }
+    .topbar h1 { font-size: 24px; font-weight: 600; }
+    .topbar p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+    .top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      min-height: 40px; display: inline-flex; align-items: center; justify-content: center;
+      border: 0; border-radius: 8px; padding: 9px 16px; background: var(--accent); color: #fff; font-weight: 500; text-decoration: none;
+    }
+    .btn.secondary { background: #fff; color: #17201d; border: 1px solid var(--line); }
+    .btn:disabled { opacity: .55; cursor: wait; }
+
+    .summary { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 14px; }
+    .metric { min-height: 94px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 3px 12px rgba(38,43,36,.05); }
+    .metric span { color: var(--muted); font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
+    .metric strong { display: block; margin-top: 12px; font-size: 24px; font-weight: 600; }
+    .metric.bag strong { color: var(--bag); }
+
+    .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .toolbar h2 { font-size: 18px; font-weight: 600; }
+    .toolbar-filters { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .search, .days-filter { min-height: 42px; border: 1px solid #d9ded9; border-radius: 8px; background: #fff; padding: 10px 12px; }
+    .search { width: min(340px, 100%); }
+    .days-filter { min-width: 185px; }
+    .search:focus, .days-filter:focus { outline: 2px solid #bceee4; border-color: var(--accent); }
+
+    .projects { display: grid; gap: 14px; }
+    .project { overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 3px 12px rgba(38,43,36,.05); }
+    .project-head { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; cursor: pointer; list-style: none; }
+    .project-head::-webkit-details-marker { display: none; }
+    .project-head::after { content: "+"; flex: 0 0 auto; color: var(--accent-dark); font-size: 22px; font-weight: 500; }
+    .project[open] .project-head { border-bottom: 1px solid var(--line); }
+    .project[open] .project-head::after { content: "-"; }
+    .project-head:hover { background: #fbfdfc; }
+    .project-head h3 { font-size: 17px; font-weight: 600; }
+    .project-meta { margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .project-counts { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
+    .pill { display: inline-flex; border-radius: 4px; padding: 5px 8px; background: var(--soft); color: var(--accent-dark); font-family: var(--mono); font-size: 11px; font-weight: 500; }
+    .pill.bag { background: var(--bag-soft); color: #b86418; }
+    .pill.days { background: #eef3ff; color: #385f9f; }
+    .received-date { margin-top: 7px; color: #59636a; font-size: 12px; font-weight: 500; }
+    .sample-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sample-section { min-width: 0; padding: 17px 20px 20px; }
+    .sample-section + .sample-section { border-left: 1px solid var(--line); }
+    .section-label { display: flex; justify-content: space-between; margin-bottom: 10px; color: #697279; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
+    .sample-list { display: grid; gap: 8px; }
+    .sample {
+      display: grid; grid-template-columns: minmax(80px, .75fr) minmax(70px, .65fr) minmax(100px, 1fr); gap: 10px;
+      align-items: center; min-height: 54px; padding: 10px 12px; border: 1px solid #edf0ec; border-radius: 9px; background: #fbfcfa;
+    }
+    .sample.bag { border-color: #f5dfc8; background: #fffbf6; }
+    .sample strong { font-size: 13px; font-weight: 600; }
+    .sample span { color: #626c73; font-size: 12px; }
+    .sample-notes { overflow: hidden; color: var(--muted) !important; font-size: 11px !important; text-overflow: ellipsis; white-space: nowrap; }
+    .empty-section { padding: 15px 0; color: #a0a7ab; font-size: 12px; }
+    .project-footer { padding: 13px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--line); background: #fafbf9; }
+    .project-footer span { color: var(--muted); font-size: 12px; }
+    .project-footer-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .complete-btn { min-height: 36px; border: 1px solid #c9dfd8; border-radius: 8px; background: var(--soft); color: var(--accent-dark); padding: 7px 12px; font-weight: 500; }
+    .complete-btn.restore { border-color: #d8dde8; background: #f0f3fa; color: #405c8a; }
+    .custody-btn { min-height: 36px; border: 1px solid #d4b28f; border-radius: 8px; background: #fff7ee; color: #8b4914; padding: 7px 12px; font-weight: 500; }
+    .empty-page { padding: 60px 22px; border: 1px dashed #d9ded9; border-radius: 14px; background: #fff; color: var(--muted); text-align: center; }
+    .empty-page strong { display: block; margin-bottom: 7px; color: var(--ink); font-size: 17px; }
+
+    dialog { width: min(850px, calc(100% - 28px)); max-height: calc(100vh - 28px); padding: 0; border: 0; border-radius: 15px; box-shadow: 0 28px 80px rgba(16,24,32,.25); }
+    dialog::backdrop { background: rgba(16,24,32,.5); }
+    .dialog-head { padding: 19px 22px; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; border-bottom: 1px solid var(--line); }
+    .dialog-head h2 { font-size: 20px; }
+    .dialog-head p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+    .close-btn { border: 0; background: transparent; color: var(--muted); font-size: 25px; line-height: 1; }
+    .import-body { max-height: calc(100vh - 210px); overflow: auto; padding: 20px 22px; display: grid; gap: 20px; }
+    .import-status { padding: 11px 13px; border-radius: 8px; background: var(--soft); color: var(--accent-dark); font-size: 12px; font-weight: 500; }
+    .import-status.error { background: #fff0ee; color: #ad3d31; }
+    .import-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+    .field { display: grid; gap: 6px; color: #59636a; font-size: 12px; font-weight: 500; }
+    .field.full { grid-column: 1 / -1; }
+    .field input, .field select { width: 100%; min-height: 40px; border: 1px solid #d9ded9; border-radius: 8px; background: #fff; padding: 9px 11px; }
+    .preview-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
+    .preview-head h3 { font-size: 15px; }
+    .small-btn { min-height: 34px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: #3f494f; padding: 6px 10px; font-weight: 500; }
+    .import-samples { display: grid; gap: 8px; }
+    .import-sample { display: grid; grid-template-columns: 1fr .8fr .8fr .8fr 36px; gap: 7px; }
+    .import-sample input, .import-sample select { min-width: 0; min-height: 38px; border: 1px solid #d9ded9; border-radius: 7px; background: #fff; padding: 8px 9px; }
+    .remove-sample { border: 1px solid #efc5c0; border-radius: 7px; background: #fff4f2; color: #ad3d31; }
+    .dialog-actions { padding: 15px 22px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--line); }
+    .raw-details summary { cursor: pointer; color: var(--muted); font-size: 12px; font-weight: 500; }
+    .raw-text { margin: 9px 0 0; padding: 12px; max-height: 170px; overflow: auto; border-radius: 8px; background: #f5f6f3; color: #566068; font: 11px/1.45 Consolas, monospace; white-space: pre-wrap; }
+
+    @media (max-width: 900px) {
+      .app-shell { display: block; }
+      .sidebar { position: static; height: auto; }
+      .tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .side-links { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 680px) {
+      .page { padding: 18px 14px 60px; }
+      .summary { gap: 9px; }
+      .metric { min-height: 92px; padding: 14px; }
+      .sample-sections { grid-template-columns: 1fr; }
+      .sample-section + .sample-section { border-left: 0; border-top: 1px solid var(--line); }
+      .project-head { align-items: flex-start; }
+      .sample { grid-template-columns: 1fr 1fr; }
+      .sample-notes { grid-column: 1 / -1; }
+      .project-footer { align-items: stretch; flex-direction: column; }
+      .project-footer-actions { justify-content: stretch; }
+      .project-footer-actions button { flex: 1 1 140px; }
+      .toolbar-filters, .search, .days-filter { width: 100%; }
+      .import-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .import-sample { grid-template-columns: 1fr 1fr; padding: 10px; border: 1px solid var(--line); border-radius: 9px; }
+      .remove-sample { min-height: 36px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Sample Inventory</h1>
+        <p>Projects and samples synced from boring logs, organized by county and sample type.</p>
+      </div>
+      <div class="sidebar-title">Inventory Views</div>
+      <nav class="tabs" id="countyTabs" aria-label="Sample inventory views"></nav>
+      <div class="sidebar-title">Lab Pages</div>
+      <nav class="side-links" aria-label="Lab pages">
+        <a href="index.html">Boring Logs</a>
+        <button type="button" id="backBtn">Back</button>
+      </nav>
+    </aside>
+
+    <main class="page">
+      <header class="topbar">
+        <div>
+          <h1>Lab Sample Inventory</h1>
+          <p>Automatically reads projects, boring logs, and samples saved from the Boring Log app.</p>
+        </div>
+        <div class="top-actions">
+          <input id="pdfInput" type="file" accept="application/pdf,.pdf" hidden>
+          <button class="btn" type="button" id="uploadBtn" hidden>Upload Custody PDF</button>
+          <button class="btn secondary" type="button" id="refreshBtn">Refresh</button>
+          <a class="btn" href="index.html">Open Boring Logs</a>
+        </div>
+      </header>
+
+      <section class="summary" aria-label="Sample inventory totals">
+        <article class="metric"><span>Projects</span><strong id="projectMetric">0</strong></article>
+        <article class="metric"><span>Total Samples</span><strong id="sampleMetric">0</strong></article>
+        <article class="metric"><span>Core / Other</span><strong id="coreMetric">0</strong></article>
+        <article class="metric bag"><span>Bag Samples</span><strong id="bagMetric">0</strong></article>
+      </section>
+
+      <section class="toolbar">
+        <h2 id="viewTitle">All Samples</h2>
+        <div class="toolbar-filters">
+          <input class="search" id="searchInput" type="search" placeholder="Search project or sample..." aria-label="Search projects and samples">
+          <select class="days-filter" id="daysFilter" aria-label="Filter by days in lab">
+            <option value="all">All days in lab</option>
+            <option value="0-7">0-7 days</option>
+            <option value="8-14">8-14 days</option>
+            <option value="15-30">15-30 days</option>
+            <option value="31-plus">31+ days</option>
+            <option value="missing">Missing received date</option>
+          </select>
+          <select class="days-filter" id="daysSort" aria-label="Sort by days in lab">
+            <option value="least">Least days first</option>
+            <option value="most">Most days first</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="projects" id="projects"></section>
+    </main>
+  </div>
+
+  <dialog id="importDialog">
+    <form id="importForm">
+      <header class="dialog-head">
+        <div><h2>Review Imported Samples</h2><p>Check the scanned information before adding it to the shared boring-log sample inventory.</p></div>
+        <button class="close-btn" id="closeImport" type="button" aria-label="Close">&times;</button>
+      </header>
+      <div class="import-body">
+        <div class="import-status" id="importStatus">Reading PDF...</div>
+        <section class="import-grid">
+          <label class="field">Project name<input name="projectName" placeholder="Project name"></label>
+          <label class="field">Project number<input name="projectNumber" placeholder="Project number"></label>
+          <label class="field">Client<input name="clientName" placeholder="Client name"></label>
+          <label class="field">County
+            <select name="county"><option>San Diego County</option><option>LA County</option><option>Orange County</option><option>Other County</option></select>
+          </label>
+          <label class="field full">Project address<input name="address" placeholder="Project address"></label>
+          <label class="field">Sampling date<input name="dateSampling" type="date"></label>
+          <label class="field">Date received in lab<input name="labCheckInDate" type="date"></label>
+        </section>
+        <section>
+          <div class="preview-head"><h3>Detected Samples</h3><button class="small-btn" id="addImportSample" type="button">+ Add Sample</button></div>
+          <div class="import-samples" id="importSamples"></div>
+        </section>
+        <details class="raw-details"><summary>Show extracted PDF text</summary><pre class="raw-text" id="rawText"></pre></details>
+      </div>
+      <footer class="dialog-actions">
+        <button class="btn secondary" id="cancelImport" type="button">Cancel</button>
+        <button class="btn" id="saveImport" type="submit">Add Project &amp; Samples</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    const storageKey = "boringLogAppState";
+    const storageBackupKey = "boringLogAppState-before-last-save";
+    const countyNames = ["San Diego County", "LA County", "Orange County", "Other County"];
+    const views = ["All Samples", ...countyNames, "Bag Samples", "Completed / Disposed"];
+    const state = { data: loadData(), view: "All Samples", search: "", daysFilter: "all", daysSort: "least", importSamples: [], importMetadata: {}, rawPdfText: "" };
+
+    function loadData() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
+        const projects = Array.isArray(saved.projects) ? saved.projects : [];
+        const borings = Array.isArray(saved.borings) ? saved.borings : [];
+        return {
+          homes: projects.map(project => {
+            const projectBorings = borings.filter(boring => boring.projectId === project.id);
+            const samples = projectBorings.flatMap(boring => (Array.isArray(boring.samples) ? boring.samples : []).map(sample => {
+              const depth = Number(sample.depth);
+              const layer = (Array.isArray(boring.layers) ? boring.layers : []).find(candidate => {
+                const from = Number(candidate.from);
+                const to = Number(candidate.to);
+                return Number.isFinite(depth) && Number.isFinite(from) && Number.isFinite(to) && depth >= from && depth <= to;
+              });
+              return {
+                id: sample.id || `${boring.id}-${sample.number || sample.depth || Math.random()}`,
+                sampleNumber: `${boring.id}-${sample.number || "sample"}`,
+                boringId: boring.id,
+                depth: sample.depth || "",
+                classification: layer?.uscs || sample.uscs || "",
+                method: sample.type || "Sample",
+                remarks: sample.notes || ""
+              };
+            }));
+            const firstBoring = projectBorings[0];
+            return {
+              id: project.id,
+              projectName: project.name || project.address || project.number || "",
+              projectNumber: project.number || "",
+              clientName: project.client || "",
+              address: project.address || "",
+              county: project.county || "Other County",
+              dateSampling: firstBoring?.info?.date || "",
+              labCheckInDate: project.labCheckInDate || firstBoring?.info?.date || "",
+              completedAt: project.inventoryCompletedAt || "",
+              samples,
+              notes: "Synced from boring logs",
+              updatedAt: project.updatedAt || ""
+            };
+          })
+        };
+      } catch (error) {
+        return { homes: [] };
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value || "").replace(/[&<>\"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;" }[character]));
+    }
+
+    function newId() { return crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()); }
+    function formatDate(value) {
+      if (!value) return "Not entered";
+      const [year, month, day] = value.split("-");
+      return year && month && day ? `${month}/${day}/${year}` : value;
+    }
+    function daysInLab(value, completedAt = "") {
+      if (!value) return null;
+      const [year, month, day] = value.split("-").map(Number);
+      if (!year || !month || !day) return null;
+      const received = new Date(year, month - 1, day);
+      const today = completedAt ? new Date(completedAt) : new Date();
+      const start = new Date(received.getFullYear(), received.getMonth(), received.getDate());
+      const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      return Math.max(0, Math.floor((end - start) / 86400000));
+    }
+    function setImportStatus(message, isError = false) {
+      const status = document.getElementById("importStatus");
+      status.textContent = message;
+      status.classList.toggle("error", isError);
+    }
+
+    function loadExternalScript(source) {
+      return new Promise((resolve, reject) => {
+        const existing = document.querySelector(`script[src="${source}"]`);
+        if (existing) {
+          if (window.Tesseract) resolve();
+          else existing.addEventListener("load", resolve, { once: true });
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = source;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+
+    function textItemsToLines(items) {
+      const rows = [];
+      items.forEach(item => {
+        const y = item.transform?.[5] || 0;
+        let row = rows.find(candidate => Math.abs(candidate.y - y) < 3);
+        if (!row) { row = { y, items: [] }; rows.push(row); }
+        row.items.push({ x: item.transform?.[4] || 0, text: item.str });
+      });
+      return rows.sort((a, b) => b.y - a.y).map(row => row.items.sort((a, b) => a.x - b.x).map(item => item.text).join(" ").replace(/\s+/g, " ").trim()).filter(Boolean);
+    }
+
+    async function extractPdfText(file) {
+      if (!window.pdfjsLib) throw new Error("The PDF reader could not load. Check your internet connection and try again.");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+      const pages = [];
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        setImportStatus(`Reading page ${pageNumber} of ${pdf.numPages}...`);
+        const page = await pdf.getPage(pageNumber);
+        const content = await page.getTextContent();
+        pages.push(textItemsToLines(content.items).join("\n"));
+      }
+      let text = pages.join("\n\n").trim();
+      if (text.replace(/\s/g, "").length >= 30) return text;
+
+      setImportStatus("This is an image-scanned PDF. Starting OCR...");
+      await loadExternalScript("https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js");
+      if (!window.Tesseract) throw new Error("OCR could not load. Try a text-based PDF or check your connection.");
+      const ocrPages = [];
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        const page = await pdf.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+        const result = await Tesseract.recognize(canvas, "eng", {
+          logger: progress => {
+            if (progress.status === "recognizing text") setImportStatus(`OCR page ${pageNumber} of ${pdf.numPages}: ${Math.round((progress.progress || 0) * 100)}%`);
+          }
+        });
+        ocrPages.push(result.data.text || "");
+      }
+      text = ocrPages.join("\n\n").trim();
+      if (!text) throw new Error("No readable text was found in this PDF.");
+      return text;
+    }
+
+    function normalizeDate(value) {
+      const match = String(value || "").match(/\b(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})\b/);
+      if (!match) return "";
+      const year = match[3].length === 2 ? `20${match[3]}` : match[3];
+      return `${year}-${match[1].padStart(2, "0")}-${match[2].padStart(2, "0")}`;
+    }
+
+    function parseCustodyText(text) {
+      const lines = text.split(/\r?\n/).map(line => line.replace(/\s+/g, " ").trim()).filter(Boolean);
+      const labels = "Project Name|Project Title|Project Number|Project No|Project #|Job Number|Job No|Client Name|Client|Project Address|Site Address|Address|Location|County|Sampling Date|Date Sampling|Date Received in Lab|Received in Lab|Lab Check-in Date|Lab Received Date|Date Received|Report Due";
+      const sectionHeading = /^(?:Client Information|Sample Information|Testing Requested|Custody\s*&\s*Review|Activity|Comment\s*\/\s*Notes|Moment Engineering|Laboratory Testing)/i;
+      function labeled(names, includeContinuation = false) {
+        for (let index = 0; index < lines.length; index += 1) {
+          for (const name of names) {
+            const match = lines[index].match(new RegExp(`(?:^|\\s)${name}\\s*[:#-]\\s*(.*)$`, "i"));
+            if (!match) continue;
+            let value = match[1].trim().replace(new RegExp(`\\s+(?:${labels})\\s*[:#-]?.*$`, "i"), "").trim();
+            if (!value && lines[index + 1] && !new RegExp(`^(?:${labels})\\b`, "i").test(lines[index + 1])) value = lines[index + 1];
+            if (includeContinuation && value) {
+              for (let next = index + 1; next < Math.min(index + 4, lines.length); next += 1) {
+                if (new RegExp(`^(?:${labels})\\b`, "i").test(lines[next]) || sectionHeading.test(lines[next])) break;
+                value += ` ${lines[next]}`;
+              }
+            }
+            if (value) return value;
+          }
+        }
+        return "";
+      }
+
+      function activityName(activity) {
+        const line = lines.find(item => new RegExp(`^${activity}\\b`, "i").test(item));
+        if (!line) return "";
+        return line.replace(new RegExp(`^${activity}\\s*`, "i"), "").replace(/\s+\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}\s*$/, "").trim();
+      }
+
+      function checkedTest(labelPattern) {
+        return new RegExp(`\\[\\s*[xX]\\s*\\]\\s*${labelPattern}`, "i").test(text);
+      }
+
+      const countyText = text.match(/\b(San Diego|Los Angeles|LA|Orange)\s+County\b/i)?.[0] || labeled(["County"]);
+      const county = /san diego/i.test(countyText) ? "San Diego County" : /los angeles|\bLA\b/i.test(countyText) ? "LA County" : /orange/i.test(countyText) ? "Orange County" : "Other County";
+      const samples = [];
+      const sampleHeader = lines.findIndex(line => /sample/i.test(line) && /depth/i.test(line));
+      const sampleEnd = sampleHeader >= 0 ? lines.findIndex((line, index) => index > sampleHeader && /^(?:Testing Requested|Custody\s*&\s*Review|Activity)\b/i.test(line)) : -1;
+      const likelyRows = sampleHeader >= 0 ? lines.slice(sampleHeader + 1, sampleEnd > sampleHeader ? sampleEnd : sampleHeader + 45) : lines;
+      likelyRows.forEach(line => {
+        const sampleMatch = line.match(/\b([A-Z]{1,4}[- ]?\d+(?:[-.]\d+)?)\b/i);
+        if (!sampleMatch) return;
+        const methodMatch = line.match(/\b(Core|Bag|SPT|Other)\b/i);
+        const classMatch = line.match(/\b(GW|GP|GM|GC|SW|SP|SM|SC|ML|CL|OL|MH|CH|OH|PT)(?:-(GW|GP|GM|GC|SW|SP|SM|SC|ML|CL|OL|MH|CH|OH|PT))?\b/i);
+        const depthMatch = line.match(/\b(?:depth\s*[:#-]?\s*)?(\d+(?:\.\d+)?)\s*(?:ft|feet|')\b/i);
+        if (sampleHeader < 0 && !methodMatch && !depthMatch) return;
+        const methodKey = methodMatch?.[1]?.toLowerCase();
+        const method = methodKey === "bag" ? "Bag" : methodKey === "spt" ? "SPT" : methodKey === "other" ? "Other" : "Core";
+        const sampleNumber = sampleMatch[1].replace(/\s+/g, "-");
+        const depth = depthMatch?.[1] || "";
+        const classification = classMatch ? `${classMatch[1]}${classMatch[2] ? `-${classMatch[2]}` : ""}`.toUpperCase() : "";
+        const duplicate = samples.some(sample => sample.sampleNumber.toLowerCase() === sampleNumber.toLowerCase() && sample.depth === depth && sample.method === method);
+        if (duplicate) return;
+        samples.push({
+          id: newId(),
+          sampleNumber,
+          depth,
+          classification,
+          method,
+          remarks: ""
+        });
+      });
+
+      const address = labeled(["Project Address", "Site Address", "Address", "Location"]);
+      return {
+        projectName: labeled(["Project Name", "Project Title"]) || address,
+        projectNumber: labeled(["Project Number", "Project No", "Project #", "Job Number", "Job No"]),
+        clientName: labeled(["Client Name", "Client"], true),
+        address,
+        county,
+        dateSampling: normalizeDate(labeled(["Sampling Date", "Date Sampling"])),
+        labCheckInDate: normalizeDate(labeled(["Date Received in Lab", "Received in Lab", "Lab Check-in Date", "Lab Received Date", "Date Received"])),
+        reportDueDate: normalizeDate(labeled(["Report Due"])),
+        technician: activityName("Received by Field Technician"),
+        labManager: activityName("Reviewed by Lab Manager"),
+        engineer: activityName("Reviewed by Engineer"),
+        tests: {
+          moisture: checkedTest("Moisture Content"),
+          sieve: checkedTest("Sieve Analysis"),
+          proctor: checkedTest("Modified Proctor"),
+          atterberg: checkedTest("Atterberg Limits"),
+          directShear: checkedTest("Direct Shear"),
+          consolidation: checkedTest("Consolidation")
+        },
+        samples
+      };
+    }
+
+    function renderImportSamples() {
+      const container = document.getElementById("importSamples");
+      container.innerHTML = state.importSamples.length ? state.importSamples.map((sample, index) => `
+        <div class="import-sample" data-import-index="${index}">
+          <input data-import-field="sampleNumber" value="${escapeHtml(sample.sampleNumber)}" placeholder="Sample #" aria-label="Sample number">
+          <input data-import-field="depth" value="${escapeHtml(sample.depth)}" placeholder="Depth (ft)" aria-label="Sample depth">
+          <input data-import-field="classification" value="${escapeHtml(sample.classification)}" placeholder="Class" aria-label="Classification">
+          <select data-import-field="method" aria-label="Sample method">${["Core", "Bag", "SPT", "Other"].map(method => `<option ${method === sample.method ? "selected" : ""}>${method}</option>`).join("")}</select>
+          <button class="remove-sample" type="button" data-remove-import="${index}" aria-label="Remove sample">&times;</button>
+        </div>
+      `).join("") : `<div class="empty-section">No samples were detected. Add a row or check the extracted text below.</div>`;
+    }
+
+    function fillImportForm(parsed) {
+      const form = document.getElementById("importForm");
+      ["projectName", "projectNumber", "clientName", "county", "address", "dateSampling", "labCheckInDate"].forEach(field => { form.elements[field].value = parsed[field] || (field === "county" ? "Other County" : ""); });
+      state.importSamples = parsed.samples;
+      state.importMetadata = parsed;
+      renderImportSamples();
+    }
+
+    function samplesFor(project) { return Array.isArray(project.samples) ? project.samples : []; }
+    function isBag(sample) { return String(sample?.method || "").trim().toLowerCase() === "bag"; }
+    function bagSamples(project) { return samplesFor(project).filter(isBag); }
+    function coreSamples(project) { return samplesFor(project).filter(sample => !isBag(sample)); }
+    function projectCounty(project) { return countyNames.includes(project.county) ? project.county : "Other County"; }
+
+    function projectMatches(project) {
+      const query = state.search.trim().toLowerCase();
+      if (!query) return true;
+      return [project.projectName, project.address, project.clientName, project.projectNumber, project.labCheckInDate, projectCounty(project), ...samplesFor(project).flatMap(sample => [sample.sampleNumber, sample.depth, sample.classification, sample.method, sample.remarks])]
+        .join(" ").toLowerCase().includes(query);
+    }
+
+    function projectsForView() {
+      return state.data.homes.filter(project => {
+        const completed = Boolean(project.completedAt);
+        if (state.view === "Completed / Disposed") return completed;
+        if (completed) return false;
+        if (state.view === "Bag Samples") return bagSamples(project).length > 0;
+        if (countyNames.includes(state.view)) return projectCounty(project) === state.view;
+        return true;
+      }).filter(project => {
+        const days = daysInLab(project.labCheckInDate, project.completedAt);
+        if (state.daysFilter === "missing") return days === null;
+        if (state.daysFilter === "0-7") return days !== null && days <= 7;
+        if (state.daysFilter === "8-14") return days !== null && days >= 8 && days <= 14;
+        if (state.daysFilter === "15-30") return days !== null && days >= 15 && days <= 30;
+        if (state.daysFilter === "31-plus") return days !== null && days >= 31;
+        return true;
+      }).filter(projectMatches).sort((a, b) => {
+        const daysA = daysInLab(a.labCheckInDate, a.completedAt);
+        const daysB = daysInLab(b.labCheckInDate, b.completedAt);
+        if (daysA === null && daysB === null) return 0;
+        if (daysA === null) return 1;
+        if (daysB === null) return -1;
+        return state.daysSort === "most" ? daysB - daysA : daysA - daysB;
+      });
+    }
+
+    function viewCount(view) {
+      if (view === "Completed / Disposed") return state.data.homes.filter(project => project.completedAt).length;
+      const active = state.data.homes.filter(project => !project.completedAt);
+      if (view === "All Samples") return active.reduce((total, project) => total + samplesFor(project).length, 0);
+      if (view === "Bag Samples") return active.reduce((total, project) => total + bagSamples(project).length, 0);
+      return active.filter(project => projectCounty(project) === view).reduce((total, project) => total + samplesFor(project).length, 0);
+    }
+
+    function renderTabs() {
+      document.getElementById("countyTabs").innerHTML = views.map(view => `
+        <button class="tab ${view === state.view ? "active" : ""} ${view === "Bag Samples" ? "bag-tab" : ""}" type="button" data-view="${escapeHtml(view)}">
+          <span>${escapeHtml(view)}</span><span class="tab-count">${viewCount(view)}</span>
+        </button>
+      `).join("");
+    }
+
+    function renderSample(sample, bag = false) {
+      const classification = sample.classification || "No classification";
+      const depth = sample.depth ? `${sample.depth} ft` : "No depth";
+      return `<div class="sample ${bag ? "bag" : ""}">
+        <strong>${escapeHtml(sample.sampleNumber || "Unnamed sample")}</strong>
+        <span>${escapeHtml(depth)}</span>
+        <span>${escapeHtml(classification)}${sample.method ? ` | ${escapeHtml(sample.method)}` : ""}</span>
+        ${sample.remarks ? `<span class="sample-notes" title="${escapeHtml(sample.remarks)}">${escapeHtml(sample.remarks)}</span>` : ""}
+      </div>`;
+    }
+
+    function custodyDocHtml(project) {
+      const title = project.projectName || project.address || project.projectNumber || project.clientName || "Untitled project";
+      const samples = samplesFor(project);
+      const sampleRows = samples.length ? samples.map((sample, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(sample.sampleNumber || "")}</td>
+          <td>${escapeHtml(sample.boringId || "")}</td>
+          <td>${escapeHtml(sample.depth ? `${sample.depth} ft` : "")}</td>
+          <td>${escapeHtml(sample.method || "")}</td>
+          <td>${escapeHtml(sample.classification || "")}</td>
+          <td>${escapeHtml(sample.remarks || "")}</td>
+        </tr>
+      `).join("") : `<tr><td colspan="7" class="empty-row">No samples have been added for this project yet.</td></tr>`;
+      const today = new Date().toLocaleDateString();
+      return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Custody Doc - ${escapeHtml(title)}</title>
+  <style>
+    :root { --ink:#272b24; --muted:#73796d; --line:#d8d9d0; --green:#2f6f18; --soft:#edf5e8; --tan:#fff7ee; --bag:#ae5a14; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #eceee8; color: var(--ink); font: 13px/1.45 Inter, Arial, sans-serif; }
+    .actions { position: sticky; top: 0; display: flex; justify-content: flex-end; gap: 8px; padding: 12px; background: #f6f7f2; border-bottom: 1px solid var(--line); }
+    button { min-height: 36px; border: 0; border-radius: 8px; background: var(--green); color: #fff; padding: 7px 14px; font: inherit; cursor: pointer; }
+    .page { width: min(8.5in, calc(100% - 24px)); min-height: 11in; margin: 18px auto; padding: .45in; background: #fff; box-shadow: 0 14px 45px rgba(38,43,36,.14); }
+    .top-line { height: 5px; background: var(--green); margin-bottom: 14px; }
+    header { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: start; margin-bottom: 18px; }
+    h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: 0; text-transform: uppercase; }
+    .firm { display: flex; gap: 10px; align-items: center; color: var(--muted); }
+    .logo { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid #9bbb83; border-radius: 8px; background: var(--soft); color: var(--green); font-weight: 600; }
+    .doc-meta { text-align: right; color: var(--muted); font-family: Consolas, monospace; font-size: 11px; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-bottom: 0; margin-bottom: 16px; }
+    .field { min-height: 54px; padding: 8px 10px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .field:nth-child(4n) { border-right: 0; }
+    .field.wide { grid-column: span 2; }
+    .label { display: block; color: var(--muted); font: 10px Consolas, monospace; letter-spacing: .06em; text-transform: uppercase; }
+    .value { display: block; margin-top: 5px; font-size: 13px; }
+    h2 { margin: 18px 0 8px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; text-align: left; }
+    th { background: #f0f1ec; color: #59636a; font: 10px Consolas, monospace; letter-spacing: .05em; text-transform: uppercase; }
+    td { min-height: 30px; }
+    .empty-row { color: var(--muted); text-align: center; }
+    .checks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .check { min-height: 38px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fbfcfa; }
+    .box { display: inline-block; width: 13px; height: 13px; margin-right: 8px; border: 1px solid #9aa19a; vertical-align: -2px; }
+    .signatures { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 24px; }
+    .sig { min-height: 84px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+    .sig-line { height: 30px; border-bottom: 1px solid #9aa19a; margin-bottom: 8px; }
+    .notes { min-height: 76px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: #fffdf9; }
+    @media print {
+      body { background: #fff; }
+      .actions { display: none; }
+      .page { width: auto; min-height: auto; margin: 0; padding: .35in; box-shadow: none; }
+    }
+    @media (max-width: 720px) {
+      .page { width: calc(100% - 18px); padding: 18px; }
+      header, .grid, .checks, .signatures { grid-template-columns: 1fr; }
+      .field, .field:nth-child(4n) { border-right: 0; }
+      .field.wide { grid-column: auto; }
+      .doc-meta { text-align: left; }
+      table { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="actions"><button type="button" onclick="window.print()">Print / Save PDF</button></div>
+  <main class="page">
+    <div class="top-line"></div>
+    <header>
+      <div class="firm"><div class="logo">ME</div><div><strong>Moment Engineering</strong><br><span>Geotechnical Services</span></div></div>
+      <div><h1>Chain of Custody</h1><div class="doc-meta">Generated ${escapeHtml(today)}</div></div>
+    </header>
+    <section class="grid">
+      <div class="field wide"><span class="label">Project</span><span class="value">${escapeHtml(title)}</span></div>
+      <div class="field"><span class="label">Project Number</span><span class="value">${escapeHtml(project.projectNumber || "")}</span></div>
+      <div class="field"><span class="label">County</span><span class="value">${escapeHtml(projectCounty(project))}</span></div>
+      <div class="field wide"><span class="label">Client</span><span class="value">${escapeHtml(project.clientName || "")}</span></div>
+      <div class="field wide"><span class="label">Project Address</span><span class="value">${escapeHtml(project.address || "")}</span></div>
+      <div class="field"><span class="label">Sampling Date</span><span class="value">${escapeHtml(formatDate(project.dateSampling))}</span></div>
+      <div class="field"><span class="label">Received In Lab</span><span class="value">${escapeHtml(formatDate(project.labCheckInDate))}</span></div>
+    </section>
+    <h2>Samples</h2>
+    <table>
+      <thead><tr><th>#</th><th>Sample ID</th><th>Boring</th><th>Depth</th><th>Type</th><th>USCS</th><th>Notes</th></tr></thead>
+      <tbody>${sampleRows}</tbody>
+    </table>
+    <h2>Testing Requested</h2>
+    <section class="checks">
+      <div class="check"><span class="box"></span>Moisture Content</div>
+      <div class="check"><span class="box"></span>Sieve Analysis</div>
+      <div class="check"><span class="box"></span>Atterberg Limits</div>
+      <div class="check"><span class="box"></span>Modified Proctor</div>
+      <div class="check"><span class="box"></span>Direct Shear</div>
+      <div class="check"><span class="box"></span>Other</div>
+    </section>
+    <h2>Custody Notes</h2>
+    <section class="notes">${escapeHtml(project.notes || "")}</section>
+    <section class="signatures">
+      <div class="sig"><div class="sig-line"></div><span class="label">Relinquished By / Date</span></div>
+      <div class="sig"><div class="sig-line"></div><span class="label">Received By Lab / Date</span></div>
+      <div class="sig"><div class="sig-line"></div><span class="label">Reviewed By / Date</span></div>
+    </section>
+  </main>
+</body>
+</html>`;
+    }
+
+    function openCustodyDoc(projectId) {
+      const project = state.data.homes.find(item => item.id === projectId);
+      if (!project) return;
+      const tab = window.open("", "_blank");
+      if (!tab) {
+        alert("The custody document was blocked by the browser. Allow pop-ups for this page and try again.");
+        return;
+      }
+      tab.document.open();
+      tab.document.write(custodyDocHtml(project));
+      tab.document.close();
+    }
+
+    function renderProject(project) {
+      const cores = coreSamples(project);
+      const bags = bagSamples(project);
+      const title = project.projectName || project.address || project.projectNumber || project.clientName || "Untitled project";
+      const meta = [project.projectNumber, project.clientName, project.address && project.address !== title ? project.address : "", projectCounty(project)].filter(Boolean).join(" | ");
+      const labDays = daysInLab(project.labCheckInDate, project.completedAt);
+      const daysLabel = labDays === null ? "Days not available" : `${labDays} day${labDays === 1 ? "" : "s"} in lab`;
+      const showOnlyBags = state.view === "Bag Samples";
+      const completed = Boolean(project.completedAt);
+      return `<details class="project">
+        <summary class="project-head">
+          <div><h3>${escapeHtml(title)}</h3><div class="project-meta">${escapeHtml(meta || "No project details")}</div><div class="received-date">Received in lab: ${escapeHtml(formatDate(project.labCheckInDate))}</div></div>
+          <div class="project-counts"><span class="pill days">${escapeHtml(daysLabel)}</span><span class="pill">${cores.length} core / other</span><span class="pill bag">${bags.length} bag</span></div>
+        </summary>
+        <div class="sample-sections" style="${showOnlyBags ? "grid-template-columns: 1fr" : ""}">
+          ${showOnlyBags ? "" : `<section class="sample-section"><div class="section-label"><span>Core / Other Samples</span><span>${cores.length}</span></div><div class="sample-list">${cores.length ? cores.map(sample => renderSample(sample)).join("") : `<div class="empty-section">No core or other samples</div>`}</div></section>`}
+          <section class="sample-section" style="${showOnlyBags ? "border:0" : ""}"><div class="section-label"><span>Bag Samples</span><span>${bags.length}</span></div><div class="sample-list">${bags.length ? bags.map(sample => renderSample(sample, true)).join("") : `<div class="empty-section">No bag samples</div>`}</div></section>
+        </div>
+        <footer class="project-footer">
+          <span>${completed ? `Out of lab: ${escapeHtml(formatDate(String(project.completedAt).slice(0, 10)))}` : "Completing a project marks all of its samples out of the lab."}</span>
+          <div class="project-footer-actions">
+            <button class="custody-btn" type="button" data-custody-doc="${escapeHtml(project.id)}">Custody Doc</button>
+            <button class="complete-btn ${completed ? "restore" : ""}" type="button" data-project-complete="${escapeHtml(project.id)}" data-completed="${completed}">${completed ? "Restore to Lab" : "Complete / Dispose"}</button>
+          </div>
+        </footer>
+      </details>`;
+    }
+
+    function render() {
+      const activeProjects = state.data.homes.filter(project => !project.completedAt);
+      const allSamples = activeProjects.flatMap(samplesFor);
+      document.getElementById("projectMetric").textContent = activeProjects.length;
+      document.getElementById("sampleMetric").textContent = allSamples.length;
+      document.getElementById("coreMetric").textContent = allSamples.filter(sample => !isBag(sample)).length;
+      document.getElementById("bagMetric").textContent = allSamples.filter(isBag).length;
+      document.getElementById("viewTitle").textContent = state.view;
+      renderTabs();
+      const projects = projectsForView();
+      document.getElementById("projects").innerHTML = projects.length
+        ? projects.map(renderProject).join("")
+        : `<div class="empty-page"><strong>No samples found</strong>${state.data.homes.length ? "Try another county or search." : "Add projects and samples in the Boring Log app. They will appear here automatically."}</div>`;
+    }
+
+    document.getElementById("countyTabs").addEventListener("click", event => {
+      const button = event.target.closest("[data-view]");
+      if (!button) return;
+      state.view = button.dataset.view;
+      render();
+    });
+    document.getElementById("searchInput").addEventListener("input", event => { state.search = event.target.value; render(); });
+    document.getElementById("daysFilter").addEventListener("change", event => { state.daysFilter = event.target.value; render(); });
+    document.getElementById("daysSort").addEventListener("change", event => { state.daysSort = event.target.value; render(); });
+    document.getElementById("refreshBtn").addEventListener("click", () => { state.data = loadData(); render(); });
+    document.getElementById("backBtn").addEventListener("click", () => { if (history.length > 1) history.back(); else location.href = "index.html"; });
+    document.getElementById("projects").addEventListener("click", event => {
+      const custodyButton = event.target.closest("[data-custody-doc]");
+      if (custodyButton) {
+        openCustodyDoc(custodyButton.dataset.custodyDoc);
+        return;
+      }
+      const button = event.target.closest("[data-project-complete]");
+      if (!button) return;
+      const isCompleted = button.dataset.completed === "true";
+      const project = state.data.homes.find(item => item.id === button.dataset.projectComplete);
+      if (!project) return;
+      const projectName = project.projectName || project.address || project.projectNumber || "this project";
+      if (!isCompleted && !confirm(`Complete ${projectName} and mark all of its samples out of the lab?`)) return;
+      const previous = localStorage.getItem(storageKey);
+      let stored = {};
+      try { stored = JSON.parse(previous || "{}"); } catch (error) {}
+      if (!Array.isArray(stored.projects)) return;
+      const storedProject = stored.projects.find(item => item.id === project.id);
+      if (!storedProject) return;
+      if (previous) localStorage.setItem(storageBackupKey, previous);
+      storedProject.inventoryCompletedAt = isCompleted ? "" : new Date().toISOString();
+      storedProject.updatedAt = new Date().toISOString();
+      localStorage.setItem(storageKey, JSON.stringify(stored));
+      state.data = loadData();
+      render();
+    });
+
+    const importDialog = document.getElementById("importDialog");
+    const importForm = document.getElementById("importForm");
+    const pdfInput = document.getElementById("pdfInput");
+    const saveImport = document.getElementById("saveImport");
+    document.getElementById("uploadBtn").addEventListener("click", () => pdfInput.click());
+    pdfInput.addEventListener("change", async () => {
+      const file = pdfInput.files?.[0];
+      if (!file) return;
+      importForm.reset();
+      state.importSamples = [];
+      state.importMetadata = {};
+      state.rawPdfText = "";
+      document.getElementById("rawText").textContent = "";
+      renderImportSamples();
+      saveImport.disabled = true;
+      setImportStatus(`Opening ${file.name}...`);
+      importDialog.showModal();
+      try {
+        const text = await extractPdfText(file);
+        state.rawPdfText = text;
+        document.getElementById("rawText").textContent = text;
+        const parsed = parseCustodyText(text);
+        fillImportForm(parsed);
+        const detail = parsed.samples.length === 1 ? "1 sample" : `${parsed.samples.length} samples`;
+        const checkedTests = Object.values(parsed.tests || {}).filter(Boolean).length;
+        setImportStatus(`Scan complete. Found ${detail} and ${checkedTests} requested test${checkedTests === 1 ? "" : "s"}. Review the fields below before saving.`);
+        saveImport.disabled = false;
+      } catch (error) {
+        setImportStatus(error.message || "The PDF could not be read.", true);
+      } finally {
+        pdfInput.value = "";
+      }
+    });
+
+    function closeImportDialog() { importDialog.close(); state.importSamples = []; state.importMetadata = {}; }
+    document.getElementById("closeImport").addEventListener("click", closeImportDialog);
+    document.getElementById("cancelImport").addEventListener("click", closeImportDialog);
+    document.getElementById("addImportSample").addEventListener("click", () => {
+      state.importSamples.push({ id: newId(), sampleNumber: "", depth: "", classification: "", method: "Core", remarks: "" });
+      renderImportSamples();
+    });
+    document.getElementById("importSamples").addEventListener("input", event => {
+      const row = event.target.closest("[data-import-index]");
+      const field = event.target.dataset.importField;
+      if (!row || !field) return;
+      state.importSamples[Number(row.dataset.importIndex)][field] = event.target.value;
+    });
+    document.getElementById("importSamples").addEventListener("click", event => {
+      if (event.target.dataset.removeImport === undefined) return;
+      state.importSamples.splice(Number(event.target.dataset.removeImport), 1);
+      renderImportSamples();
+    });
+    importForm.addEventListener("submit", event => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(importForm));
+      const validSamples = state.importSamples.filter(sample => sample.sampleNumber || sample.depth || sample.classification);
+      if (!values.projectName && !values.projectNumber && !values.address && !values.clientName) {
+        setImportStatus("Add at least a project name, number, address, or client before saving.", true);
+        return;
+      }
+      let stored = {};
+      const previous = localStorage.getItem(storageKey);
+      try { stored = JSON.parse(previous || "{}"); } catch (error) {}
+      if (!Array.isArray(stored.projects)) stored.projects = [];
+      if (!Array.isArray(stored.borings)) stored.borings = [];
+      if (previous) localStorage.setItem(storageBackupKey, previous);
+      const projectId = newId();
+      stored.projects.push({
+        id: projectId,
+        number: values.projectNumber || "",
+        name: values.projectName || values.address || "",
+        client: values.clientName || "",
+        address: values.address || values.projectName || "",
+        county: values.county || "Other County",
+        labCheckInDate: values.labCheckInDate || "",
+        source: "Inventory Import",
+        updatedAt: new Date().toISOString()
+      });
+      stored.borings.push({
+        id: "LAB-1",
+        projectId,
+        info: { id: "LAB-1", date: values.dateSampling || "", projectTitle: values.projectName || "", loggerDriller: "", totalDepth: "", plannedDepthReached: "yes", terminationNotes: "" },
+        layers: [],
+        samples: validSamples.map(sample => ({
+          id: sample.id || newId(),
+          type: sample.method || "Sample",
+          number: sample.sampleNumber || "",
+          depth: sample.depth || "",
+          uscs: sample.classification || "",
+          blows: ["", "", ""],
+          recovery: "",
+          notes: sample.remarks || ""
+        }))
+      });
+      localStorage.setItem(storageKey, JSON.stringify(stored));
+      state.data = loadData();
+      state.view = values.county || "All Samples";
+      state.search = "";
+      state.daysFilter = "all";
+      document.getElementById("searchInput").value = "";
+      document.getElementById("daysFilter").value = "all";
+      closeImportDialog();
+      render();
+    });
+
+    window.addEventListener("storage", event => { if (event.key === storageKey) { state.data = loadData(); render(); } });
+    window.addEventListener("focus", () => { state.data = loadData(); render(); });
+    render();
+  </script>
+</body>
+</html>
