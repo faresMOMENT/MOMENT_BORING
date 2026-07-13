@@ -3496,16 +3496,19 @@ on conflict (id) do nothing;`;
       return boring;
     }
 
-    function infoReady(boring = activeBoring()) {
-      if (!boring) return false;
-      const info = boring.info;
-      const hasRequired = Boolean(info.id.trim() && info.date.trim() && info.loggerDriller.trim() && info.totalDepth.trim());
-      const hasTerminationReason = info.plannedDepthReached !== "no" || Boolean(info.terminationNotes.trim());
-      return hasRequired && hasTerminationReason;
+    function openBoringWorkspace(tabName = "info") {
+      if (!activeProjectId) {
+        alert("Select or add a project before starting a boring log.");
+        return false;
+      }
+      if (!activeBoring()) createBoring();
+      setPage("workspace");
+      setTab(tabName);
+      return true;
     }
 
-    function infoGate(kind) {
-      return `<div class="empty-state"><h3>Complete boring info first</h3><p>Fill Boring ID, Date, Logger / Driller, Total Depth, and termination status before starting ${kind}.</p><button class="primary" type="button" data-jump-info>Go to Info</button></div>`;
+    function infoReady(boring = activeBoring()) {
+      return Boolean(boring);
     }
 
     function renderBoringShell() {
@@ -3529,10 +3532,10 @@ on conflict (id) do nothing;`;
       document.querySelector('[data-panel="layers"] .panel-header .tiny').textContent = `${lastLayer?.to || 0} ft covered - ${layers.length} layers`;
       document.querySelector('[data-panel="samples"] .panel-header .section-kicker').textContent = `${samples.length} samples`;
       document.querySelector("#deleteBoringButton").disabled = !boring;
-      document.querySelector('[data-tab="layers"]').disabled = Boolean(boring) && !infoReady(boring);
-      document.querySelector('[data-tab="samples"]').disabled = Boolean(boring) && !infoReady(boring);
-      document.querySelector("[data-add-layer]").disabled = !infoReady(boring);
-      document.querySelector("[data-add-sample]").disabled = !infoReady(boring);
+      document.querySelector('[data-tab="layers"]').disabled = !boring;
+      document.querySelector('[data-tab="samples"]').disabled = !boring;
+      document.querySelector("[data-add-layer]").disabled = !boring;
+      document.querySelector("[data-add-sample]").disabled = !boring;
 
       document.querySelectorAll("[data-info-field]").forEach(input => {
         const field = input.dataset.infoField;
@@ -4059,13 +4062,6 @@ on conflict (id) do nothing;`;
         return;
       }
 
-      if (!infoReady()) {
-        document.querySelector("#layersList").innerHTML = infoGate("layers");
-        document.querySelector("#samplesList").innerHTML = infoGate("samples");
-        renderOutput();
-        return;
-      }
-
       document.querySelector("#layersList").innerHTML = layers.map((layer, index) => `
         <details class="entry-card" ${openState.layers.includes(index) ? "open" : ""}>
           <summary>
@@ -4243,9 +4239,6 @@ on conflict (id) do nothing;`;
     }
 
     function setTab(tabName) {
-      if ((tabName === "layers" || tabName === "samples") && activeBoring() && !infoReady()) {
-        tabName = "info";
-      }
       document.querySelectorAll(".tab").forEach(tab => {
         tab.classList.toggle("active", tab.dataset.tab === tabName);
       });
@@ -4266,7 +4259,7 @@ on conflict (id) do nothing;`;
     }
 
     document.querySelectorAll("[data-open-workspace]").forEach(button => {
-      button.addEventListener("click", () => setPage("workspace"));
+      button.addEventListener("click", () => openBoringWorkspace());
     });
 
     document.querySelectorAll("[data-open-compact]").forEach(button => {
@@ -4338,13 +4331,7 @@ on conflict (id) do nothing;`;
     });
 
     document.querySelector("#startBoringButton").addEventListener("click", () => {
-      if (!activeProjectId) {
-        alert("Select or add a project before starting a boring log.");
-        return;
-      }
-      if (!activeBoring()) createBoring();
-      setPage("workspace");
-      setTab("info");
+      openBoringWorkspace("info");
     });
 
     backButton.addEventListener("click", () => setPage("home"));
@@ -4561,7 +4548,7 @@ on conflict (id) do nothing;`;
         }
         createBoring();
         setPage("workspace");
-        setTab("info");
+        setTab("layers");
       });
     });
 
@@ -4600,11 +4587,7 @@ on conflict (id) do nothing;`;
       }
       saveState();
       renderRows();
-      if (infoReady()) {
-        setTab("layers");
-      } else {
-        alert("Please fill Boring ID, Date, Logger / Driller, Total Depth, and termination reason if planned depth was not reached.");
-      }
+      setTab("layers");
     });
 
     document.querySelector("#deleteBoringButton").addEventListener("click", () => {
@@ -4839,10 +4822,6 @@ on conflict (id) do nothing;`;
     });
 
     document.querySelector("#layersList").addEventListener("click", event => {
-      if (event.target.closest("[data-jump-info]")) {
-        setTab("info");
-        return;
-      }
       const button = event.target.closest("[data-delete-layer]");
       if (!button) return;
       const index = Number(button.dataset.deleteLayer);
@@ -4852,10 +4831,6 @@ on conflict (id) do nothing;`;
     });
 
     document.querySelector("#samplesList").addEventListener("click", event => {
-      if (event.target.closest("[data-jump-info]")) {
-        setTab("info");
-        return;
-      }
       const button = event.target.closest("[data-delete-sample]");
       if (!button) return;
       const index = Number(button.dataset.deleteSample);
@@ -4866,10 +4841,6 @@ on conflict (id) do nothing;`;
 
     document.querySelector("[data-add-layer]").addEventListener("click", () => {
       if (!activeBoring()) createBoring();
-      if (!infoReady()) {
-        setTab("info");
-        return;
-      }
       const last = layers[layers.length - 1] || { to: "0" };
       layers.push({
         from: last.to,
@@ -4888,10 +4859,6 @@ on conflict (id) do nothing;`;
 
     document.querySelector("[data-add-sample]").addEventListener("click", () => {
       if (!activeBoring()) createBoring();
-      if (!infoReady()) {
-        setTab("info");
-        return;
-      }
       const nextNumber = String(samples.length + 1);
       samples.push({
         id: newId(),
@@ -4911,7 +4878,7 @@ on conflict (id) do nothing;`;
     document.querySelectorAll(".nav-item").forEach(item => {
       item.addEventListener("click", () => {
         if (item.dataset.tool === "boring") {
-          setPage("workspace");
+          openBoringWorkspace("info");
           return;
         }
         if (item.dataset.tool === "compact") {
