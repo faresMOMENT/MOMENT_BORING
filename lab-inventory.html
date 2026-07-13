@@ -65,6 +65,13 @@
     .metric span { color: var(--muted); font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
     .metric strong { display: block; margin-top: 12px; font-size: 24px; font-weight: 600; }
     .metric.bag strong { color: var(--bag); }
+    .custody-dropzone {
+      display: grid; gap: 7px; padding: 15px 16px; border: 1px dashed #bfc8ba; border-radius: 10px;
+      background: #fbfcfa; color: var(--muted); font-size: 13px; transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+    .custody-dropzone strong { color: var(--ink); font-size: 15px; font-weight: 600; }
+    .custody-dropzone:focus { outline: 2px solid #bceee4; outline-offset: 2px; }
+    .custody-dropzone.drag-over { border-color: var(--accent); background: var(--soft); box-shadow: 0 0 0 3px rgba(47,111,24,.12); }
 
     .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
     .toolbar h2 { font-size: 18px; font-weight: 600; }
@@ -156,6 +163,7 @@
       .project-footer-actions { justify-content: stretch; }
       .project-footer-actions button { flex: 1 1 140px; }
       .toolbar-filters, .search, .days-filter { width: 100%; }
+      .custody-dropzone { padding: 13px; }
       .import-grid { grid-template-columns: 1fr; }
       .field.full { grid-column: auto; }
       .import-sample { grid-template-columns: 1fr 1fr; padding: 10px; border: 1px solid var(--line); border-radius: 9px; }
@@ -198,6 +206,11 @@
         <article class="metric"><span>Total Samples</span><strong id="sampleMetric">0</strong></article>
         <article class="metric"><span>Core / Other</span><strong id="coreMetric">0</strong></article>
         <article class="metric bag"><span>Bag Samples</span><strong id="bagMetric">0</strong></article>
+      </section>
+
+      <section class="custody-dropzone" id="custodyDropzone" role="button" tabindex="0" aria-label="Upload custody PDF">
+        <strong>Drop custody PDF here</strong>
+        <span>Drag a custody sheet onto this area, or click here to choose a PDF.</span>
       </section>
 
       <section class="toolbar">
@@ -817,10 +830,16 @@
     const importForm = document.getElementById("importForm");
     const pdfInput = document.getElementById("pdfInput");
     const saveImport = document.getElementById("saveImport");
+    const custodyDropzone = document.getElementById("custodyDropzone");
     document.getElementById("uploadBtn").addEventListener("click", () => pdfInput.click());
-    pdfInput.addEventListener("change", async () => {
-      const file = pdfInput.files?.[0];
+
+    async function importCustodyFile(file) {
       if (!file) return;
+      const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name || "");
+      if (!isPdf) {
+        alert("Please upload a custody PDF file.");
+        return;
+      }
       importForm.reset();
       state.importSamples = [];
       state.importMetadata = {};
@@ -845,7 +864,24 @@
       } finally {
         pdfInput.value = "";
       }
+    }
+
+    pdfInput.addEventListener("change", () => importCustodyFile(pdfInput.files?.[0]));
+    custodyDropzone.addEventListener("click", () => pdfInput.click());
+    custodyDropzone.addEventListener("keydown", event => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      pdfInput.click();
     });
+    ["dragenter", "dragover"].forEach(type => custodyDropzone.addEventListener(type, event => {
+      event.preventDefault();
+      custodyDropzone.classList.add("drag-over");
+    }));
+    ["dragleave", "drop"].forEach(type => custodyDropzone.addEventListener(type, event => {
+      event.preventDefault();
+      custodyDropzone.classList.remove("drag-over");
+    }));
+    custodyDropzone.addEventListener("drop", event => importCustodyFile(event.dataTransfer?.files?.[0]));
 
     function closeImportDialog() { importDialog.close(); state.importSamples = []; state.importMetadata = {}; }
     document.getElementById("closeImport").addEventListener("click", closeImportDialog);

@@ -1399,6 +1399,13 @@
       background: #fbfcfa;
     }
 
+    .compaction-map.drag-over,
+    .file-upload-card.drag-over {
+      border-color: var(--green);
+      background: #f1f8e9;
+      box-shadow: 0 0 0 3px rgba(47, 111, 24, .12);
+    }
+
     .map-tools {
       display: flex;
       gap: 8px;
@@ -1418,6 +1425,11 @@
       background: #f0f1ec;
       color: var(--muted);
       cursor: crosshair;
+    }
+
+    .map-stage.drag-over {
+      border-color: var(--green);
+      background: #edf5e8;
     }
 
     .map-stage img {
@@ -4334,10 +4346,13 @@
       renderCompactionPrint(report);
     });
 
-    document.querySelector("#compactionMapInput").addEventListener("change", event => {
-      const file = event.target.files?.[0];
+    function addCompactionMapFile(file) {
       const report = activeCompaction();
       if (!file || !report) return;
+      if (!file.type.startsWith("image/")) {
+        alert("Drop an image file for the compaction site plan.");
+        return;
+      }
       const reader = new FileReader();
       reader.onload = () => {
         report.siteMapName = file.name;
@@ -4347,6 +4362,60 @@
         renderCompactionMap(report);
       };
       reader.readAsDataURL(file);
+    }
+
+    function addProjectFile(file, formToReset = null) {
+      if (!activeProjectId) {
+        alert("Select or add a project before adding files.");
+        return;
+      }
+      if (!file) {
+        alert("Choose a file to upload.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        projectFiles.push({
+          id: newId(),
+          projectId: activeProjectId,
+          name: file.name,
+          type: file.type || "file",
+          size: file.size,
+          dataUrl: reader.result,
+          site: document.querySelector("#fileSite").value.trim(),
+          testLocation: document.querySelector("#fileTestLocation").value.trim(),
+          notes: document.querySelector("#fileNotes").value.trim(),
+          addedAt: new Date().toLocaleString()
+        });
+        if (formToReset) formToReset.reset();
+        saveState();
+        renderProjectFiles();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function setupDropZone(element, onFile) {
+      ["dragenter", "dragover"].forEach(type => {
+        element.addEventListener(type, event => {
+          event.preventDefault();
+          element.classList.add("drag-over");
+        });
+      });
+      ["dragleave", "drop"].forEach(type => {
+        element.addEventListener(type, event => {
+          event.preventDefault();
+          if (type === "dragleave" && element.contains(event.relatedTarget)) return;
+          element.classList.remove("drag-over");
+        });
+      });
+      element.addEventListener("drop", event => {
+        const file = event.dataTransfer?.files?.[0];
+        if (file) onFile(file, event);
+      });
+    }
+
+    document.querySelector("#compactionMapInput").addEventListener("change", event => {
+      addCompactionMapFile(event.target.files?.[0]);
       event.target.value = "";
     });
 
@@ -4377,35 +4446,12 @@
 
     document.querySelector("#fileUploadForm").addEventListener("submit", event => {
       event.preventDefault();
-      if (!activeProjectId) {
-        alert("Select or add a project before adding files.");
-        return;
-      }
-      const file = document.querySelector("#projectFileInput").files?.[0];
-      if (!file) {
-        alert("Choose a file to upload.");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        projectFiles.push({
-          id: newId(),
-          projectId: activeProjectId,
-          name: file.name,
-          type: file.type || "file",
-          size: file.size,
-          dataUrl: reader.result,
-          site: document.querySelector("#fileSite").value.trim(),
-          testLocation: document.querySelector("#fileTestLocation").value.trim(),
-          notes: document.querySelector("#fileNotes").value.trim(),
-          addedAt: new Date().toLocaleString()
-        });
-        event.target.reset();
-        saveState();
-        renderProjectFiles();
-      };
-      reader.readAsDataURL(file);
+      addProjectFile(document.querySelector("#projectFileInput").files?.[0], event.target);
     });
+
+    setupDropZone(document.querySelector("#fileUploadForm"), file => addProjectFile(file, document.querySelector("#fileUploadForm")));
+    setupDropZone(document.querySelector(".compaction-map"), file => addCompactionMapFile(file));
+    setupDropZone(document.querySelector("#compactionMapStage"), file => addCompactionMapFile(file));
 
     document.querySelector("#projectFilesList").addEventListener("click", event => {
       const button = event.target.closest("[data-delete-file]");
