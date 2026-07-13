@@ -328,6 +328,16 @@
       white-space: pre-wrap;
     }
 
+    .settings-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .settings-actions button {
+      flex: 1 1 190px;
+    }
+
     .section {
       padding: 18px 14px;
       border-bottom: 1px solid var(--line);
@@ -2330,7 +2340,10 @@
                 <span>Open Supabase, go to SQL Editor, run this once, then come back and click Sync Data.</span>
                 <pre class="setup-sql" id="supabaseSetupSql"></pre>
               </div>
-              <button class="primary" type="button" id="syncDataButton">Sync Data</button>
+              <div class="settings-actions">
+                <button class="primary" type="button" id="syncDataButton">Save This Device to Cloud</button>
+                <button class="secondary" type="button" id="loadCloudButton">Load Cloud Data</button>
+              </div>
             </div>
             <button class="secondary" type="button" id="settingsHomeButton">Back to Home</button>
           </div>
@@ -3025,6 +3038,15 @@ on conflict (id) do nothing;`;
       };
     }
 
+    function stateSummary(state = exportState()) {
+      const projectCount = Array.isArray(state.projects) ? state.projects.length : 0;
+      const boringCount = Array.isArray(state.borings) ? state.borings.length : 0;
+      const sampleCount = Array.isArray(state.borings)
+        ? state.borings.reduce((total, boring) => total + (Array.isArray(boring.samples) ? boring.samples.length : 0), 0)
+        : 0;
+      return `${projectCount} project${projectCount === 1 ? "" : "s"}, ${boringCount} boring${boringCount === 1 ? "" : "s"}, ${sampleCount} sample${sampleCount === 1 ? "" : "s"}`;
+    }
+
     function applyState(stored = {}) {
       projects.splice(0, projects.length, ...(Array.isArray(stored.projects) ? stored.projects : []));
       borings.splice(0, borings.length, ...(Array.isArray(stored.borings) ? stored.borings : []));
@@ -3097,7 +3119,7 @@ on conflict (id) do nothing;`;
         if (!record?.state) return false;
         applyState(record.state);
         saveState({ sync: false });
-        localStorage.setItem(syncKey, `Cloud loaded: ${new Date(record.updated_at || Date.now()).toLocaleString()}`);
+        localStorage.setItem(syncKey, `Cloud loaded: ${stateSummary(record.state)} at ${new Date(record.updated_at || Date.now()).toLocaleString()}`);
         renderRows();
         renderProjects();
         updateSettingsView();
@@ -3131,7 +3153,7 @@ on conflict (id) do nothing;`;
           })
         });
         const stamp = new Date().toLocaleString();
-        localStorage.setItem(syncKey, `Cloud saved: ${stamp}`);
+        localStorage.setItem(syncKey, `Cloud saved: ${stateSummary()} at ${stamp}`);
         showSupabaseSetup(false);
         updateSettingsView();
       } finally {
@@ -3140,7 +3162,7 @@ on conflict (id) do nothing;`;
     }
 
     async function syncData() {
-      setSyncStatus("Syncing with Supabase...");
+      setSyncStatus("Saving this device to Supabase...");
       try {
         await saveCloudState();
         setSyncStatus(localStorage.getItem(syncKey) || "Cloud saved.");
@@ -3149,6 +3171,17 @@ on conflict (id) do nothing;`;
         console.error(error);
       } finally {
         cloudSaveInFlight = false;
+      }
+    }
+
+    async function pullCloudData() {
+      setSyncStatus("Loading cloud data from Supabase...");
+      try {
+        const loaded = await loadCloudState();
+        setSyncStatus(loaded ? (localStorage.getItem(syncKey) || "Cloud loaded.") : "No cloud data has been saved yet. Save from the computer first.");
+      } catch (error) {
+        setSyncStatus(`Supabase load failed: ${readableSupabaseError(error)}`);
+        console.error(error);
       }
     }
 
@@ -4091,7 +4124,7 @@ on conflict (id) do nothing;`;
       try {
         const loaded = await loadCloudState();
         if (!loaded) {
-          setSyncStatus("No cloud data yet. Click Sync Data after adding projects.");
+          setSyncStatus("No cloud data yet. On the computer, click Save This Device to Cloud after adding projects.");
           renderRows();
           renderProjects();
         }
@@ -4113,6 +4146,10 @@ on conflict (id) do nothing;`;
 
     document.querySelector("#syncDataButton").addEventListener("click", async () => {
       await syncData();
+    });
+
+    document.querySelector("#loadCloudButton").addEventListener("click", async () => {
+      await pullCloudData();
     });
 
     document.querySelector("#settingsHomeButton").addEventListener("click", () => {
@@ -4710,7 +4747,10 @@ on conflict (id) do nothing;`;
     setupSignaturePad();
     setAuthenticated(currentUser);
     if (currentUser) {
-      loadCloudState().catch(error => {
+      Promise.resolve()
+        .then(() => (!currentAccessToken && currentRefreshToken ? refreshSupabaseSession() : null))
+        .then(() => loadCloudState())
+        .catch(error => {
         setSyncStatus(`Supabase load failed: ${readableSupabaseError(error)}`);
         console.error(error);
       });
