@@ -293,6 +293,41 @@
       border-bottom: 0;
     }
 
+    .setup-panel {
+      display: none;
+      gap: 9px;
+      padding: 12px;
+      border: 1px solid #f0d5a8;
+      border-radius: 10px;
+      background: #fff8ef;
+      color: #6c4a20;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .setup-panel.active {
+      display: grid;
+    }
+
+    .setup-panel strong {
+      color: #372815;
+      font-weight: 600;
+    }
+
+    .setup-sql {
+      max-height: 190px;
+      overflow: auto;
+      margin: 0;
+      padding: 10px;
+      border: 1px solid #ead4b5;
+      border-radius: 8px;
+      background: #fff;
+      color: #25302a;
+      font-family: var(--mono);
+      font-size: 11px;
+      white-space: pre-wrap;
+    }
+
     .section {
       padding: 18px 14px;
       border-bottom: 1px solid var(--line);
@@ -2290,6 +2325,11 @@
                 <span id="syncStatus">Not synced yet</span>
                 <span>Projects, borings, layers, and samples use shared browser storage.</span>
               </div>
+              <div class="setup-panel" id="supabaseSetupPanel">
+                <strong>Supabase table setup is needed.</strong>
+                <span>Open Supabase, go to SQL Editor, run this once, then come back and click Sync Data.</span>
+                <pre class="setup-sql" id="supabaseSetupSql"></pre>
+              </div>
               <button class="primary" type="button" id="syncDataButton">Sync Data</button>
             </div>
             <button class="secondary" type="button" id="settingsHomeButton">Back to Home</button>
@@ -2780,11 +2820,47 @@
     const sessionKey = "boringLogCurrentUser";
     const passwordKey = "boringLogCurrentPassword";
     const accessTokenKey = "boringLogSupabaseAccessToken";
+    const refreshTokenKey = "boringLogSupabaseRefreshToken";
     const syncKey = "boringLogLastSync";
     const supabaseUrl = "https://fuivzblvhjuuzhygdeln.supabase.co";
     const supabaseKey = "sb_publishable_Kcy_SCyyVSeYWRJLLcV1IA_I1dHFSYe";
     const supabaseTable = "field_app_state";
     const supabaseStateId = "moment-shared-state";
+    const supabaseSetupSql = `create table if not exists public.field_app_state (
+  id text primary key,
+  state jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
+  updated_by text
+);
+
+alter table public.field_app_state enable row level security;
+
+drop policy if exists "field app shared read" on public.field_app_state;
+drop policy if exists "field app shared insert" on public.field_app_state;
+drop policy if exists "field app shared update" on public.field_app_state;
+
+create policy "field app shared read"
+on public.field_app_state
+for select
+to authenticated
+using (true);
+
+create policy "field app shared insert"
+on public.field_app_state
+for insert
+to authenticated
+with check (true);
+
+create policy "field app shared update"
+on public.field_app_state
+for update
+to authenticated
+using (true)
+with check (true);
+
+insert into public.field_app_state (id, state, updated_by)
+values ('moment-shared-state', '{}'::jsonb, 'setup')
+on conflict (id) do nothing;`;
 
     const loginPage = document.querySelector("#loginPage");
     const appShell = document.querySelector(".app");
@@ -2799,7 +2875,11 @@
     let currentUser = localStorage.getItem(sessionKey) || "";
     let currentPassword = localStorage.getItem(passwordKey) || "";
     let currentAccessToken = localStorage.getItem(accessTokenKey) || "";
+    let currentRefreshToken = localStorage.getItem(refreshTokenKey) || "";
     let authMode = "login";
+    let cloudSaveTimer = null;
+    let cloudSaveInFlight = false;
+    let applyingCloudState = false;
 
     function newId() {
       return crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2816,6 +2896,18 @@
       document.querySelector("#syncStatus").textContent = message;
     }
 
+    function canUseCloudStorage() {
+      return Boolean(currentUser && currentAccessToken);
+    }
+
+    function showSupabaseSetup(show = true) {
+      const panel = document.querySelector("#supabaseSetupPanel");
+      const sql = document.querySelector("#supabaseSetupSql");
+      if (!panel || !sql) return;
+      sql.textContent = supabaseSetupSql;
+      panel.classList.toggle("active", show);
+    }
+
     function setLoginStatus(message, isError = false) {
       const status = document.querySelector("#loginStatus");
       status.textContent = message;
@@ -2824,6 +2916,14 @@
 
     function readableSupabaseError(error) {
       const message = String(error?.message || error || "Unknown Supabase error");
+      if (error?.supabaseStatus === 404 || /PGRST205|Could not find the table|schema cache|404/i.test(message)) {
+        showSupabaseSetup(true);
+        return `The Supabase table "${supabaseTable}" is missing. Run the setup SQL shown in Settings, then click Sync Data again.`;
+      }
+      if (error?.supabaseStatus === 401 || error?.supabaseStatus === 403 || /row-level security|permission denied|JWT|not authorized|401|403/i.test(message)) {
+        showSupabaseSetup(true);
+        return "Supabase blocked the shared data request. Run or check the table policies in the setup SQL shown in Settings.";
+      }
       try {
         const parsed = JSON.parse(message);
         return parsed.message || parsed.details || message;
@@ -2842,7 +2942,9 @@
         localStorage.removeItem(sessionKey);
         localStorage.removeItem(passwordKey);
         localStorage.removeItem(accessTokenKey);
+        localStorage.removeItem(refreshTokenKey);
         currentAccessToken = "";
+        currentRefreshToken = "";
       }
       document.querySelector("#signedInUser").textContent = currentUser;
       document.querySelector("#userChip").classList.toggle("active", Boolean(currentUser));
@@ -2898,8 +3000,17 @@
 
     function storeAuthSession(data, email, password) {
       currentAccessToken = data.access_token || data.session?.access_token || "";
+      currentRefreshToken = data.refresh_token || data.session?.refresh_token || currentRefreshToken || "";
       if (currentAccessToken) localStorage.setItem(accessTokenKey, currentAccessToken);
+      if (currentRefreshToken) localStorage.setItem(refreshTokenKey, currentRefreshToken);
       setAuthenticated(email, password);
+    }
+
+    async function refreshSupabaseSession() {
+      if (!currentRefreshToken) throw new Error("Your Supabase session expired. Log out, then log back in.");
+      const data = await supabaseAuth("token?grant_type=refresh_token", { refresh_token: currentRefreshToken });
+      storeAuthSession(data, currentUser, currentPassword);
+      return data;
     }
 
     function exportState() {
@@ -2937,12 +3048,24 @@
       samples = boring?.samples || [];
     }
 
-    function saveState() {
+    function saveState(options = {}) {
       const state = exportState();
       localStorage.setItem(storageKey, JSON.stringify(state));
+      if (options.sync !== false) scheduleCloudSave();
     }
 
-    async function supabaseRequest(path, options = {}) {
+    function scheduleCloudSave() {
+      if (applyingCloudState || !canUseCloudStorage()) return;
+      clearTimeout(cloudSaveTimer);
+      cloudSaveTimer = setTimeout(() => {
+        saveCloudState({ fromAutoSave: true }).catch(error => {
+          setSyncStatus(`Auto-save failed: ${readableSupabaseError(error)}`);
+          console.error(error);
+        });
+      }, 900);
+    }
+
+    async function supabaseRequest(path, options = {}, retrying = false) {
       const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
         ...options,
         headers: {
@@ -2955,48 +3078,77 @@
       });
       if (!response.ok) {
         const detail = await response.text();
-        throw new Error(detail || `Supabase request failed (${response.status} ${response.statusText})`);
+        if ((response.status === 401 || response.status === 403) && currentRefreshToken && !retrying) {
+          await refreshSupabaseSession();
+          return supabaseRequest(path, options, true);
+        }
+        const error = new Error(detail || `Supabase request failed (${response.status} ${response.statusText})`);
+        error.supabaseStatus = response.status;
+        throw error;
       }
       return response.status === 204 ? null : response.json();
     }
 
     async function loadCloudState() {
-      const rows = await supabaseRequest(`${supabaseTable}?id=eq.${encodeURIComponent(supabaseStateId)}&select=state,updated_at&limit=1`);
-      const record = rows?.[0];
-      if (!record?.state) return false;
-      applyState(record.state);
-      localStorage.setItem(storageKey, JSON.stringify(exportState()));
-      localStorage.setItem(syncKey, `Cloud loaded: ${new Date(record.updated_at || Date.now()).toLocaleString()}`);
-      renderRows();
-      renderProjects();
-      updateSettingsView();
-      return true;
+      applyingCloudState = true;
+      try {
+        const rows = await supabaseRequest(`${supabaseTable}?id=eq.${encodeURIComponent(supabaseStateId)}&select=state,updated_at&limit=1`);
+        const record = rows?.[0];
+        if (!record?.state) return false;
+        applyState(record.state);
+        saveState({ sync: false });
+        localStorage.setItem(syncKey, `Cloud loaded: ${new Date(record.updated_at || Date.now()).toLocaleString()}`);
+        renderRows();
+        renderProjects();
+        updateSettingsView();
+        return true;
+      } finally {
+        applyingCloudState = false;
+      }
     }
 
-    async function saveCloudState() {
-      saveState();
-      await supabaseRequest(`${supabaseTable}?on_conflict=id`, {
-        method: "POST",
-        headers: { Prefer: "resolution=merge-duplicates,return=representation" },
-        body: JSON.stringify({
-          id: supabaseStateId,
-          state: exportState(),
-          updated_at: new Date().toISOString(),
-          updated_by: currentUser || "unknown"
-        })
-      });
-      const stamp = new Date().toLocaleString();
-      localStorage.setItem(syncKey, `Cloud saved: ${stamp}`);
-      updateSettingsView();
+    async function saveCloudState(options = {}) {
+      if (!currentUser) throw new Error("Log in before syncing data.");
+      if (!currentAccessToken && currentRefreshToken) await refreshSupabaseSession();
+      if (!currentAccessToken) throw new Error("Your Supabase session is missing. Log out, then log back in before syncing.");
+      if (cloudSaveInFlight) {
+        scheduleCloudSave();
+        return;
+      }
+      clearTimeout(cloudSaveTimer);
+      cloudSaveInFlight = true;
+      if (options.fromAutoSave) setSyncStatus("Saving to Supabase...");
+      saveState({ sync: false });
+      try {
+        await supabaseRequest(`${supabaseTable}?on_conflict=id`, {
+          method: "POST",
+          headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+          body: JSON.stringify({
+            id: supabaseStateId,
+            state: exportState(),
+            updated_at: new Date().toISOString(),
+            updated_by: currentUser || "unknown"
+          })
+        });
+        const stamp = new Date().toLocaleString();
+        localStorage.setItem(syncKey, `Cloud saved: ${stamp}`);
+        showSupabaseSetup(false);
+        updateSettingsView();
+      } finally {
+        cloudSaveInFlight = false;
+      }
     }
 
     async function syncData() {
       setSyncStatus("Syncing with Supabase...");
       try {
         await saveCloudState();
+        setSyncStatus(localStorage.getItem(syncKey) || "Cloud saved.");
       } catch (error) {
         setSyncStatus(`Supabase sync failed: ${readableSupabaseError(error)}`);
         console.error(error);
+      } finally {
+        cloudSaveInFlight = false;
       }
     }
 
