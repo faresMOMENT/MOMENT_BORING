@@ -129,7 +129,7 @@
     .preview-head h3 { font-size: 15px; }
     .small-btn { min-height: 34px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: #3f494f; padding: 6px 10px; font-weight: 500; }
     .import-samples { display: grid; gap: 8px; }
-    .import-sample { display: grid; grid-template-columns: 1fr .8fr .8fr .8fr 36px; gap: 7px; }
+    .import-sample { display: grid; grid-template-columns: 1fr .7fr .7fr .75fr 1.2fr 36px; gap: 7px; }
     .import-sample input, .import-sample select { min-width: 0; min-height: 38px; border: 1px solid #d9ded9; border-radius: 7px; background: #fff; padding: 8px 9px; }
     .remove-sample { border: 1px solid #efc5c0; border-radius: 7px; background: #fff4f2; color: #ad3d31; }
     .dialog-actions { padding: 15px 22px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--line); }
@@ -446,22 +446,47 @@
       const sampleHeader = lines.findIndex(line => /sample/i.test(line) && /depth/i.test(line));
       const sampleEnd = sampleHeader >= 0 ? lines.findIndex((line, index) => index > sampleHeader && /^(?:Testing Requested|Custody\s*&\s*Review|Activity)\b/i.test(line)) : -1;
       const likelyRows = sampleHeader >= 0 ? lines.slice(sampleHeader + 1, sampleEnd > sampleHeader ? sampleEnd : sampleHeader + 45) : lines;
+      const uscsPattern = "(GW|GP|GM|GC|SW|SP|SM|SC|ML|CL|OL|MH|CH|OH|PT)(?:-(GW|GP|GM|GC|SW|SP|SM|SC|ML|CL|OL|MH|CH|OH|PT))?";
+      function addSample(sample) {
+        const duplicate = samples.some(existing =>
+          String(existing.sampleNumber).toLowerCase() === String(sample.sampleNumber).toLowerCase()
+          && String(existing.depth) === String(sample.depth)
+          && String(existing.method).toLowerCase() === String(sample.method).toLowerCase()
+          && String(existing.classification).toLowerCase() === String(sample.classification).toLowerCase()
+        );
+        if (!duplicate) samples.push({ id: newId(), ...sample });
+      }
       likelyRows.forEach(line => {
+        const tableMatch = line.match(new RegExp(`^([A-Z]{1,5}[- ]?\\d+(?:[-.]\\d+)?)\\s+${uscsPattern}\\s*(?:-\\s*)?(.+?)\\s+(\\d+(?:\\.\\d+)?)\\s+(Core|Bag|SPT|Other)(?:\\s+(.*))?$`, "i"));
+        if (tableMatch) {
+          const sampleNumber = tableMatch[1].replace(/\s+/g, "-");
+          const classification = `${tableMatch[2]}${tableMatch[3] ? `-${tableMatch[3]}` : ""}`.toUpperCase();
+          const description = (tableMatch[4] || "").trim();
+          const depth = tableMatch[5] || "";
+          const method = tableMatch[6][0].toUpperCase() + tableMatch[6].slice(1).toLowerCase();
+          const trailingRemarks = (tableMatch[7] || "").trim();
+          addSample({
+            sampleNumber,
+            depth,
+            classification,
+            method,
+            remarks: [description, trailingRemarks].filter(Boolean).join(" - ")
+          });
+          return;
+        }
         const sampleMatch = line.match(/\b([A-Z]{1,4}[- ]?\d+(?:[-.]\d+)?)\b/i);
         if (!sampleMatch) return;
         const methodMatch = line.match(/\b(Core|Bag|SPT|Other)\b/i);
-        const classMatch = line.match(/\b(GW|GP|GM|GC|SW|SP|SM|SC|ML|CL|OL|MH|CH|OH|PT)(?:-(GW|GP|GM|GC|SW|SP|SM|SC|ML|CL|OL|MH|CH|OH|PT))?\b/i);
-        const depthMatch = line.match(/\b(?:depth\s*[:#-]?\s*)?(\d+(?:\.\d+)?)\s*(?:ft|feet|')\b/i);
+        const classMatch = line.match(new RegExp(`\\b${uscsPattern}\\b`, "i"));
+        const depthMatch = line.match(/\b(?:depth\s*[:#-]?\s*)?(\d+(?:\.\d+)?)\s*(?:ft|feet|')\b/i)
+          || (methodMatch ? line.slice(0, methodMatch.index).match(/\b(\d+(?:\.\d+)?)\s*$/) : null);
         if (sampleHeader < 0 && !methodMatch && !depthMatch) return;
         const methodKey = methodMatch?.[1]?.toLowerCase();
         const method = methodKey === "bag" ? "Bag" : methodKey === "spt" ? "SPT" : methodKey === "other" ? "Other" : "Core";
         const sampleNumber = sampleMatch[1].replace(/\s+/g, "-");
         const depth = depthMatch?.[1] || "";
         const classification = classMatch ? `${classMatch[1]}${classMatch[2] ? `-${classMatch[2]}` : ""}`.toUpperCase() : "";
-        const duplicate = samples.some(sample => sample.sampleNumber.toLowerCase() === sampleNumber.toLowerCase() && sample.depth === depth && sample.method === method);
-        if (duplicate) return;
-        samples.push({
-          id: newId(),
+        addSample({
           sampleNumber,
           depth,
           classification,
@@ -503,6 +528,7 @@
           <input data-import-field="depth" value="${escapeHtml(sample.depth)}" placeholder="Depth (ft)" aria-label="Sample depth">
           <input data-import-field="classification" value="${escapeHtml(sample.classification)}" placeholder="Class" aria-label="Classification">
           <select data-import-field="method" aria-label="Sample method">${["Core", "Bag", "SPT", "Other"].map(method => `<option ${method === sample.method ? "selected" : ""}>${method}</option>`).join("")}</select>
+          <input data-import-field="remarks" value="${escapeHtml(sample.remarks)}" placeholder="Remarks" aria-label="Sample remarks">
           <button class="remove-sample" type="button" data-remove-import="${index}" aria-label="Remove sample">&times;</button>
         </div>
       `).join("") : `<div class="empty-section">No samples were detected. Add a row or check the extracted text below.</div>`;

@@ -1261,6 +1261,60 @@
       padding: 9px 10px;
     }
 
+    .compaction-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f0f1ec;
+    }
+
+    .compaction-tab {
+      flex: 1 0 auto;
+      min-height: 38px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      padding: 7px 12px;
+      font-weight: 500;
+    }
+
+    .compaction-tab.active {
+      background: #fff;
+      color: var(--green);
+      box-shadow: 0 2px 10px rgba(38, 43, 36, .08);
+    }
+
+    .compaction-panel[hidden] {
+      display: none;
+    }
+
+    .compaction-panel {
+      display: grid;
+      gap: 12px;
+    }
+
+    .compaction-preview {
+      max-height: 78vh;
+      overflow: auto;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #eceee8;
+    }
+
+    .compaction-preview .compaction-print-sheet {
+      display: block;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 18px;
+      background: #fff;
+      box-shadow: 0 14px 40px rgba(38, 43, 36, .15);
+    }
+
     .compaction-top {
       display: flex;
       justify-content: space-between;
@@ -1391,6 +1445,35 @@
       pointer-events: none;
     }
 
+    .compaction-print-sheet {
+      display: none;
+    }
+
+    .signature-pad {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fbfcfa;
+    }
+
+    .signature-pad canvas {
+      width: 100%;
+      height: 150px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      touch-action: none;
+    }
+
+    .signature-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     .marker-list {
       display: grid;
       gap: 6px;
@@ -1457,6 +1540,218 @@
       gap: 4px;
       color: var(--muted);
       font-size: 12px;
+    }
+
+    @media print {
+      @page {
+        size: letter portrait;
+        margin: .25in;
+      }
+
+      body {
+        background: #fff;
+      }
+
+      .app {
+        display: block;
+        min-height: 0;
+        padding: 0;
+      }
+
+      .topbar,
+      .desktop-sidebar,
+      .bottom-nav,
+      .login-page,
+      #homePage,
+      #settingsPage,
+      #workspacePage,
+      #compactionPage > .panel-header,
+      .compaction-days,
+      .compaction-tabs,
+      .compaction-top,
+      .compaction-panel:not([data-compaction-panel="preview"]) {
+        display: none !important;
+      }
+
+      .page-wrap,
+      #compactionPage,
+      .compaction-shell,
+      .compaction-sheet,
+      [data-compaction-panel="preview"],
+      .compaction-preview {
+        display: block !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        background: #fff !important;
+        overflow: visible !important;
+      }
+
+      #compactionPrintSheet,
+      #compactionPrintSheet * {
+        visibility: visible;
+      }
+
+      #compactionPrintSheet {
+        position: static;
+        display: block !important;
+        margin: 0;
+        padding: 0;
+        color: #111;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10px;
+        line-height: 1.15;
+      }
+
+      .print-compaction-page {
+        width: 100%;
+        max-height: 10.5in;
+        overflow: hidden;
+      }
+
+      .print-logo {
+        display: grid;
+        justify-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+        text-align: center;
+      }
+
+      .print-mark {
+        display: none;
+        gap: 6px;
+      }
+
+      .print-mark span {
+        display: block;
+        width: 62px;
+        height: 18px;
+        background: #3b3d3c;
+        transform: skewX(-28deg);
+      }
+
+      .print-logo strong {
+        display: block;
+        font-size: 27px;
+        letter-spacing: .04em;
+        line-height: .9;
+      }
+
+      .print-grid,
+      .print-test-table,
+      .print-signatures {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .print-grid td,
+      .print-test-table th,
+      .print-test-table td {
+        border: 1px solid #222;
+        padding: 4px 5px;
+        vertical-align: top;
+      }
+
+      .print-grid .label,
+      .print-test-table th {
+        color: #1f3342;
+        font-size: 9px;
+        font-weight: 500;
+        text-transform: none;
+      }
+
+      .print-grid .value {
+        display: block;
+        min-height: 16px;
+        margin-top: 2px;
+        font-size: 11px;
+      }
+
+      .print-test-table {
+        margin-top: 8px;
+        table-layout: fixed;
+      }
+
+      .print-test-table th {
+        text-align: left;
+        background: #f4f4ef;
+      }
+
+      .print-test-table td {
+        height: 18px;
+        font-size: 10px;
+      }
+
+      .print-notes {
+        min-height: 30px;
+        padding: 5px;
+        border: 1px solid #222;
+        border-top: 0;
+        font-size: 10px;
+      }
+
+      .print-site-plan {
+        margin-top: 7px;
+        break-inside: avoid;
+      }
+
+      .print-site-plan h2 {
+        margin: 0 0 5px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .print-map-stage {
+        position: relative;
+        min-height: 95px;
+        max-height: 135px;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        border: 1px solid #222;
+      }
+
+      .print-map-stage img {
+        width: 100%;
+        max-height: 135px;
+        object-fit: contain;
+      }
+
+      .print-map-stage .map-marker {
+        visibility: visible;
+        width: 18px;
+        min-width: 18px;
+        height: 18px;
+        border: 1px solid #111;
+        background: #fff;
+        color: #111;
+        font-size: 9px;
+        box-shadow: none;
+      }
+
+      .print-signatures {
+        margin-top: 9px;
+      }
+
+      .print-signatures td {
+        width: 33.33%;
+        position: relative;
+        height: 34px;
+        padding: 15px 8px 2px;
+        border: 0;
+        border-bottom: 1px solid #222;
+        font-size: 11px;
+      }
+
+      .print-signature-img {
+        position: absolute;
+        right: 8px;
+        bottom: 10px;
+        max-width: 125px;
+        max-height: 34px;
+      }
     }
 
     .option-card {
@@ -2311,6 +2606,13 @@
             </label>
             <button class="secondary" type="button" id="newCompactionDayButton">+ New Day</button>
           </div>
+          <nav class="compaction-tabs" aria-label="Compaction test sections">
+            <button class="compaction-tab active" type="button" data-compaction-tab="info">Info</button>
+            <button class="compaction-tab" type="button" data-compaction-tab="tests">Tests</button>
+            <button class="compaction-tab" type="button" data-compaction-tab="signing">Signing</button>
+            <button class="compaction-tab" type="button" data-compaction-tab="preview">Preview</button>
+          </nav>
+
           <div class="compaction-sheet">
             <div class="compaction-top">
               <div>
@@ -2319,69 +2621,94 @@
               </div>
               <button class="secondary" type="button" id="printCompactionButton">Print / Save PDF</button>
             </div>
-            <section class="compaction-map">
-              <div class="map-tools">
-                <div>
-                  <div class="section-kicker">Site Plan / Test Markings</div>
-                  <div class="tiny">Upload a site image, then tap/click where each compaction test was done.</div>
-                </div>
-                <input id="compactionMapInput" type="file" accept="image/*">
+
+            <section class="compaction-panel" data-compaction-panel="info">
+              <div class="form-grid">
+                <div class="field"><label>Job No.</label><input data-compaction-field="jobNo"></div>
+                <div class="field"><label>Job Location</label><input data-compaction-field="jobLocation"></div>
+                <div class="field"><label>Client / Owner</label><input data-compaction-field="clientOwner"></div>
+                <div class="field"><label>Project Name</label><input data-compaction-field="projectName"></div>
+                <div class="field wide"><label>General Location of Fill / Purpose of Fill</label><input data-compaction-field="fillPurpose" placeholder="General location of fill / structure to be supported"></div>
+                <div class="field"><label>Date</label><input type="date" data-compaction-field="date"></div>
+                <div class="field"><label>Day</label><input data-compaction-field="day" placeholder="e.g. Friday"></div>
+                <div class="field"><label>Scope of Work</label><input data-compaction-field="scope"></div>
+                <div class="field"><label>Soil Engineer / Technician</label><input data-compaction-field="technician"></div>
+                <div class="field"><label>Weather</label><input data-compaction-field="weather"></div>
+                <div class="field"><label>Grading Contractor</label><input data-compaction-field="gradingContractor"></div>
+                <div class="field"><label>Equipment Used</label><input data-compaction-field="equipment"></div>
+                <div class="field"><label>General Contractor</label><input data-compaction-field="generalContractor"></div>
+                <div class="field"><label>Soil Type Number</label><input data-compaction-field="soilTypeNumber"></div>
+                <div class="field wide"><label>Soil Description</label><input data-compaction-field="soilDescription" placeholder="e.g. well graded sand"></div>
+                <div class="field"><label>Max. Density (PCF)</label><input data-compaction-field="maxDensity" inputmode="decimal"></div>
+                <div class="field"><label>Opt. Moisture Content (%)</label><input data-compaction-field="optMoisture" inputmode="decimal"></div>
+                <div class="field"><label>Required Compaction (%)</label><input data-compaction-field="requiredCompaction" inputmode="decimal"></div>
               </div>
-              <div class="map-stage" id="compactionMapStage">Upload a site plan or photo to mark test locations.</div>
-              <div class="marker-list" id="compactionMarkerList"></div>
             </section>
-            <div class="form-grid">
-              <div class="field"><label>Job No.</label><input data-compaction-field="jobNo"></div>
-              <div class="field"><label>Job Location</label><input data-compaction-field="jobLocation"></div>
-              <div class="field"><label>Client / Owner</label><input data-compaction-field="clientOwner"></div>
-              <div class="field"><label>Project Name</label><input data-compaction-field="projectName"></div>
-              <div class="field wide"><label>General Location of Fill / Purpose of Fill</label><input data-compaction-field="fillPurpose" placeholder="General location of fill / structure to be supported"></div>
-              <div class="field"><label>Date</label><input type="date" data-compaction-field="date"></div>
-              <div class="field"><label>Day</label><input data-compaction-field="day" placeholder="e.g. Friday"></div>
-              <div class="field"><label>Scope of Work</label><input data-compaction-field="scope"></div>
-              <div class="field"><label>Soil Engineer / Technician</label><input data-compaction-field="technician"></div>
-              <div class="field"><label>Weather</label><input data-compaction-field="weather"></div>
-              <div class="field"><label>Grading Contractor</label><input data-compaction-field="gradingContractor"></div>
-              <div class="field"><label>Equipment Used</label><input data-compaction-field="equipment"></div>
-              <div class="field"><label>General Contractor</label><input data-compaction-field="generalContractor"></div>
-              <div class="field"><label>Soil Type Number</label><input data-compaction-field="soilTypeNumber"></div>
-              <div class="field wide"><label>Soil Description</label><input data-compaction-field="soilDescription" placeholder="e.g. well graded sand"></div>
-              <div class="field"><label>Max. Density (PCF)</label><input data-compaction-field="maxDensity" inputmode="decimal"></div>
-              <div class="field"><label>Opt. Moisture Content (%)</label><input data-compaction-field="optMoisture" inputmode="decimal"></div>
-              <div class="field"><label>Required Compaction (%)</label><input data-compaction-field="requiredCompaction" inputmode="decimal"></div>
-            </div>
-            <div class="compaction-table-wrap">
-              <table class="compaction-table">
-                <thead>
-                  <tr>
-                    <th>Test No.</th>
-                    <th>Test Location</th>
-                    <th>Elev. (ft)</th>
-                    <th>Depth of Fill</th>
-                    <th>Soil Type</th>
-                    <th>Moisture (%)</th>
-                    <th>Dry Density</th>
-                    <th>Rel. Compaction</th>
-                    <th>Test Type</th>
-                    <th>Pass / Fail</th>
-                    <th>Notes</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="compactionRows"></tbody>
-              </table>
-            </div>
-            <button class="secondary add-wide" type="button" id="addCompactionRow">+ Add Test Row</button>
-            <div class="field">
-              <label>Supplementary notes, drawings, test location map, etc.</label>
-              <textarea data-compaction-field="notes" placeholder="Add site notes or references to uploaded files."></textarea>
-            </div>
-            <div class="form-grid">
-              <div class="field"><label>Prepared By</label><input data-compaction-field="preparedBy"></div>
-              <div class="field"><label>Hours Charged</label><input data-compaction-field="hoursCharged" placeholder="Minimum 4 hrs."></div>
-              <div class="field"><label>Approved By</label><input data-compaction-field="approvedBy"></div>
-              <div class="field"><label>Client / Contractor</label><input data-compaction-field="clientContractor"></div>
-            </div>
+
+            <section class="compaction-panel" data-compaction-panel="tests" hidden>
+              <section class="compaction-map">
+                <div class="map-tools">
+                  <div>
+                    <div class="section-kicker">Site Plan / Test Markings</div>
+                    <div class="tiny">Upload a site image, then tap/click where each compaction test was done.</div>
+                  </div>
+                  <input id="compactionMapInput" type="file" accept="image/*">
+                </div>
+                <div class="map-stage" id="compactionMapStage">Upload a site plan or photo to mark test locations.</div>
+                <div class="marker-list" id="compactionMarkerList"></div>
+              </section>
+              <div class="compaction-table-wrap">
+                <table class="compaction-table">
+                  <thead>
+                    <tr>
+                      <th>Test No.</th>
+                      <th>Test Location</th>
+                      <th>Elev. (ft)</th>
+                      <th>Depth of Fill</th>
+                      <th>Soil Type</th>
+                      <th>Moisture (%)</th>
+                      <th>Dry Density</th>
+                      <th>Rel. Compaction</th>
+                      <th>Test Type</th>
+                      <th>Pass / Fail</th>
+                      <th>Notes</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="compactionRows"></tbody>
+                </table>
+              </div>
+              <button class="secondary add-wide" type="button" id="addCompactionRow">+ Add Test Row</button>
+              <div class="field">
+                <label>Supplementary notes, drawings, test location map, etc.</label>
+                <textarea data-compaction-field="notes" placeholder="Add site notes or references to uploaded files."></textarea>
+              </div>
+            </section>
+
+            <section class="compaction-panel" data-compaction-panel="signing" hidden>
+              <div class="form-grid">
+                <div class="field"><label>Prepared By</label><input data-compaction-field="preparedBy"></div>
+                <div class="field"><label>Hours Charged</label><input data-compaction-field="hoursCharged" placeholder="Minimum 4 hrs."></div>
+                <div class="field"><label>Approved By</label><input data-compaction-field="approvedBy"></div>
+                <div class="field"><label>Client / Contractor</label><input data-compaction-field="clientContractor"></div>
+              </div>
+              <section class="signature-pad">
+                <div>
+                  <div class="section-kicker">Approved By / Contractor Signature</div>
+                  <div class="tiny">Sign here and it will be added to the printed PDF.</div>
+                </div>
+                <canvas id="approvedSignaturePad" width="900" height="260" aria-label="Approved by contractor signature pad"></canvas>
+                <div class="signature-actions">
+                  <button class="secondary" type="button" id="clearApprovedSignature">Clear Signature</button>
+                </div>
+              </section>
+            </section>
+
+            <section class="compaction-panel" data-compaction-panel="preview" hidden>
+              <div class="compaction-preview">
+                <div class="compaction-print-sheet" id="compactionPrintSheet"></div>
+              </div>
+            </section>
           </div>
         </div>
       </section>
@@ -2713,6 +3040,7 @@
         hoursCharged: "Minimum 4 hrs.",
         approvedBy: "",
         clientContractor: "",
+        approvedSignature: "",
         siteMapName: "",
         siteMapDataUrl: "",
         markers: [],
@@ -2899,6 +3227,10 @@
       return percent >= required ? "Pass" : "Fail";
     }
 
+    function valueOrBlank(value) {
+      return esc(value || "");
+    }
+
     function nextCompactionTestNumber() {
       const used = compactionForActiveProject()
         .flatMap(report => Array.isArray(report.tests) ? report.tests : [])
@@ -2934,6 +3266,7 @@
           "soilDescription", "maxDensity", "optMoisture", "requiredCompaction",
           "preparedBy", "hoursCharged", "approvedBy", "clientContractor"
         ].forEach(field => { next[field] = previous[field] || next[field] || ""; });
+        next.approvedSignature = previous.approvedSignature || "";
         next.siteMapName = previous.siteMapName || "";
         next.siteMapDataUrl = previous.siteMapDataUrl || "";
         next.markers = [];
@@ -2971,6 +3304,7 @@
         input.disabled = !report;
         input.value = report ? (report[field] ?? "") : "";
       });
+      renderApprovedSignaturePad(report);
 
       const rows = document.querySelector("#compactionRows");
       if (!report) {
@@ -2999,6 +3333,107 @@
         `;
       }).join("") : `<tr><td colspan="12">No test rows yet. Add the first compaction test row.</td></tr>`;
       renderCompactionMap(report);
+      renderCompactionPrint(report);
+    }
+
+    function renderCompactionPrint(report = activeCompaction()) {
+      const container = document.querySelector("#compactionPrintSheet");
+      if (!report) {
+        container.innerHTML = "";
+        return;
+      }
+      const tests = Array.isArray(report.tests) ? report.tests : [];
+      const rows = [...tests, ...Array.from({ length: Math.max(0, 12 - tests.length) }, () => null)]
+        .slice(0, Math.max(12, tests.length))
+        .map(test => {
+          const rel = test ? compactionPercent(test, report) : "";
+          const result = test ? passFail(test, report) : "";
+          return `<tr>
+            <td>${valueOrBlank(test?.testNo)}</td>
+            <td>${valueOrBlank(test?.testLocation)}</td>
+            <td>${valueOrBlank(test?.elevation)}</td>
+            <td>${valueOrBlank(test?.fillDepth)}</td>
+            <td>${valueOrBlank(test?.soilType)}</td>
+            <td>${valueOrBlank(test?.moisture)}</td>
+            <td>${valueOrBlank(test?.dryDensity)}</td>
+            <td>${rel ? `${esc(rel)}%` : ""}</td>
+            <td>${valueOrBlank(test?.testType)}</td>
+            <td>${result ? esc(result[0]) : ""}</td>
+          </tr>`;
+        }).join("");
+      const mapHtml = report.siteMapDataUrl ? `
+        <section class="print-site-plan">
+          <h2>Supplementary notes, drawings, test location map, etc</h2>
+          <div class="print-map-stage">
+            <img src="${esc(report.siteMapDataUrl)}" alt="${esc(report.siteMapName || "Site plan")}">
+            ${(report.markers || []).map((marker, index) => `<span class="map-marker" style="left:${marker.x}%;top:${marker.y}%">${esc(marker.label || String(index + 1))}</span>`).join("")}
+          </div>
+        </section>
+      ` : "";
+      const signatureImg = report.approvedSignature ? `<img class="print-signature-img" src="${esc(report.approvedSignature)}" alt="Approved signature">` : "";
+      container.innerHTML = `
+        <div class="print-compaction-page">
+          <div class="print-logo">
+            <div class="print-mark"><span></span><span></span></div>
+            <div><strong>MOMENT</strong><strong>ENGINEERING</strong></div>
+          </div>
+          <table class="print-grid">
+            <tr>
+              <td style="width:19%"><span class="label">Job No.</span><span class="value">${valueOrBlank(report.jobNo)}</span></td>
+              <td style="width:47%"><span class="label">Job Location</span><span class="value">${valueOrBlank(report.jobLocation)}</span></td>
+              <td colspan="2"><span class="label">Client/ Owner</span><span class="value">${valueOrBlank(report.clientOwner)}</span></td>
+            </tr>
+            <tr>
+              <td><span class="label">Project Name</span><span class="value">${valueOrBlank(report.projectName)}</span></td>
+              <td><span class="label">General Location of Fill/ Purpose of Fill/ Structure to be supported</span><span class="value">${valueOrBlank(report.fillPurpose)}</span></td>
+              <td><span class="label">Date</span><span class="value">${valueOrBlank(report.date)}</span></td>
+              <td><span class="label">Day</span><span class="value">${valueOrBlank(report.day)}</span></td>
+            </tr>
+            <tr>
+              <td><span class="label">Scope of Work</span><span class="value">${valueOrBlank(report.scope)}</span></td>
+              <td><span class="label">Soil Engineer/ Geologist/ Eng. Technician</span><span class="value">${valueOrBlank(report.technician)}</span></td>
+              <td colspan="2"><span class="label">Weather</span><span class="value">${valueOrBlank(report.weather)}</span></td>
+            </tr>
+            <tr>
+              <td><span class="label">Grading Contractor</span><span class="value">${valueOrBlank(report.gradingContractor)}</span></td>
+              <td><span class="label">Equipment Used</span><span class="value">${valueOrBlank(report.equipment)}</span></td>
+              <td colspan="2"><span class="label">General Contractor</span><span class="value">${valueOrBlank(report.generalContractor)}</span></td>
+            </tr>
+            <tr>
+              <td><span class="label">Soil Type Number</span><span class="value">${valueOrBlank(report.soilTypeNumber)}</span></td>
+              <td><span class="label">Soil Description</span><span class="value">${valueOrBlank(report.soilDescription)}</span></td>
+              <td><span class="label">Max. Density (PCF)</span><span class="value">${valueOrBlank(report.maxDensity)}</span></td>
+              <td><span class="label">Moisture Contents (%)</span><span class="value">${valueOrBlank(report.optMoisture)}</span></td>
+            </tr>
+          </table>
+          <table class="print-test-table">
+            <thead>
+              <tr>
+                <th style="width:7%">Test<br>No.</th>
+                <th style="width:13%">Test<br>Location</th>
+                <th style="width:10%">Elev. (ft)</th>
+                <th style="width:11%">Depth of<br>Fill</th>
+                <th style="width:10%">Soil<br>Type</th>
+                <th style="width:11%">Moisture<br>Contents</th>
+                <th style="width:10%">Dry<br>Density</th>
+                <th style="width:13%">Rel.<br>Compaction</th>
+                <th style="width:8%">Test<br>Type</th>
+                <th style="width:7%">Pass/Fail</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <div class="print-notes">${valueOrBlank(report.notes)}</div>
+          ${mapHtml}
+          <table class="print-signatures">
+            <tr>
+              <td>Prepared by: ${valueOrBlank(report.preparedBy)}</td>
+              <td>Hour Charged: ${valueOrBlank(report.hoursCharged)}<br>Total Hour Charged:</td>
+              <td>${signatureImg}Approved By: ${valueOrBlank(report.approvedBy)}<br>Client/ Contractor: ${valueOrBlank(report.clientContractor)}</td>
+            </tr>
+          </table>
+        </div>
+      `;
     }
 
     function renderCompactionMap(report = activeCompaction()) {
@@ -3019,6 +3454,81 @@
           <button class="danger compact" type="button" data-delete-marker="${index}">Delete</button>
         </div>
       `).join("") : `<div class="tiny">No markings yet. Tap the image to add one.</div>`;
+    }
+
+    function signatureCanvasContext() {
+      const canvas = document.querySelector("#approvedSignaturePad");
+      return { canvas, context: canvas.getContext("2d") };
+    }
+
+    function clearSignatureCanvas() {
+      const { canvas, context } = signatureCanvasContext();
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      context.lineWidth = 4;
+      context.strokeStyle = "#111";
+    }
+
+    function renderApprovedSignaturePad(report = activeCompaction()) {
+      const { canvas, context } = signatureCanvasContext();
+      clearSignatureCanvas();
+      if (!report?.approvedSignature) return;
+      const image = new Image();
+      image.onload = () => {
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      };
+      image.src = report.approvedSignature;
+    }
+
+    function saveApprovedSignature() {
+      const report = activeCompaction();
+      if (!report) return;
+      const { canvas } = signatureCanvasContext();
+      report.approvedSignature = canvas.toDataURL("image/png");
+      saveState();
+      renderCompactionPrint(report);
+    }
+
+    function canvasPoint(event, canvas) {
+      const source = event.touches?.[0] || event.changedTouches?.[0] || event;
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: ((source.clientX - rect.left) / rect.width) * canvas.width,
+        y: ((source.clientY - rect.top) / rect.height) * canvas.height
+      };
+    }
+
+    function setupSignaturePad() {
+      const { canvas, context } = signatureCanvasContext();
+      let drawing = false;
+      clearSignatureCanvas();
+      const start = event => {
+        event.preventDefault();
+        drawing = true;
+        const point = canvasPoint(event, canvas);
+        context.beginPath();
+        context.moveTo(point.x, point.y);
+      };
+      const move = event => {
+        if (!drawing) return;
+        event.preventDefault();
+        const point = canvasPoint(event, canvas);
+        context.lineTo(point.x, point.y);
+        context.stroke();
+      };
+      const end = event => {
+        if (!drawing) return;
+        event.preventDefault();
+        drawing = false;
+        saveApprovedSignature();
+      };
+      canvas.addEventListener("mousedown", start);
+      canvas.addEventListener("mousemove", move);
+      window.addEventListener("mouseup", end);
+      canvas.addEventListener("touchstart", start, { passive: false });
+      canvas.addEventListener("touchmove", move, { passive: false });
+      canvas.addEventListener("touchend", end, { passive: false });
     }
 
     function renderProjectFiles() {
@@ -3366,6 +3876,17 @@
       });
     }
 
+    function setCompactionTab(tabName) {
+      document.querySelectorAll(".compaction-tab").forEach(tab => {
+        tab.classList.toggle("active", tab.dataset.compactionTab === tabName);
+      });
+      document.querySelectorAll("[data-compaction-panel]").forEach(panel => {
+        panel.hidden = panel.dataset.compactionPanel !== tabName;
+      });
+      if (tabName === "preview") renderCompactionPrint(activeCompaction());
+      if (tabName === "signing") renderApprovedSignaturePad(activeCompaction());
+    }
+
     document.querySelectorAll("[data-open-workspace]").forEach(button => {
       button.addEventListener("click", () => setPage("workspace"));
     });
@@ -3503,7 +4024,28 @@
         .trim();
     }
 
+    function parseDashedProjectLine(text) {
+      const normalized = String(text || "").replace(/\s+/g, " ").trim();
+      const jobNumber = normalized.match(/\(([A-Z0-9]{3,}[A-Z0-9-]*-\d{2,})\)/i)?.[1] || "";
+      const withoutJob = normalized.replace(/\([A-Z0-9]{3,}[A-Z0-9-]*-\d{2,}\)/ig, "").trim();
+      const parts = withoutJob.split(/\s+(?:-|–|\u2013|\u2014)\s+/).map(part => part.trim()).filter(Boolean);
+      if (parts.length < 2) return null;
+      const addressPart = parts.find(looksLikeAddress);
+      const namePart = parts.find(part => part !== addressPart && !looksLikeAddress(part));
+      if (!addressPart || !namePart) return null;
+      const address = cleanAddress(addressPart);
+      const client = cleanClientName(namePart);
+      return {
+        projectNumber: jobNumber,
+        name: client,
+        address,
+        client
+      };
+    }
+
     function parseProjectText(text) {
+      const dashed = parseDashedProjectLine(text);
+      if (dashed) return dashed;
       const lines = text
         .split(/\r?\n/)
         .map(line => line.trim())
@@ -3695,6 +4237,10 @@
       tab.addEventListener("click", () => setTab(tab.dataset.tab));
     });
 
+    document.querySelectorAll(".compaction-tab").forEach(tab => {
+      tab.addEventListener("click", () => setCompactionTab(tab.dataset.compactionTab));
+    });
+
     document.querySelector("#layersList").addEventListener("change", event => updateEntry(event.target));
     document.querySelector("#samplesList").addEventListener("change", event => updateEntry(event.target));
 
@@ -3770,7 +4316,23 @@
       renderCompaction();
     });
 
-    document.querySelector("#printCompactionButton").addEventListener("click", () => window.print());
+    document.querySelector("#printCompactionButton").addEventListener("click", () => {
+      renderCompactionPrint(activeCompaction());
+      const previousTitle = document.title;
+      document.title = " ";
+      window.addEventListener("afterprint", () => { document.title = previousTitle; }, { once: true });
+      window.print();
+    });
+
+    document.querySelector("#clearApprovedSignature").addEventListener("click", () => {
+      const report = activeCompaction();
+      if (report) {
+        report.approvedSignature = "";
+        saveState();
+      }
+      clearSignatureCanvas();
+      renderCompactionPrint(report);
+    });
 
     document.querySelector("#compactionMapInput").addEventListener("change", event => {
       const file = event.target.files?.[0];
@@ -3947,6 +4509,7 @@
     loadState();
     renderRows();
     renderProjects();
+    setupSignaturePad();
     setAuthenticated(currentUser);
     if (currentUser) {
       loadCloudState().catch(error => {
