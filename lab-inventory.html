@@ -273,52 +273,64 @@
   <script>
     const storageKey = "boringLogAppState";
     const storageBackupKey = "boringLogAppState-before-last-save";
+    const sessionKey = "boringLogCurrentUser";
+    const accessTokenKey = "boringLogSupabaseAccessToken";
+    const refreshTokenKey = "boringLogSupabaseRefreshToken";
+    const syncKey = "boringLogLastSync";
+    const supabaseUrl = "https://fuivzblvhjuuzhygdeln.supabase.co";
+    const supabaseKey = "sb_publishable_Kcy_SCyyVSeYWRJLLcV1IA_I1dHFSYe";
+    const supabaseTable = "field_app_state";
+    const supabaseStateId = "moment-shared-state";
     const countyNames = ["San Diego County", "LA County", "Orange County", "Other County"];
     const views = ["All Samples", ...countyNames, "Bag Samples", "Completed / Disposed"];
     const state = { data: loadData(), view: "All Samples", search: "", daysFilter: "all", daysSort: "least", importSamples: [], importMetadata: {}, rawPdfText: "" };
 
+    function dataFromStored(saved = {}) {
+      const projects = Array.isArray(saved.projects) ? saved.projects : [];
+      const borings = Array.isArray(saved.borings) ? saved.borings : [];
+      return {
+        homes: projects.map(project => {
+          const projectBorings = borings.filter(boring => boring.projectId === project.id);
+          const samples = projectBorings.flatMap(boring => (Array.isArray(boring.samples) ? boring.samples : []).map(sample => {
+            const depth = Number(sample.depth);
+            const layer = (Array.isArray(boring.layers) ? boring.layers : []).find(candidate => {
+              const from = Number(candidate.from);
+              const to = Number(candidate.to);
+              return Number.isFinite(depth) && Number.isFinite(from) && Number.isFinite(to) && depth >= from && depth <= to;
+            });
+            return {
+              id: sample.id || `${boring.id}-${sample.number || sample.depth || Math.random()}`,
+              sampleNumber: `${boring.id}-${sample.number || "sample"}`,
+              boringId: boring.id,
+              depth: sample.depth || "",
+              classification: layer?.uscs || sample.uscs || "",
+              method: sample.type || "Sample",
+              remarks: sample.notes || ""
+            };
+          }));
+          const firstBoring = projectBorings[0];
+          return {
+            id: project.id,
+            projectName: project.name || project.address || project.number || "",
+            projectNumber: project.number || "",
+            clientName: project.client || "",
+            address: project.address || "",
+            county: project.county || "Other County",
+            dateSampling: firstBoring?.info?.date || "",
+            labCheckInDate: project.labCheckInDate || firstBoring?.info?.date || "",
+            completedAt: project.inventoryCompletedAt || "",
+            samples,
+            notes: "Synced from boring logs",
+            updatedAt: project.updatedAt || ""
+          };
+        })
+      };
+    }
+
     function loadData() {
       try {
         const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
-        const projects = Array.isArray(saved.projects) ? saved.projects : [];
-        const borings = Array.isArray(saved.borings) ? saved.borings : [];
-        return {
-          homes: projects.map(project => {
-            const projectBorings = borings.filter(boring => boring.projectId === project.id);
-            const samples = projectBorings.flatMap(boring => (Array.isArray(boring.samples) ? boring.samples : []).map(sample => {
-              const depth = Number(sample.depth);
-              const layer = (Array.isArray(boring.layers) ? boring.layers : []).find(candidate => {
-                const from = Number(candidate.from);
-                const to = Number(candidate.to);
-                return Number.isFinite(depth) && Number.isFinite(from) && Number.isFinite(to) && depth >= from && depth <= to;
-              });
-              return {
-                id: sample.id || `${boring.id}-${sample.number || sample.depth || Math.random()}`,
-                sampleNumber: `${boring.id}-${sample.number || "sample"}`,
-                boringId: boring.id,
-                depth: sample.depth || "",
-                classification: layer?.uscs || sample.uscs || "",
-                method: sample.type || "Sample",
-                remarks: sample.notes || ""
-              };
-            }));
-            const firstBoring = projectBorings[0];
-            return {
-              id: project.id,
-              projectName: project.name || project.address || project.number || "",
-              projectNumber: project.number || "",
-              clientName: project.client || "",
-              address: project.address || "",
-              county: project.county || "Other County",
-              dateSampling: firstBoring?.info?.date || "",
-              labCheckInDate: project.labCheckInDate || firstBoring?.info?.date || "",
-              completedAt: project.inventoryCompletedAt || "",
-              samples,
-              notes: "Synced from boring logs",
-              updatedAt: project.updatedAt || ""
-            };
-          })
-        };
+        return dataFromStored(saved);
       } catch (error) {
         return { homes: [] };
       }
@@ -348,6 +360,103 @@
       const status = document.getElementById("importStatus");
       status.textContent = message;
       status.classList.toggle("error", isError);
+    }
+
+    function saveBackup(previous) {
+      if (!previous) return;
+      try {
+        localStorage.setItem(storageBackupKey, previous);
+      } catch (error) {
+        console.warn("Could not save local backup before updating inventory.", error);
+      }
+    }
+
+    function stateSummary(saved = {}) {
+      const projectCount = Array.isArray(saved.projects) ? saved.projects.length : 0;
+      const boringCount = Array.isArray(saved.borings) ? saved.borings.length : 0;
+      const sampleCount = Array.isArray(saved.borings)
+        ? saved.borings.reduce((total, boring) => total + (Array.isArray(boring.samples) ? boring.samples.length : 0), 0)
+        : 0;
+      return `${projectCount} project${projectCount === 1 ? "" : "s"}, ${boringCount} boring${boringCount === 1 ? "" : "s"}, ${sampleCount} sample${sampleCount === 1 ? "" : "s"}`;
+    }
+
+    async function supabaseAuth(path, body) {
+      const response = await fetch(`${supabaseUrl}/auth/v1/${path}`, {
+        method: "POST",
+        headers: {
+          apikey: supabaseKey,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+      if (!response.ok) throw new Error(data.msg || data.message || text || `Auth failed (${response.status})`);
+      return data;
+    }
+
+    async function refreshSupabaseSession() {
+      const refreshToken = localStorage.getItem(refreshTokenKey) || "";
+      if (!refreshToken) throw new Error("Log in from the Boring Logs page before saving to Supabase.");
+      const data = await supabaseAuth("token?grant_type=refresh_token", { refresh_token: refreshToken });
+      if (data.access_token || data.session?.access_token) localStorage.setItem(accessTokenKey, data.access_token || data.session.access_token);
+      if (data.refresh_token || data.session?.refresh_token) localStorage.setItem(refreshTokenKey, data.refresh_token || data.session.refresh_token);
+      return data.access_token || data.session?.access_token || "";
+    }
+
+    async function supabaseRequest(path, options = {}, retrying = false) {
+      let accessToken = localStorage.getItem(accessTokenKey) || "";
+      if (!accessToken && localStorage.getItem(refreshTokenKey)) accessToken = await refreshSupabaseSession();
+      const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
+        ...options,
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken || supabaseKey}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation",
+          ...(options.headers || {})
+        }
+      });
+      if (!response.ok) {
+        const detail = await response.text();
+        if ((response.status === 401 || response.status === 403) && localStorage.getItem(refreshTokenKey) && !retrying) {
+          await refreshSupabaseSession();
+          return supabaseRequest(path, options, true);
+        }
+        throw new Error(detail || `Supabase request failed (${response.status} ${response.statusText})`);
+      }
+      return response.status === 204 ? null : response.json();
+    }
+
+    async function saveInventoryState(stored) {
+      let savedLocally = true;
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(stored));
+      } catch (error) {
+        savedLocally = false;
+        console.warn("Local inventory storage is full; trying Supabase save.", error);
+      }
+
+      const currentUser = localStorage.getItem(sessionKey) || "";
+      if (!currentUser && !savedLocally) throw new Error("Browser storage is full and no Supabase login was found. Log in from the Boring Logs page, then try again.");
+      if (!currentUser) return { savedLocally, savedCloud: false };
+
+      await supabaseRequest(`${supabaseTable}?on_conflict=id`, {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+        body: JSON.stringify({
+          id: supabaseStateId,
+          state: stored,
+          updated_at: new Date().toISOString(),
+          updated_by: currentUser
+        })
+      });
+      try {
+        localStorage.setItem(syncKey, `Cloud saved: ${stateSummary(stored)} at ${new Date().toLocaleString()}`);
+      } catch (error) {
+        console.warn("Could not save local sync status.", error);
+      }
+      return { savedLocally, savedCloud: true };
     }
 
     function loadExternalScript(source) {
@@ -800,7 +909,7 @@
     document.getElementById("daysSort").addEventListener("change", event => { state.daysSort = event.target.value; render(); });
     document.getElementById("refreshBtn").addEventListener("click", () => { state.data = loadData(); render(); });
     document.getElementById("backBtn").addEventListener("click", () => { if (history.length > 1) history.back(); else location.href = "index.html"; });
-    document.getElementById("projects").addEventListener("click", event => {
+    document.getElementById("projects").addEventListener("click", async event => {
       const custodyButton = event.target.closest("[data-custody-doc]");
       if (custodyButton) {
         openCustodyDoc(custodyButton.dataset.custodyDoc);
@@ -819,11 +928,16 @@
       if (!Array.isArray(stored.projects)) return;
       const storedProject = stored.projects.find(item => item.id === project.id);
       if (!storedProject) return;
-      if (previous) localStorage.setItem(storageBackupKey, previous);
+      saveBackup(previous);
       storedProject.inventoryCompletedAt = isCompleted ? "" : new Date().toISOString();
       storedProject.updatedAt = new Date().toISOString();
-      localStorage.setItem(storageKey, JSON.stringify(stored));
-      state.data = loadData();
+      try {
+        await saveInventoryState(stored);
+      } catch (error) {
+        alert(`The inventory update could not be saved: ${error.message || error}`);
+        return;
+      }
+      state.data = dataFromStored(stored);
       render();
     });
 
@@ -936,7 +1050,7 @@
       });
     }
 
-    function saveImportedSamples() {
+    async function saveImportedSamples() {
       syncImportRowsFromForm();
       const values = Object.fromEntries(new FormData(importForm));
       const validSamples = state.importSamples.filter(sample => sample.sampleNumber || sample.depth || sample.classification);
@@ -955,7 +1069,7 @@
       if (!Array.isArray(stored.borings)) stored.borings = [];
       if (!Array.isArray(stored.compactionReports)) stored.compactionReports = [];
       if (!Array.isArray(stored.projectFiles)) stored.projectFiles = [];
-      if (previous) localStorage.setItem(storageBackupKey, previous);
+      saveBackup(previous);
       const projectId = newId();
       const boringId = `LAB-${stored.borings.filter(boring => boring.projectId === projectId).length + 1}`;
       stored.projects.push({
@@ -987,8 +1101,8 @@
       });
       stored.activeProjectId = projectId;
       stored.activeBoringId = boringId;
-      localStorage.setItem(storageKey, JSON.stringify(stored));
-      state.data = loadData();
+      const saveResult = await saveInventoryState(stored);
+      state.data = dataFromStored(stored);
       state.view = values.county || "All Samples";
       state.search = "";
       state.daysFilter = "all";
@@ -996,13 +1110,20 @@
       document.getElementById("daysFilter").value = "all";
       closeImportDialog();
       render();
+      if (!saveResult.savedLocally && saveResult.savedCloud) {
+        alert("Saved to Supabase. Browser storage is full on this device, so open Boring Logs and use Load Cloud Data if this page does not show the latest data later.");
+      }
     }
 
-    saveImport.addEventListener("click", () => {
+    saveImport.addEventListener("click", async () => {
       try {
-        saveImportedSamples();
+        saveImport.disabled = true;
+        setImportStatus("Saving samples...");
+        await saveImportedSamples();
       } catch (error) {
         setImportStatus(`The samples could not be saved: ${error.message || error}`, true);
+      } finally {
+        saveImport.disabled = false;
       }
     });
     importForm.addEventListener("submit", event => {
