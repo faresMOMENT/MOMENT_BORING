@@ -195,6 +195,7 @@
         </div>
         <div class="top-actions">
           <input id="pdfInput" type="file" accept="application/pdf,.pdf" hidden>
+          <button class="btn secondary" type="button" id="manualImportBtn">Add Samples</button>
           <button class="btn" type="button" id="uploadBtn">Upload Custody PDF</button>
           <button class="btn secondary" type="button" id="refreshBtn">Refresh</button>
           <a class="btn" href="index.html">Open Boring Logs</a>
@@ -833,6 +834,22 @@
     const custodyDropzone = document.getElementById("custodyDropzone");
     document.getElementById("uploadBtn").addEventListener("click", () => pdfInput.click());
 
+    function blankImportSample() {
+      return { id: newId(), sampleNumber: "", depth: "", classification: "", method: "Core", remarks: "" };
+    }
+
+    function openManualImportDialog(message = "Enter the project and sample details, then save them to the shared inventory.") {
+      importForm.reset();
+      state.importSamples = [blankImportSample()];
+      state.importMetadata = {};
+      state.rawPdfText = "";
+      document.getElementById("rawText").textContent = "";
+      renderImportSamples();
+      saveImport.disabled = false;
+      setImportStatus(message);
+      importDialog.showModal();
+    }
+
     async function importCustodyFile(file) {
       if (!file) return;
       const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name || "");
@@ -860,12 +877,18 @@
         setImportStatus(`Scan complete. Found ${detail} and ${checkedTests} requested test${checkedTests === 1 ? "" : "s"}. Review the fields below before saving.`);
         saveImport.disabled = false;
       } catch (error) {
-        setImportStatus(error.message || "The PDF could not be read.", true);
+        if (!state.importSamples.length) {
+          state.importSamples = [blankImportSample()];
+          renderImportSamples();
+        }
+        saveImport.disabled = false;
+        setImportStatus(`${error.message || "The PDF could not be read."} You can still enter the samples manually below.`, true);
       } finally {
         pdfInput.value = "";
       }
     }
 
+    document.getElementById("manualImportBtn").addEventListener("click", () => openManualImportDialog());
     pdfInput.addEventListener("change", () => importCustodyFile(pdfInput.files?.[0]));
     custodyDropzone.addEventListener("click", () => pdfInput.click());
     custodyDropzone.addEventListener("keydown", event => {
@@ -887,7 +910,8 @@
     document.getElementById("closeImport").addEventListener("click", closeImportDialog);
     document.getElementById("cancelImport").addEventListener("click", closeImportDialog);
     document.getElementById("addImportSample").addEventListener("click", () => {
-      state.importSamples.push({ id: newId(), sampleNumber: "", depth: "", classification: "", method: "Core", remarks: "" });
+      state.importSamples.push(blankImportSample());
+      saveImport.disabled = false;
       renderImportSamples();
     });
     document.getElementById("importSamples").addEventListener("input", event => {
