@@ -195,7 +195,7 @@
         </div>
         <div class="top-actions">
           <input id="pdfInput" type="file" accept="application/pdf,.pdf" hidden>
-          <button class="btn" type="button" id="uploadBtn" hidden>Upload Custody PDF</button>
+          <button class="btn" type="button" id="uploadBtn">Upload Custody PDF</button>
           <button class="btn secondary" type="button" id="refreshBtn">Refresh</button>
           <a class="btn" href="index.html">Open Boring Logs</a>
         </div>
@@ -914,8 +914,11 @@
       try { stored = JSON.parse(previous || "{}"); } catch (error) {}
       if (!Array.isArray(stored.projects)) stored.projects = [];
       if (!Array.isArray(stored.borings)) stored.borings = [];
+      if (!Array.isArray(stored.compactionReports)) stored.compactionReports = [];
+      if (!Array.isArray(stored.projectFiles)) stored.projectFiles = [];
       if (previous) localStorage.setItem(storageBackupKey, previous);
       const projectId = newId();
+      const boringId = `LAB-${stored.borings.filter(boring => boring.projectId === projectId).length + 1}`;
       stored.projects.push({
         id: projectId,
         number: values.projectNumber || "",
@@ -928,9 +931,9 @@
         updatedAt: new Date().toISOString()
       });
       stored.borings.push({
-        id: "LAB-1",
+        id: boringId,
         projectId,
-        info: { id: "LAB-1", date: values.dateSampling || "", projectTitle: values.projectName || "", loggerDriller: "", totalDepth: "", plannedDepthReached: "yes", terminationNotes: "" },
+        info: { id: boringId, date: values.dateSampling || "", projectTitle: values.projectName || "", loggerDriller: "", totalDepth: "", plannedDepthReached: "yes", terminationNotes: "" },
         layers: [],
         samples: validSamples.map(sample => ({
           id: sample.id || newId(),
@@ -943,6 +946,8 @@
           notes: sample.remarks || ""
         }))
       });
+      stored.activeProjectId = projectId;
+      stored.activeBoringId = boringId;
       localStorage.setItem(storageKey, JSON.stringify(stored));
       state.data = loadData();
       state.view = values.county || "All Samples";

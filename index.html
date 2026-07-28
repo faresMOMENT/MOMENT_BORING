@@ -3361,7 +3361,7 @@ on conflict (id) do nothing;`;
     }
 
     function activeBoring() {
-      return borings.find(boring => boring.id === activeBoringId) || null;
+      return borings.find(boring => boring.id === activeBoringId && boring.projectId === activeProjectId) || null;
     }
 
     function boringsForActiveProject() {
@@ -3435,7 +3435,7 @@ on conflict (id) do nothing;`;
     }
 
     function useBoring(id) {
-      const boring = borings.find(item => item.id === id) || null;
+      const boring = borings.find(item => item.id === id && item.projectId === activeProjectId) || null;
       if (!boring) {
         activeBoringId = null;
         layers = [];
@@ -4554,7 +4554,7 @@ on conflict (id) do nothing;`;
 
     document.querySelector("#boringIdInput").addEventListener("change", event => {
       const cleanId = event.target.value.trim() || activeBoringId;
-      const duplicate = borings.some(boring => boring.id === cleanId && boring.id !== activeBoringId);
+      const duplicate = borings.some(boring => boring.projectId === activeProjectId && boring.id === cleanId && boring.id !== activeBoringId);
       if (duplicate) {
         event.target.value = activeBoringId;
         alert("That boring ID already exists.");
@@ -4595,7 +4595,7 @@ on conflict (id) do nothing;`;
       if (!boring) return;
       const confirmed = confirm(`Delete boring log ${boring.id}?`);
       if (!confirmed) return;
-      const index = borings.findIndex(item => item.id === boring.id);
+      const index = borings.findIndex(item => item.id === boring.id && item.projectId === activeProjectId);
       borings.splice(index, 1);
       const next = borings[index] || borings[index - 1] || null;
       useBoring(next?.id || null);
