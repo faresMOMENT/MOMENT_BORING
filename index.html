@@ -1262,6 +1262,10 @@
       border-bottom: 1px solid #191d18;
     }
 
+    .sheet-info .sheet-info-wide {
+      grid-column: 1 / -1;
+    }
+
     .sheet-info > div:nth-last-child(-n + 2) {
       border-bottom: 0;
     }
@@ -2808,12 +2812,13 @@
                 <div class="boring-sheet">
                   <div class="sheet-head">
                     <div class="sheet-brand"><strong>MOMENT ENGINEERING</strong>Geotechnical Laboratory</div>
-                    <div class="sheet-title" id="sheetTitle">LOG OF BORING</div>
+                    <div class="sheet-title" id="sheetTitle">B-1</div>
                     <div class="sheet-project">Project No.<strong id="sheetProjectNo">-</strong></div>
                   </div>
                   <div class="sheet-info">
                     <div><strong>Project:</strong> <span id="sheetProjectName">-</span></div>
                     <div><strong>Date:</strong> <span id="sheetDate">-</span></div>
+                    <div class="sheet-info-wide"><strong>Project address:</strong> <span id="sheetProjectAddress">-</span></div>
                     <div><strong>Logger:</strong> <span id="sheetLogger">-</span></div>
                     <div><strong>Driller:</strong> <span id="sheetDriller">-</span></div>
                     <div><strong>Drill method:</strong> <span id="sheetDrillMethod">-</span></div>
@@ -3579,7 +3584,7 @@ on conflict (id) do nothing;`;
       document.querySelector("#boringToolCount").textContent = `${projectBorings.length} ${projectBorings.length === 1 ? "log" : "logs"}`;
       document.querySelector("#outputBoringId").textContent = boring?.id || "No boring";
       document.querySelector("#outputSampleCount").textContent = `${samples.length} samples`;
-      document.querySelector("#sheetTitle").textContent = boring ? `LOG OF BORING ${boring.id}` : "LOG OF BORING";
+      document.querySelector("#sheetTitle").textContent = boring?.id || "-";
       document.querySelector('[data-tab="layers"] .count').textContent = layers.length;
       document.querySelector('[data-tab="samples"] .count').textContent = samples.length;
       const lastLayer = layers[layers.length - 1];
@@ -4187,6 +4192,7 @@ on conflict (id) do nothing;`;
       const info = boring?.info || blankInfo("");
       document.querySelector("#sheetProjectNo").textContent = project?.number || "-";
       document.querySelector("#sheetProjectName").textContent = info.projectTitle || project?.name || "-";
+      document.querySelector("#sheetProjectAddress").textContent = project?.address || "-";
       document.querySelector("#sheetDate").textContent = info.date || "-";
       const loggerParts = info.loggerDriller.split("/").map(part => part.trim());
       document.querySelector("#sheetLogger").textContent = loggerParts[0] || "-";
@@ -4221,7 +4227,7 @@ on conflict (id) do nothing;`;
       }
 
       document.querySelector("#sheetRows").innerHTML = layers.map(layer => {
-        const layerSamples = samplesInLayer(layer);
+        const layerSamples = samplesInLayer(layer).filter(sample => sample.depth || sample.recovery || sample.notes || (sample.blows || []).some(Boolean));
         const materialDescription = esc(layerNote(layer));
         const sampleHtml = layerSamples.length ? layerSamples.map(sample => `
           <div class="sample-line">
@@ -4299,38 +4305,233 @@ on conflict (id) do nothing;`;
     async function downloadBoringPdf() {
       if (!openBoringWorkspace("output")) return;
       renderOutput();
-      await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js", () => Boolean(window.html2canvas));
       await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js", () => Boolean(window.jspdf?.jsPDF));
-      const paper = document.querySelector(".paper");
-      document.body.classList.add("export-boring-pdf");
-      try {
-        const canvas = await html2canvas(paper, {
-          backgroundColor: "#ffffff",
-          scale: Math.min(2, window.devicePixelRatio || 1.5),
-          useCORS: true
-        });
-        const pdf = new jspdf.jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
-        const margin = 18;
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const contentWidth = pageWidth - (margin * 2);
-        const contentHeight = pageHeight - (margin * 2);
-        const imageHeight = canvas.height * contentWidth / canvas.width;
-        const image = canvas.toDataURL("image/png");
-        let heightLeft = imageHeight;
-        let y = margin;
-        pdf.addImage(image, "PNG", margin, y, contentWidth, imageHeight);
-        heightLeft -= contentHeight;
-        while (heightLeft > 0) {
-          pdf.addPage();
-          y = margin - (imageHeight - heightLeft);
-          pdf.addImage(image, "PNG", margin, y, contentWidth, imageHeight);
-          heightLeft -= contentHeight;
-        }
-        pdf.save(pdfFileName());
-      } finally {
-        document.body.classList.remove("export-boring-pdf");
+      const pdf = new jspdf.jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
+      const project = activeProject();
+      const boring = activeBoring();
+      const info = boring?.info || blankInfo("");
+      const left = 36;
+      const top = 36;
+      const width = 540;
+      const bottom = 756;
+      const line = 0.75;
+      const dark = "#182018";
+
+      function setFont(size, style = "normal") {
+        pdf.setFont("helvetica", style);
+        pdf.setFontSize(size);
       }
+
+      function drawText(text, x, y, options = {}) {
+        setFont(options.size || 9, options.style || "normal");
+        pdf.setTextColor(dark);
+        pdf.text(String(text || ""), x, y, options);
+      }
+
+      function drawCell(x, y, w, h, text = "", options = {}) {
+        pdf.setDrawColor(20, 24, 20);
+        pdf.setLineWidth(options.lineWidth || line);
+        pdf.rect(x, y, w, h);
+        if (!text && !options.label) return;
+        const pad = options.pad ?? 7;
+        const label = options.label ? `${options.label}: ` : "";
+        const body = String(text || "");
+        setFont(options.size || 9, "normal");
+        if (options.label) {
+          setFont(options.size || 9, "bold");
+          const labelWidth = pdf.getTextWidth(label);
+          pdf.text(label, x + pad, y + 14);
+          setFont(options.size || 9, "normal");
+          const bodyX = x + pad + labelWidth + 3;
+          const bodyLines = pdf.splitTextToSize(body, Math.max(20, x + w - pad - bodyX));
+          pdf.text(bodyLines.slice(0, Math.max(1, Math.floor((h - 6) / ((options.size || 9) + 2)))), bodyX, y + 14);
+          return;
+        }
+        const lines = pdf.splitTextToSize(body, w - pad * 2);
+        pdf.text(lines, x + pad, y + 14);
+      }
+
+      function drawCentered(text, x, y, w, h, size = 9, style = "bold") {
+        setFont(size, style);
+        const lines = pdf.splitTextToSize(String(text || ""), w - 8);
+        const lineHeight = size * 1.15;
+        const startY = y + (h - (lines.length - 1) * lineHeight) / 2 + size * .35;
+        lines.forEach((lineText, index) => {
+          pdf.text(lineText, x + w / 2, startY + index * lineHeight, { align: "center" });
+        });
+      }
+
+      function groundwaterText() {
+        if (info.groundwaterMethod === "Not encountered") return "Not encountered";
+        if (info.groundwaterDepth) return `${info.groundwaterDepth} ft${info.groundwaterTime ? " at " + info.groundwaterTime : ""}`;
+        return "-";
+      }
+
+      function terminationText() {
+        if (info.plannedDepthReached !== "no") return "Planned depth reached";
+        return /refusal/i.test(info.terminationNotes || "") ? "Refusal" : "Planned depth not reached";
+      }
+
+      function sampleText(sample) {
+        const hasValues = sample.depth || sample.recovery || sample.notes || (sample.blows || []).some(Boolean);
+        if (!hasValues) return "";
+        const n = sampleN(sample);
+        return `${sample.type || "SS"} @ ${sample.depth || "-"} ft\nBlows:\n${(sample.blows || []).join("/")}\nN: ${n}\n${densityFromN(n)}`;
+      }
+
+      function drawWrapped(text, x, y, w, size = 9, style = "normal", lineHeight = 11) {
+        setFont(size, style);
+        const lines = pdf.splitTextToSize(String(text || ""), w);
+        pdf.text(lines, x, y);
+        return lines.length * lineHeight;
+      }
+
+      function drawWrappedLimit(text, x, y, w, size = 9, style = "normal", lineHeight = 11, maxHeight = 999) {
+        setFont(size, style);
+        const maxLines = Math.max(1, Math.floor(maxHeight / lineHeight));
+        const lines = pdf.splitTextToSize(String(text || ""), w).slice(0, maxLines);
+        if (lines.length === maxLines && pdf.splitTextToSize(String(text || ""), w).length > maxLines) {
+          lines[lines.length - 1] = `${lines[lines.length - 1].replace(/\.*$/, "")}...`;
+        }
+        pdf.text(lines, x, y);
+        return lines.length * lineHeight;
+      }
+
+      function drawLabeledLine(label, value, x, y, size = 10.5, maxWidth = width) {
+        const labelText = `${label}:`;
+        setFont(size, "bold");
+        pdf.text(labelText, x, y);
+        const valueX = x + pdf.getTextWidth(labelText) + 5;
+        setFont(size, "normal");
+        const lines = pdf.splitTextToSize(String(value || "-"), Math.max(24, maxWidth - (valueX - x)));
+        pdf.text(lines, valueX, y);
+        return Math.max(1, lines.length) * (size + 2);
+      }
+
+      function drawPattern(code, x, y, w, h) {
+        const upper = String(code || "").toUpperCase();
+        pdf.setDrawColor(180, 135, 32);
+        pdf.setFillColor(255, 248, 224);
+        pdf.rect(x + 7, y + 7, w - 14, h - 14, "F");
+        if (upper === "SC" || upper.includes("-SC")) {
+          pdf.setLineWidth(.45);
+          for (let offset = -h; offset < w + h; offset += 8) {
+            pdf.line(x + 7 + Math.max(0, offset), y + 7 + Math.max(0, -offset), x + 7 + Math.min(w - 14, offset + h), y + 7 + Math.min(h - 14, h));
+          }
+        } else {
+          pdf.setFillColor(184, 126, 20);
+          for (let dotY = y + 10; dotY < y + h - 8; dotY += 7) {
+            for (let dotX = x + 10; dotX < x + w - 8; dotX += 7) {
+              pdf.circle(dotX, dotY, .9, "F");
+            }
+          }
+        }
+        pdf.setDrawColor(20, 24, 20);
+      }
+
+      function drawHeader() {
+        pdf.setDrawColor(20, 24, 20);
+        pdf.setLineWidth(1.4);
+        const headH = 36;
+        const brandW = 164;
+        const titleW = 212;
+        const projectW = width - brandW - titleW;
+        pdf.rect(left, top, width, headH);
+        pdf.line(left + brandW, top, left + brandW, top + headH);
+        pdf.line(left + brandW + titleW, top, left + brandW + titleW, top + headH);
+        drawText("MOMENT ENGINEERING", left + 8, top + 16, { size: 10.5, style: "bold" });
+        drawText("Geotechnical Laboratory", left + 8, top + 28, { size: 8.5 });
+        drawCentered(boring?.id || "-", left + brandW, top, titleW, headH, 22, "bold");
+        drawText("Project No.", left + brandW + titleW + 8, top + 14, { size: 9 });
+        drawText(project?.number || "-", left + brandW + titleW + 8, top + 28, { size: 10, style: "bold" });
+
+        const rowY = top + headH;
+        const rowH = 20;
+        const half = width / 2;
+        drawCell(left, rowY, half, rowH, info.projectTitle || project?.name || "-", { label: "Project", size: 10 });
+        drawCell(left + half, rowY, half, rowH, info.date || "-", { label: "Date", size: 10 });
+        drawCell(left, rowY + rowH, width, rowH, project?.address || "-", { label: "Project address", size: 10 });
+        drawCell(left, rowY + rowH * 2, half, rowH, (info.loggerDriller || "").split("/")[0]?.trim() || "-", { label: "Logger", size: 10 });
+        drawCell(left + half, rowY + rowH * 2, half, rowH, (info.loggerDriller || "").split("/")[1]?.trim() || "-", { label: "Driller", size: 10 });
+        drawCell(left, rowY + rowH * 3, half, rowH, info.drillMethod || "-", { label: "Drill method", size: 10 });
+        drawCell(left + half, rowY + rowH * 3, half, rowH, info.rigType || "-", { label: "Rig / hammer", size: 10 });
+        drawCell(left, rowY + rowH * 4, half, rowH, info.surfaceElevation || "-", { label: "Surface elevation", size: 10 });
+        drawCell(left + half, rowY + rowH * 4, half, rowH, info.totalDepth ? `${info.totalDepth} ft` : "-", { label: "Total depth", size: 10 });
+        drawCell(left, rowY + rowH * 5, half, rowH, info.boreholeDiameter || "-", { label: "Borehole diameter", size: 10 });
+        drawCell(left + half, rowY + rowH * 5, half, rowH, groundwaterText(), { label: "Groundwater", size: 10 });
+        return rowY + rowH * 6 + 2;
+      }
+
+      let y = drawHeader();
+      const cols = [36, 38, 30, 372, 64];
+      const xs = [left];
+      cols.slice(0, -1).forEach(col => xs.push(xs.at(-1) + col));
+      const tableHeadH = 28;
+      pdf.setLineWidth(1.2);
+      pdf.rect(left, y, width, tableHeadH);
+      let cursorX = left;
+      cols.forEach((col, index) => {
+        if (index) pdf.line(cursorX, y, cursorX, y + tableHeadH);
+        cursorX += col;
+      });
+      ["Depth", "Graphic", "USCS", "Material description", "Samples /\nBlows / N"].forEach((heading, index) => {
+        drawCentered(heading, xs[index], y, cols[index], tableHeadH, 8.5, "bold");
+      });
+      y += tableHeadH;
+
+      const footerReserve = 78;
+      const rowModels = layers.map(layer => {
+        const layerSamples = samplesInLayer(layer);
+        const materialLines = pdf.splitTextToSize(layerNote(layer), cols[3] - 12);
+        const sampleBlocks = layerSamples.map(sampleText).filter(Boolean);
+        const sampleLines = sampleBlocks.flatMap((block, index) => index ? ["", ...block.split("\n")] : block.split("\n"));
+        const baseH = Math.max(52, materialLines.length * 10 + 14, sampleLines.length * 9 + 14);
+        return { layer, sampleBlocks, baseH };
+      });
+      const availableRowsHeight = Math.max(140, bottom - footerReserve - y);
+      const totalBaseHeight = rowModels.reduce((total, row) => total + row.baseH, 0) || 1;
+      const rowScale = Math.min(1, availableRowsHeight / totalBaseHeight);
+
+      rowModels.forEach(model => {
+        const { layer, sampleBlocks } = model;
+        const rowH = Math.max(34, Math.floor(model.baseH * rowScale));
+        pdf.setLineWidth(.9);
+        pdf.rect(left, y, width, rowH);
+        cursorX = left;
+        cols.forEach((col, index) => {
+          if (index) pdf.line(cursorX, y, cursorX, y + rowH);
+          cursorX += col;
+        });
+        drawWrappedLimit(`${layer.from}-${layer.to} ft`, xs[0] + 5, y + 15, cols[0] - 8, 8.5, "normal", 9.5, rowH - 10);
+        drawPattern(layer.uscs, xs[1], y, cols[1], rowH);
+        drawText(layer.uscs || "-", xs[2] + 5, y + 15, { size: 8.5, style: "bold" });
+        drawWrappedLimit(layerNote(layer), xs[3] + 6, y + 15, cols[3] - 12, 8.5, "normal", 10, rowH - 12);
+        if (sampleBlocks.length) {
+          let sampleY = y + 14;
+          sampleBlocks.forEach(block => {
+            const blockLines = block.split("\n");
+            blockLines.forEach((lineText, index) => {
+              if (sampleY > y + rowH - 6) return;
+              drawText(lineText, xs[4] + 5, sampleY, { size: 7.8, style: index === 1 || index === 3 ? "bold" : "normal" });
+              sampleY += 8.6;
+            });
+            sampleY += 3;
+          });
+        } else {
+          drawText("-", xs[4] + 5, y + 15, { size: 8.5 });
+        }
+        y += rowH;
+      });
+
+      y = Math.min(y + 14, bottom - 58);
+      y += drawLabeledLine("Termination", terminationText(), left, y, 10.5, width) + 7;
+      const methodText = info.groundwaterMethod === "Not encountered" ? "Not encountered" : [info.groundwaterMethod, info.date].filter(Boolean).join(" - ") || "-";
+      y += drawLabeledLine("Groundwater method / stabilized reading", methodText, left, y, 10.5, width) + 7;
+      setFont(10.5, "bold");
+      pdf.text("Notes:", left, y);
+      const notesX = left + pdf.getTextWidth("Notes:") + 5;
+      drawWrappedLimit(info.terminationNotes || "-", notesX, y, width - (notesX - left), 10.5, "normal", 12, bottom - y);
+      pdf.save(pdfFileName());
     }
 
     function updateEntry(target) {
