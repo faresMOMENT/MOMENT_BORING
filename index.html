@@ -1861,6 +1861,50 @@
         max-width: 125px;
         max-height: 34px;
       }
+
+      body.print-boring #workspacePage,
+      body.print-boring [data-panel="output"],
+      body.print-boring .output-layout,
+      body.print-boring .preview,
+      body.print-boring .paper {
+        display: block !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        background: #fff !important;
+        overflow: visible !important;
+      }
+
+      body.print-boring .topbar,
+      body.print-boring .desktop-sidebar,
+      body.print-boring .bottom-nav,
+      body.print-boring .login-page,
+      body.print-boring #homePage,
+      body.print-boring #settingsPage,
+      body.print-boring #compactionPage,
+      body.print-boring #workspacePage > .boring-selector,
+      body.print-boring #workspacePage > .tabs,
+      body.print-boring [data-panel="output"] > .panel-header,
+      body.print-boring .options,
+      body.print-boring .format-drawer {
+        display: none !important;
+      }
+
+      body.print-boring .boring-sheet {
+        width: 100%;
+        border-color: #111;
+        color: #111;
+      }
+
+      body.print-boring .sheet-table {
+        min-width: 0;
+      }
+
+      body.print-boring .sheet-row {
+        break-inside: avoid;
+      }
     }
 
     .option-card {
@@ -4206,6 +4250,82 @@ on conflict (id) do nothing;`;
       `;
     }
 
+    function loadScriptOnce(source, isReady) {
+      return new Promise((resolve, reject) => {
+        if (isReady()) {
+          resolve();
+          return;
+        }
+        const existing = document.querySelector(`script[src="${source}"]`);
+        if (existing) {
+          existing.addEventListener("load", resolve, { once: true });
+          existing.addEventListener("error", reject, { once: true });
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = source;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+
+    function pdfFileName() {
+      const project = activeProject();
+      const boring = activeBoring();
+      const base = [
+        project?.number || project?.name || "boring-log",
+        boring?.id || "log"
+      ].join("-");
+      return `${base.replace(/[^a-z0-9-]+/gi, "-").replace(/^-+|-+$/g, "") || "boring-log"}.pdf`;
+    }
+
+    function printBoringLog() {
+      if (!openBoringWorkspace("output")) return;
+      renderOutput();
+      document.body.classList.remove("print-compaction");
+      document.body.classList.add("print-boring");
+      const previousTitle = document.title;
+      document.title = activeBoring()?.id ? `Boring Log ${activeBoring().id}` : "Boring Log";
+      window.addEventListener("afterprint", () => {
+        document.body.classList.remove("print-boring");
+        document.title = previousTitle;
+      }, { once: true });
+      window.print();
+    }
+
+    async function downloadBoringPdf() {
+      if (!openBoringWorkspace("output")) return;
+      renderOutput();
+      await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js", () => Boolean(window.html2canvas));
+      await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js", () => Boolean(window.jspdf?.jsPDF));
+      const paper = document.querySelector(".paper");
+      const canvas = await html2canvas(paper, {
+        backgroundColor: "#ffffff",
+        scale: Math.min(2, window.devicePixelRatio || 1.5),
+        useCORS: true
+      });
+      const pdf = new jspdf.jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
+      const margin = 18;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const contentWidth = pageWidth - (margin * 2);
+      const contentHeight = pageHeight - (margin * 2);
+      const imageHeight = canvas.height * contentWidth / canvas.width;
+      const image = canvas.toDataURL("image/png");
+      let heightLeft = imageHeight;
+      let y = margin;
+      pdf.addImage(image, "PNG", margin, y, contentWidth, imageHeight);
+      heightLeft -= contentHeight;
+      while (heightLeft > 0) {
+        pdf.addPage();
+        y = margin - (imageHeight - heightLeft);
+        pdf.addImage(image, "PNG", margin, y, contentWidth, imageHeight);
+        heightLeft -= contentHeight;
+      }
+      pdf.save(pdfFileName());
+    }
+
     function updateEntry(target) {
       const editor = target.closest(".entry-editor");
       if (!editor) return;
@@ -4720,18 +4840,30 @@ on conflict (id) do nothing;`;
       renderCompactionPrint(activeCompaction());
       const previousTitle = document.title;
       document.title = " ";
-      window.addEventListener("afterprint", () => { document.title = previousTitle; }, { once: true });
+      document.body.classList.remove("print-boring");
+      document.body.classList.add("print-compaction");
+      window.addEventListener("afterprint", () => {
+        document.body.classList.remove("print-compaction");
+        document.title = previousTitle;
+      }, { once: true });
       window.print();
     });
 
     document.querySelectorAll("[data-print-boring]").forEach(button => {
-      button.addEventListener("click", () => {
-        if (!openBoringWorkspace("output")) return;
-        renderOutput();
-        const previousTitle = document.title;
-        document.title = activeBoring()?.id ? `Boring Log ${activeBoring().id}` : "Boring Log";
-        window.addEventListener("afterprint", () => { document.title = previousTitle; }, { once: true });
-        window.print();
+      button.addEventListener("click", async () => {
+        const originalText = button.textContent;
+        try {
+          button.disabled = true;
+          button.textContent = "Preparing PDF...";
+          await downloadBoringPdf();
+        } catch (error) {
+          console.error(error);
+          alert("The automatic PDF download could not start, so the print dialog will open for the boring log instead.");
+          printBoringLog();
+        } finally {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
       });
     });
 
