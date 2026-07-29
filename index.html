@@ -4415,8 +4415,15 @@ on conflict (id) do nothing;`;
         pdf.rect(x + 7, y + 7, w - 14, h - 14, "F");
         if (upper === "SC" || upper.includes("-SC")) {
           pdf.setLineWidth(.45);
-          for (let offset = -h; offset < w + h; offset += 8) {
-            pdf.line(x + 7 + Math.max(0, offset), y + 7 + Math.max(0, -offset), x + 7 + Math.min(w - 14, offset + h), y + 7 + Math.min(h - 14, h));
+          const ix = x + 7;
+          const iy = y + 7;
+          const iw = w - 14;
+          const ih = h - 14;
+          for (let offset = -ih; offset < iw; offset += 8) {
+            const start = Math.max(0, -offset);
+            const end = Math.min(ih, iw - offset);
+            if (end <= start) continue;
+            pdf.line(ix + offset + start, iy + start, ix + offset + end, iy + end);
           }
         } else {
           pdf.setFillColor(184, 126, 20);
@@ -4463,7 +4470,7 @@ on conflict (id) do nothing;`;
       }
 
       let y = drawHeader();
-      const cols = [36, 38, 30, 372, 64];
+      const cols = [42, 44, 34, 344, 76];
       const xs = [left];
       cols.slice(0, -1).forEach(col => xs.push(xs.at(-1) + col));
       const tableHeadH = 28;
@@ -4474,9 +4481,11 @@ on conflict (id) do nothing;`;
         if (index) pdf.line(cursorX, y, cursorX, y + tableHeadH);
         cursorX += col;
       });
-      ["Depth", "Graphic", "USCS", "Material description", "Samples /\nBlows / N"].forEach((heading, index) => {
-        drawCentered(heading, xs[index], y, cols[index], tableHeadH, 8.5, "bold");
-      });
+      drawCentered("Depth", xs[0], y, cols[0], tableHeadH, 8.5, "bold");
+      drawCentered("Graphic", xs[1], y, cols[1], tableHeadH, 7.6, "bold");
+      drawCentered("USCS", xs[2], y, cols[2], tableHeadH, 8.2, "bold");
+      drawCentered("Material description", xs[3], y, cols[3], tableHeadH, 8.5, "bold");
+      drawCentered("Samples /\nBlows / N", xs[4], y, cols[4], tableHeadH, 8.5, "bold");
       y += tableHeadH;
 
       const footerReserve = 78;
