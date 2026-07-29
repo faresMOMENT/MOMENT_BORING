@@ -4036,12 +4036,6 @@ on conflict (id) do nothing;`;
       return layerForDepth(sample.depth)?.uscs || "";
     }
 
-    function sampleNotesInLayer(layer) {
-      return samplesInLayer(layer)
-        .filter(sample => sample.notes.trim())
-        .map(sample => `Sample note ${sample.depth || "-"} ft: ${sample.notes.trim()}`);
-    }
-
     function currentOpenState() {
       return {
         layers: [...document.querySelectorAll('#layersList details[open]')]
@@ -4164,7 +4158,7 @@ on conflict (id) do nothing;`;
 
       document.querySelector("#sheetRows").innerHTML = layers.map(layer => {
         const layerSamples = samplesInLayer(layer);
-        const materialNotes = [fullLayerNote(layer), ...sampleNotesInLayer(layer)].filter(Boolean).map(esc).join("<br>");
+        const materialDescription = esc(layerNote(layer));
         const sampleHtml = layerSamples.length ? layerSamples.map(sample => `
           <div class="sample-line">
             ${esc(sample.type)} @ ${esc(sample.depth)} ft<br>
@@ -4179,7 +4173,7 @@ on conflict (id) do nothing;`;
             <div class="sheet-depth">${esc(layer.from)}-${esc(layer.to)} ft</div>
             <div class="sheet-graphic soil-graphic ${graphicClass(layer.uscs)}"></div>
             <div class="sheet-uscs">${esc(layer.uscs)}</div>
-            <div>${materialNotes}</div>
+            <div>${materialDescription}</div>
             <div>${sampleHtml}</div>
           </div>
         `;
