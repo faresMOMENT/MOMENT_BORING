@@ -4376,7 +4376,11 @@ on conflict (id) do nothing;`;
         const hasValues = sample.depth || sample.recovery || sample.notes || (sample.blows || []).some(Boolean);
         if (!hasValues) return "";
         const n = sampleN(sample);
-        return `${sample.type || "SS"} @ ${sample.depth || "-"} ft\nBlows:\n${(sample.blows || []).join("/")}\nN: ${n}\n${densityFromN(n)}`;
+        const blows = (sample.blows || []).filter(Boolean).join("/");
+        const lines = [`${sample.type || "SS"} @ ${sample.depth || "-"} ft`];
+        if (blows) lines.push(`Blows: ${blows}`);
+        if (blows) lines.push(`N: ${n} ${densityFromN(n)}`);
+        return lines.join("\n");
       }
 
       function drawWrapped(text, x, y, w, size = 9, style = "normal", lineHeight = 11) {
@@ -4504,6 +4508,10 @@ on conflict (id) do nothing;`;
       rowModels.forEach(model => {
         const { layer, sampleBlocks } = model;
         const rowH = Math.max(34, Math.floor(model.baseH * rowScale));
+        const sampleFont = Math.max(6.2, 7.8 * rowScale);
+        const sampleLineHeight = sampleFont + 1.1;
+        const materialFont = Math.max(7, 8.5 * rowScale);
+        const materialLineHeight = materialFont + 1.5;
         pdf.setLineWidth(.9);
         pdf.rect(left, y, width, rowH);
         cursorX = left;
@@ -4511,20 +4519,20 @@ on conflict (id) do nothing;`;
           if (index) pdf.line(cursorX, y, cursorX, y + rowH);
           cursorX += col;
         });
-        drawWrappedLimit(`${layer.from}-${layer.to} ft`, xs[0] + 5, y + 15, cols[0] - 8, 8.5, "normal", 9.5, rowH - 10);
+        drawWrappedLimit(`${layer.from}-${layer.to} ft`, xs[0] + 5, y + 15, cols[0] - 8, Math.max(7, 8.5 * rowScale), "normal", 9.5 * rowScale, rowH - 10);
         drawPattern(layer.uscs, xs[1], y, cols[1], rowH);
-        drawText(layer.uscs || "-", xs[2] + 5, y + 15, { size: 8.5, style: "bold" });
-        drawWrappedLimit(layerNote(layer), xs[3] + 6, y + 15, cols[3] - 12, 8.5, "normal", 10, rowH - 12);
+        drawText(layer.uscs || "-", xs[2] + 5, y + 15, { size: Math.max(7, 8.5 * rowScale), style: "bold" });
+        drawWrappedLimit(layerNote(layer), xs[3] + 6, y + 15, cols[3] - 12, materialFont, "normal", materialLineHeight, rowH - 12);
         if (sampleBlocks.length) {
-          let sampleY = y + 14;
+          let sampleY = y + sampleFont + 5;
           sampleBlocks.forEach(block => {
             const blockLines = block.split("\n");
             blockLines.forEach((lineText, index) => {
-              if (sampleY > y + rowH - 6) return;
-              drawText(lineText, xs[4] + 5, sampleY, { size: 7.8, style: index === 1 || index === 3 ? "bold" : "normal" });
-              sampleY += 8.6;
+              if (sampleY > y + rowH - 4) return;
+              drawText(lineText, xs[4] + 5, sampleY, { size: sampleFont, style: index === 1 || index === 2 ? "bold" : "normal" });
+              sampleY += sampleLineHeight;
             });
-            sampleY += 3;
+            sampleY += 2;
           });
         } else {
           drawText("-", xs[4] + 5, y + 15, { size: 8.5 });
