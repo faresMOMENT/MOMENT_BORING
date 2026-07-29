@@ -852,6 +852,10 @@
       position: relative;
     }
 
+    .switch.active {
+      background: var(--green);
+    }
+
     .switch::after {
       content: "";
       position: absolute;
@@ -861,6 +865,10 @@
       height: 14px;
       border-radius: 50%;
       background: #fff;
+    }
+
+    .switch.active::after {
+      left: 17px;
     }
 
     .list {
@@ -2449,7 +2457,7 @@
       <input type="search" value="" placeholder="Search projects or jobs...">
       <div id="desktopBoringList"></div>
       <button class="secondary" type="button" data-add-boring>+ Add Boring</button>
-      <button class="primary" type="button">Generate PDF</button>
+      <button class="primary" type="button" data-print-boring>Generate PDF</button>
     </aside>
 
     <div class="page-wrap">
@@ -2792,7 +2800,7 @@
               <button class="option-card active" type="button"><span class="check">x</span><span><strong>Firm Letterhead</strong><br><small>Logo + branding header</small></span></button>
               <button class="option-card" type="button"><span></span><span><strong>Minimal</strong><br><small>Clean single-line header</small></span></button>
               <button class="option-card" type="button"><span></span><span><strong>ASTM Standard</strong><br><small>Full field-grid, D1586</small></span></button>
-              <button class="primary" type="button">Generate PDF</button>
+              <button class="primary" type="button" data-print-boring>Generate PDF</button>
             </div>
           </div>
         </article>
@@ -3539,9 +3547,15 @@ on conflict (id) do nothing;`;
 
       document.querySelectorAll("[data-info-field]").forEach(input => {
         const field = input.dataset.infoField;
-        input.disabled = !boring;
+        const groundwaterNotEncountered = boring?.info?.groundwaterMethod === "Not encountered";
+        input.disabled = !boring || (groundwaterNotEncountered && (field === "groundwaterDepth" || field === "groundwaterTime"));
         input.value = boring ? (boring.info[field] ?? "") : "";
       });
+      const groundwaterSwitch = document.querySelector(".groundwater .switch");
+      const groundwaterNotEncountered = boring?.info?.groundwaterMethod === "Not encountered";
+      groundwaterSwitch.classList.toggle("active", Boolean(groundwaterNotEncountered));
+      groundwaterSwitch.setAttribute("aria-pressed", groundwaterNotEncountered ? "true" : "false");
+      groundwaterSwitch.disabled = !boring;
     }
 
     function activeProject() {
@@ -4136,10 +4150,14 @@ on conflict (id) do nothing;`;
       document.querySelector("#sheetSurfaceElevation").textContent = info.surfaceElevation || "-";
       document.querySelector("#sheetTotalDepth").textContent = info.totalDepth ? `${info.totalDepth} ft` : "-";
       document.querySelector("#sheetBoreholeDiameter").textContent = info.boreholeDiameter || "-";
-      const groundwater = info.groundwaterDepth ? `${info.groundwaterDepth} ft${info.groundwaterTime ? " at " + info.groundwaterTime : ""}` : "-";
+      const groundwater = info.groundwaterMethod === "Not encountered"
+        ? "N/E"
+        : info.groundwaterDepth ? `${info.groundwaterDepth} ft${info.groundwaterTime ? " at " + info.groundwaterTime : ""}` : "-";
       document.querySelector("#sheetGroundwater").textContent = groundwater;
       document.querySelector("#outputGroundwater").textContent = groundwater;
-      document.querySelector("#sheetGroundwaterMethod").textContent = [info.groundwaterMethod, info.date].filter(Boolean).join(" - ") || "-";
+      document.querySelector("#sheetGroundwaterMethod").textContent = info.groundwaterMethod === "Not encountered"
+        ? "Not encountered"
+        : [info.groundwaterMethod, info.date].filter(Boolean).join(" - ") || "-";
       document.querySelector("#sheetTermination").textContent = info.plannedDepthReached === "no" ? "Planned depth not reached" : "Planned depth reached";
       document.querySelector("#sheetNotes").textContent = info.terminationNotes || "-";
 
@@ -4568,7 +4586,25 @@ on conflict (id) do nothing;`;
       const boring = activeBoring();
       if (!field || !boring) return;
       boring.info[field] = event.target.value;
+      if (field === "groundwaterMethod" && event.target.value === "Not encountered") {
+        boring.info.groundwaterDepth = "";
+        boring.info.groundwaterTime = "";
+      }
       if (field === "id") return;
+      saveState();
+      renderBoringShell();
+      renderOutput();
+    });
+
+    document.querySelector(".groundwater .switch").addEventListener("click", () => {
+      const boring = activeBoring();
+      if (!boring) return;
+      const isNotEncountered = boring.info.groundwaterMethod === "Not encountered";
+      boring.info.groundwaterMethod = isNotEncountered ? "" : "Not encountered";
+      if (!isNotEncountered) {
+        boring.info.groundwaterDepth = "";
+        boring.info.groundwaterTime = "";
+      }
       saveState();
       renderBoringShell();
       renderOutput();
@@ -4686,6 +4722,17 @@ on conflict (id) do nothing;`;
       document.title = " ";
       window.addEventListener("afterprint", () => { document.title = previousTitle; }, { once: true });
       window.print();
+    });
+
+    document.querySelectorAll("[data-print-boring]").forEach(button => {
+      button.addEventListener("click", () => {
+        if (!openBoringWorkspace("output")) return;
+        renderOutput();
+        const previousTitle = document.title;
+        document.title = activeBoring()?.id ? `Boring Log ${activeBoring().id}` : "Boring Log";
+        window.addEventListener("afterprint", () => { document.title = previousTitle; }, { once: true });
+        window.print();
+      });
     });
 
     document.querySelector("#clearApprovedSignature").addEventListener("click", () => {

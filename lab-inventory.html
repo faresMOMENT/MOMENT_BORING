@@ -282,7 +282,7 @@
     const supabaseTable = "field_app_state";
     const supabaseStateId = "moment-shared-state";
     const countyNames = ["San Diego County", "LA County", "Orange County", "Other County"];
-    const views = ["All Samples", ...countyNames, "Bag Samples", "Completed / Disposed"];
+    const views = ["All Samples", ...countyNames, "Bag Samples", "Arrival Pending", "Completed / Disposed"];
     const state = { data: loadData(), view: "All Samples", search: "", daysFilter: "all", daysSort: "least", importSamples: [], importMetadata: {}, rawPdfText: "" };
 
     function dataFromStored(saved = {}) {
@@ -317,7 +317,7 @@
             address: project.address || "",
             county: project.county || "Other County",
             dateSampling: firstBoring?.info?.date || "",
-            labCheckInDate: project.labCheckInDate || firstBoring?.info?.date || "",
+            labCheckInDate: project.labCheckInDate || "",
             completedAt: project.inventoryCompletedAt || "",
             samples,
             notes: "Synced from boring logs",
@@ -457,6 +457,22 @@
         console.warn("Could not save local sync status.", error);
       }
       return { savedLocally, savedCloud: true };
+    }
+
+    async function loadInventoryCloudState() {
+      if (!localStorage.getItem(sessionKey) && !localStorage.getItem(accessTokenKey) && !localStorage.getItem(refreshTokenKey)) return false;
+      const rows = await supabaseRequest(`${supabaseTable}?id=eq.${encodeURIComponent(supabaseStateId)}&select=state,updated_at&limit=1`);
+      const record = rows?.[0];
+      if (!record?.state) return false;
+      state.data = dataFromStored(record.state);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(record.state));
+        localStorage.setItem(syncKey, `Cloud loaded: ${stateSummary(record.state)} at ${new Date(record.updated_at || Date.now()).toLocaleString()}`);
+      } catch (error) {
+        console.warn("Could not cache Supabase inventory state locally.", error);
+      }
+      render();
+      return true;
     }
 
     function loadExternalScript(source) {
@@ -670,6 +686,7 @@
     function bagSamples(project) { return samplesFor(project).filter(isBag); }
     function coreSamples(project) { return samplesFor(project).filter(sample => !isBag(sample)); }
     function projectCounty(project) { return countyNames.includes(project.county) ? project.county : "Other County"; }
+    function arrivalPending(project) { return !project.completedAt && !project.labCheckInDate && samplesFor(project).length > 0; }
 
     function projectMatches(project) {
       const query = state.search.trim().toLowerCase();
@@ -683,6 +700,7 @@
         const completed = Boolean(project.completedAt);
         if (state.view === "Completed / Disposed") return completed;
         if (completed) return false;
+        if (state.view === "Arrival Pending") return arrivalPending(project);
         if (state.view === "Bag Samples") return bagSamples(project).length > 0;
         if (countyNames.includes(state.view)) return projectCounty(project) === state.view;
         return true;
@@ -709,6 +727,7 @@
       const active = state.data.homes.filter(project => !project.completedAt);
       if (view === "All Samples") return active.reduce((total, project) => total + samplesFor(project).length, 0);
       if (view === "Bag Samples") return active.reduce((total, project) => total + bagSamples(project).length, 0);
+      if (view === "Arrival Pending") return active.filter(arrivalPending).reduce((total, project) => total + samplesFor(project).length, 0);
       return active.filter(project => projectCounty(project) === view).reduce((total, project) => total + samplesFor(project).length, 0);
     }
 
@@ -814,7 +833,7 @@
       <div class="field wide"><span class="label">Client</span><span class="value">${escapeHtml(project.clientName || "")}</span></div>
       <div class="field wide"><span class="label">Project Address</span><span class="value">${escapeHtml(project.address || "")}</span></div>
       <div class="field"><span class="label">Sampling Date</span><span class="value">${escapeHtml(formatDate(project.dateSampling))}</span></div>
-      <div class="field"><span class="label">Received In Lab</span><span class="value">${escapeHtml(formatDate(project.labCheckInDate))}</span></div>
+      <div class="field"><span class="label">Received In Lab</span><span class="value">${escapeHtml(project.labCheckInDate ? formatDate(project.labCheckInDate) : "Arrival pending")}</span></div>
     </section>
     <h2>Samples</h2>
     <table>
@@ -861,12 +880,13 @@
       const title = project.projectName || project.address || project.projectNumber || project.clientName || "Untitled project";
       const meta = [project.projectNumber, project.clientName, project.address && project.address !== title ? project.address : "", projectCounty(project)].filter(Boolean).join(" | ");
       const labDays = daysInLab(project.labCheckInDate, project.completedAt);
-      const daysLabel = labDays === null ? "Days not available" : `${labDays} day${labDays === 1 ? "" : "s"} in lab`;
+      const pending = arrivalPending(project);
+      const daysLabel = pending ? "Arrival pending" : labDays === null ? "Days not available" : `${labDays} day${labDays === 1 ? "" : "s"} in lab`;
       const showOnlyBags = state.view === "Bag Samples";
       const completed = Boolean(project.completedAt);
       return `<details class="project">
         <summary class="project-head">
-          <div><h3>${escapeHtml(title)}</h3><div class="project-meta">${escapeHtml(meta || "No project details")}</div><div class="received-date">Received in lab: ${escapeHtml(formatDate(project.labCheckInDate))}</div></div>
+          <div><h3>${escapeHtml(title)}</h3><div class="project-meta">${escapeHtml(meta || "No project details")}</div><div class="received-date">${pending ? "Arrival pending" : `Received in lab: ${escapeHtml(formatDate(project.labCheckInDate))}`}</div></div>
           <div class="project-counts"><span class="pill days">${escapeHtml(daysLabel)}</span><span class="pill">${cores.length} core / other</span><span class="pill bag">${bags.length} bag</span></div>
         </summary>
         <div class="sample-sections" style="${showOnlyBags ? "grid-template-columns: 1fr" : ""}">
@@ -1103,7 +1123,7 @@
       stored.activeBoringId = boringId;
       const saveResult = await saveInventoryState(stored);
       state.data = dataFromStored(stored);
-      state.view = values.county || "All Samples";
+      state.view = values.labCheckInDate ? (values.county || "All Samples") : "Arrival Pending";
       state.search = "";
       state.daysFilter = "all";
       document.getElementById("searchInput").value = "";
@@ -1111,7 +1131,7 @@
       closeImportDialog();
       render();
       if (!saveResult.savedLocally && saveResult.savedCloud) {
-        alert("Saved to Supabase. Browser storage is full on this device, so open Boring Logs and use Load Cloud Data if this page does not show the latest data later.");
+        alert("Saved to Supabase. Browser storage is full on this device, so this page is showing the saved cloud data without caching it locally.");
       }
     }
 
@@ -1134,6 +1154,7 @@
     window.addEventListener("storage", event => { if (event.key === storageKey) { state.data = loadData(); render(); } });
     window.addEventListener("focus", () => { state.data = loadData(); render(); });
     render();
+    loadInventoryCloudState().catch(error => console.warn("Could not load inventory from Supabase.", error));
   </script>
 </body>
 </html>
