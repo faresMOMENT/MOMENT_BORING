@@ -23,7 +23,7 @@
 
     * { box-sizing: border-box; }
     body { margin: 0; font-family: var(--sans); color: var(--ink); background: var(--bg); font-size: 15px; }
-    button, input { font: inherit; }
+    button, input, select, textarea { font: inherit; }
     button { cursor: pointer; }
     .app-shell { min-height: 100vh; display: grid; grid-template-columns: 250px minmax(0, 1fr); }
 
@@ -34,8 +34,8 @@
     .brand h1 { margin: 0; color: var(--accent); font-size: 20px; font-weight: 600; }
     .brand p { margin: 8px 0 20px; color: var(--muted); font-size: 12px; line-height: 1.4; }
     .sidebar-title { margin: 18px 10px 8px; color: var(--muted); font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; }
-    .tabs, .side-links { display: grid; gap: 7px; }
-    .tab, .side-links a, .side-links button {
+    .tabs { display: grid; gap: 7px; }
+    .tab {
       width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
       border: 1px solid transparent; border-radius: 8px; background: transparent; color: #5f686f;
       padding: 9px 10px; text-align: left; text-decoration: none; font-size: 13px; font-weight: 500;
@@ -44,11 +44,13 @@
     .tab.bag-tab.active { color: #b86418; background: var(--bag-soft); border-color: #f5d5b4; }
     .tab-count { min-width: 28px; padding: 3px 8px; border-radius: 999px; background: #f0f0ed; color: #6f777d; font-size: 12px; text-align: center; }
     .tab.active .tab-count { background: #fff; color: inherit; }
-    .side-links { margin-top: 4px; }
-    .side-links button { justify-content: flex-start; }
 
-    .page { min-width: 0; padding: 24px 28px 72px; display: grid; gap: 20px; align-content: start; }
-    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .page { min-width: 0; padding: 0 28px 72px; display: grid; gap: 20px; align-content: start; }
+    .topbar {
+      position: sticky; top: 0; z-index: 20; margin: 0 -28px; padding: 12px 28px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+      background: rgba(255, 255, 252, .96); border-bottom: 1px solid var(--line); backdrop-filter: blur(10px);
+    }
     h1, h2, h3 { margin: 0; }
     .topbar h1 { font-size: 24px; font-weight: 600; }
     .topbar p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
@@ -61,12 +63,12 @@
     .btn:disabled { opacity: .55; cursor: wait; }
 
     .summary { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 14px; }
-    .metric { min-height: 94px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 3px 12px rgba(38,43,36,.05); }
+    .metric { min-height: 94px; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 3px 12px rgba(38,43,36,.05); }
     .metric span { color: var(--muted); font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
     .metric strong { display: block; margin-top: 12px; font-size: 24px; font-weight: 600; }
     .metric.bag strong { color: var(--bag); }
     .custody-dropzone {
-      display: grid; gap: 7px; padding: 15px 16px; border: 1px dashed #bfc8ba; border-radius: 10px;
+      display: grid; gap: 7px; padding: 15px 16px; border: 1px dashed #bfc8ba; border-radius: 8px;
       background: #fbfcfa; color: var(--muted); font-size: 13px; transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
     }
     .custody-dropzone strong { color: var(--ink); font-size: 15px; font-weight: 600; }
@@ -82,7 +84,7 @@
     .search:focus, .days-filter:focus { outline: 2px solid #bceee4; border-color: var(--accent); }
 
     .projects { display: grid; gap: 14px; }
-    .project { overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 3px 12px rgba(38,43,36,.05); }
+    .project { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 3px 12px rgba(38,43,36,.05); }
     .project-head { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; cursor: pointer; list-style: none; }
     .project-head::-webkit-details-marker { display: none; }
     .project-head::after { content: "+"; flex: 0 0 auto; color: var(--accent-dark); font-size: 22px; font-weight: 500; }
@@ -115,6 +117,7 @@
     .project-footer-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
     .complete-btn { min-height: 36px; border: 1px solid #c9dfd8; border-radius: 8px; background: var(--soft); color: var(--accent-dark); padding: 7px 12px; font-weight: 500; }
     .complete-btn.restore { border-color: #d8dde8; background: #f0f3fa; color: #405c8a; }
+    .arrival-btn { min-height: 36px; border: 1px solid #c9dfd8; border-radius: 8px; background: var(--soft); color: var(--accent-dark); padding: 7px 12px; font-weight: 500; }
     .custody-btn { min-height: 36px; border: 1px solid #d4b28f; border-radius: 8px; background: #fff7ee; color: #8b4914; padding: 7px 12px; font-weight: 500; }
     .empty-page { padding: 60px 22px; border: 1px dashed #d9ded9; border-radius: 14px; background: #fff; color: var(--muted); text-align: center; }
     .empty-page strong { display: block; margin-bottom: 7px; color: var(--ink); font-size: 17px; }
@@ -147,11 +150,12 @@
       .app-shell { display: block; }
       .sidebar { position: static; height: auto; }
       .tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .side-links { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 680px) {
-      .page { padding: 18px 14px 60px; }
+      .page { padding: 0 14px 60px; }
+      .topbar { margin: 0 -14px; padding: 12px 14px; }
+      input, select, textarea, .search, .days-filter, .field input, .field select, .import-sample input, .import-sample select { font-size: 16px; }
       .summary { gap: 9px; }
       .metric { min-height: 92px; padding: 14px; }
       .sample-sections { grid-template-columns: 1fr; }
@@ -180,11 +184,6 @@
       </div>
       <div class="sidebar-title">Inventory Views</div>
       <nav class="tabs" id="countyTabs" aria-label="Sample inventory views"></nav>
-      <div class="sidebar-title">Lab Pages</div>
-      <nav class="side-links" aria-label="Lab pages">
-        <a href="index.html">Boring Logs</a>
-        <button type="button" id="backBtn">Back</button>
-      </nav>
     </aside>
 
     <main class="page">
@@ -265,6 +264,23 @@
       <footer class="dialog-actions">
         <button class="btn secondary" id="cancelImport" type="button">Cancel</button>
         <button class="btn" id="saveImport" type="button">Add Project &amp; Samples</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="arrivalDialog">
+    <form id="arrivalForm" novalidate>
+      <header class="dialog-head">
+        <div><h2>Add Arrival Date</h2><p id="arrivalProjectName">Select the date these samples arrived at the lab.</p></div>
+        <button class="close-btn" id="closeArrival" type="button" aria-label="Close">&times;</button>
+      </header>
+      <div class="import-body">
+        <div class="import-status" id="arrivalStatus">Choose the received date, then add it to inventory.</div>
+        <label class="field">Date arrived in lab<input name="labCheckInDate" type="date" required></label>
+      </div>
+      <footer class="dialog-actions">
+        <button class="btn secondary" id="cancelArrival" type="button">Cancel</button>
+        <button class="btn" id="saveArrival" type="button">Add Date</button>
       </footer>
     </form>
   </dialog>
@@ -894,9 +910,10 @@
           <section class="sample-section" style="${showOnlyBags ? "border:0" : ""}"><div class="section-label"><span>Bag Samples</span><span>${bags.length}</span></div><div class="sample-list">${bags.length ? bags.map(sample => renderSample(sample, true)).join("") : `<div class="empty-section">No bag samples</div>`}</div></section>
         </div>
         <footer class="project-footer">
-          <span>${completed ? `Out of lab: ${escapeHtml(formatDate(String(project.completedAt).slice(0, 10)))}` : "Completing a project marks all of its samples out of the lab."}</span>
+          <span>${completed ? `Out of lab: ${escapeHtml(formatDate(String(project.completedAt).slice(0, 10)))}` : pending ? "Add the date these samples arrived to move this project into active inventory." : "Completing a project marks all of its samples out of the lab."}</span>
           <div class="project-footer-actions">
             <button class="custody-btn" type="button" data-custody-doc="${escapeHtml(project.id)}">Custody Doc</button>
+            ${pending ? `<button class="arrival-btn" type="button" data-project-arrival="${escapeHtml(project.id)}">Add Arrival Date</button>` : ""}
             <button class="complete-btn ${completed ? "restore" : ""}" type="button" data-project-complete="${escapeHtml(project.id)}" data-completed="${completed}">${completed ? "Restore to Lab" : "Complete / Dispose"}</button>
           </div>
         </footer>
@@ -928,11 +945,15 @@
     document.getElementById("daysFilter").addEventListener("change", event => { state.daysFilter = event.target.value; render(); });
     document.getElementById("daysSort").addEventListener("change", event => { state.daysSort = event.target.value; render(); });
     document.getElementById("refreshBtn").addEventListener("click", () => { state.data = loadData(); render(); });
-    document.getElementById("backBtn").addEventListener("click", () => { if (history.length > 1) history.back(); else location.href = "index.html"; });
     document.getElementById("projects").addEventListener("click", async event => {
       const custodyButton = event.target.closest("[data-custody-doc]");
       if (custodyButton) {
         openCustodyDoc(custodyButton.dataset.custodyDoc);
+        return;
+      }
+      const arrivalButton = event.target.closest("[data-project-arrival]");
+      if (arrivalButton) {
+        openArrivalDialog(arrivalButton.dataset.projectArrival);
         return;
       }
       const button = event.target.closest("[data-project-complete]");
@@ -964,6 +985,9 @@
     const importDialog = document.getElementById("importDialog");
     const importForm = document.getElementById("importForm");
     const pdfInput = document.getElementById("pdfInput");
+    const arrivalDialog = document.getElementById("arrivalDialog");
+    const arrivalForm = document.getElementById("arrivalForm");
+    let activeArrivalProjectId = "";
     const saveImport = document.getElementById("saveImport");
     const custodyDropzone = document.getElementById("custodyDropzone");
     document.getElementById("uploadBtn").addEventListener("click", () => pdfInput.click());
@@ -982,6 +1006,65 @@
       saveImport.disabled = false;
       setImportStatus(message);
       importDialog.showModal();
+    }
+
+    function setArrivalStatus(message, isError = false) {
+      const box = document.getElementById("arrivalStatus");
+      box.textContent = message;
+      box.classList.toggle("error", isError);
+    }
+
+    function openArrivalDialog(projectId) {
+      const project = state.data.homes.find(item => item.id === projectId);
+      if (!project) return;
+      const projectName = project.projectName || project.address || project.projectNumber || "this project";
+      activeArrivalProjectId = projectId;
+      arrivalForm.reset();
+      arrivalForm.elements.labCheckInDate.value = new Date().toISOString().slice(0, 10);
+      document.getElementById("arrivalProjectName").textContent = projectName;
+      setArrivalStatus("Choose the received date, then add it to inventory.");
+      arrivalDialog.showModal();
+    }
+
+    function closeArrivalDialog() {
+      arrivalDialog.close();
+      activeArrivalProjectId = "";
+      arrivalForm.reset();
+    }
+
+    async function saveArrivalDate() {
+      const values = Object.fromEntries(new FormData(arrivalForm));
+      if (!values.labCheckInDate) {
+        setArrivalStatus("Select the date the samples arrived before saving.", true);
+        return;
+      }
+      const previous = localStorage.getItem(storageKey);
+      let stored = {};
+      try { stored = JSON.parse(previous || "{}"); } catch (error) {}
+      if (!Array.isArray(stored.projects)) {
+        setArrivalStatus("The saved project list could not be found. Refresh from Boring Logs, then try again.", true);
+        return;
+      }
+      const storedProject = stored.projects.find(item => item.id === activeArrivalProjectId);
+      if (!storedProject) {
+        setArrivalStatus("This pending project could not be found in storage.", true);
+        return;
+      }
+      saveBackup(previous);
+      storedProject.labCheckInDate = values.labCheckInDate;
+      storedProject.updatedAt = new Date().toISOString();
+      const saveResult = await saveInventoryState(stored);
+      state.data = dataFromStored(stored);
+      state.view = storedProject.county || "All Samples";
+      state.search = "";
+      state.daysFilter = "all";
+      document.getElementById("searchInput").value = "";
+      document.getElementById("daysFilter").value = "all";
+      closeArrivalDialog();
+      render();
+      if (!saveResult.savedLocally && saveResult.savedCloud) {
+        alert("Saved to Supabase. Browser storage is full on this device, so this page is showing the saved cloud data without caching it locally.");
+      }
     }
 
     async function importCustodyFile(file) {
@@ -1023,6 +1106,24 @@
     }
 
     document.getElementById("manualImportBtn").addEventListener("click", () => openManualImportDialog());
+    document.getElementById("closeArrival").addEventListener("click", closeArrivalDialog);
+    document.getElementById("cancelArrival").addEventListener("click", closeArrivalDialog);
+    document.getElementById("saveArrival").addEventListener("click", async () => {
+      const button = document.getElementById("saveArrival");
+      try {
+        button.disabled = true;
+        setArrivalStatus("Saving arrival date...");
+        await saveArrivalDate();
+      } catch (error) {
+        setArrivalStatus(`The arrival date could not be saved: ${error.message || error}`, true);
+      } finally {
+        button.disabled = false;
+      }
+    });
+    arrivalForm.addEventListener("submit", event => {
+      event.preventDefault();
+      document.getElementById("saveArrival").click();
+    });
     pdfInput.addEventListener("change", () => importCustodyFile(pdfInput.files?.[0]));
     custodyDropzone.addEventListener("click", () => pdfInput.click());
     custodyDropzone.addEventListener("keydown", event => {
