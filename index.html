@@ -967,64 +967,128 @@
     }
 
     .soil-graphic {
-      background-color: #fff6cf;
-      background-image: radial-gradient(#bd8d25 1.4px, transparent 1.4px);
-      background-size: 8px 8px;
-    }
-
-    .graphic-sand {
-      background-color: #fff2bd;
-      background-image: radial-gradient(#b77c13 1.3px, transparent 1.3px);
-      background-size: 7px 7px;
-    }
-
-    .graphic-silty-sand {
-      background-color: #fff2bd;
+      background-color: #fff;
       background-image:
-        radial-gradient(#b77c13 1.2px, transparent 1.2px),
-        linear-gradient(45deg, rgba(100, 107, 94, .24) 1px, transparent 1px);
-      background-size: 7px 7px, 10px 10px;
+        radial-gradient(circle, #111 0 1.8px, transparent 2px),
+        radial-gradient(circle, transparent 0 2.4px, #111 2.5px 3px, transparent 3.1px);
+      background-position: 0 0, 5px 5px;
+      background-size: 11px 10px;
     }
 
-    .graphic-clayey-sand {
-      background-color: #fff7df;
-      background-image: repeating-linear-gradient(28deg, transparent 0 9px, rgba(121, 75, 48, .5) 10px 11px);
+    .graphic-gw {
+      background-color: #fff;
+      background-image:
+        radial-gradient(circle at 25% 25%, #111 0 2px, transparent 2.2px),
+        radial-gradient(circle at 72% 36%, #111 0 2.4px, transparent 2.6px),
+        radial-gradient(circle at 42% 76%, #111 0 1.8px, transparent 2px);
+      background-size: 13px 12px;
+    }
+
+    .graphic-gp {
+      background-color: #fff;
+      background-image:
+        radial-gradient(circle, transparent 0 2px, #111 2.1px 2.6px, transparent 2.7px),
+        radial-gradient(circle, transparent 0 1.6px, #111 1.7px 2.2px, transparent 2.3px);
+      background-position: 1px 1px, 8px 6px;
+      background-size: 14px 12px, 14px 12px;
+    }
+
+    .graphic-gm {
+      background-color: #fff;
+      background-image:
+        repeating-linear-gradient(90deg, transparent 0 7px, #111 7px 8px, transparent 8px 13px),
+        radial-gradient(circle, transparent 0 1.5px, #111 1.6px 2px, transparent 2.1px);
+      background-position: 0 0, 3px 4px;
+      background-size: 13px 100%, 10px 10px;
+    }
+
+    .graphic-gc {
+      background-color: #fff;
+      background-image:
+        repeating-linear-gradient(45deg, transparent 0 5px, #111 5px 6px, transparent 6px 11px),
+        repeating-linear-gradient(135deg, transparent 0 8px, #111 8px 9px, transparent 9px 16px),
+        radial-gradient(circle, transparent 0 1.8px, #111 1.9px 2.3px, transparent 2.4px);
+      background-size: 100% 100%, 100% 100%, 12px 10px;
+    }
+
+    .graphic-sw {
+      background-color: #fff;
+      background-image: radial-gradient(circle, #111 0 .9px, transparent 1.1px);
+      background-position: 0 0;
+      background-size: 6px 6px;
+    }
+
+    .graphic-sp {
+      background-color: #fffde8;
+      background-image: radial-gradient(circle, rgba(0, 0, 0, .35) 0 .65px, transparent .85px);
+      background-size: 5px 5px;
+    }
+
+    .graphic-sm {
+      background-color: #fff;
+      background-image:
+        repeating-linear-gradient(90deg, transparent 0 5px, #111 5px 6px, transparent 6px 10px),
+        radial-gradient(circle, #111 0 .75px, transparent .95px);
+      background-size: 10px 100%, 6px 6px;
+    }
+
+    .graphic-sc {
+      background-color: #f1ffff;
+      background-image:
+        repeating-linear-gradient(45deg, transparent 0 4px, #111 4px 5px, transparent 5px 9px),
+        repeating-linear-gradient(135deg, transparent 0 7px, rgba(0, 0, 0, .35) 7px 8px, transparent 8px 13px);
       background-size: 100% 100%;
     }
 
-    .graphic-silt {
-      background-color: #eeeedf;
-      background-image: linear-gradient(45deg, rgba(100, 107, 94, .45) 1px, transparent 1px);
-      background-size: 7px 7px;
+    .graphic-ml {
+      background-color: #fff;
+      background-image: repeating-linear-gradient(90deg, transparent 0 7px, #c74747 7px 8px, transparent 8px 14px);
     }
 
-    .graphic-clay {
-      background-color: #ead7c8;
-      background-image: linear-gradient(0deg, rgba(121, 75, 48, .35) 2px, transparent 2px);
-      background-size: 100% 8px;
+    .graphic-cl {
+      background-color: #fff3e8;
+      background-image: repeating-linear-gradient(45deg, transparent 0 3px, #be4b4b 3px 4px, transparent 4px 7px);
     }
 
-    .graphic-gravel {
-      background-color: #eee8d1;
-      background-image: radial-gradient(ellipse at center, #8c7a52 2.3px, transparent 2.6px);
-      background-size: 11px 9px;
+    .graphic-ol {
+      background-color: #fff;
+      background-image: repeating-linear-gradient(0deg, transparent 0 5px, rgba(0, 0, 0, .45) 5px 6px, transparent 6px 10px);
     }
 
-    .graphic-gravel-sand {
-      background-color: #f7e9bc;
+    .graphic-mh {
+      background-color: #fff;
+      background-image: repeating-linear-gradient(90deg, #111 0 2px, transparent 2px 6px);
+    }
+
+    .graphic-ch {
+      background-color: #fff;
+      background-image: repeating-linear-gradient(135deg, #111 0 2px, transparent 2px 7px);
+    }
+
+    .graphic-oh {
+      background-color: #fff;
       background-image:
-        radial-gradient(ellipse at center, #8c7a52 2.2px, transparent 2.5px),
-        radial-gradient(#b77c13 1.1px, transparent 1.2px);
-      background-size: 12px 10px, 7px 7px;
+        radial-gradient(ellipse at 50% 0, transparent 0 5px, #111 5.2px 5.8px, transparent 6px),
+        radial-gradient(ellipse at 50% 100%, transparent 0 5px, #111 5.2px 5.8px, transparent 6px);
+      background-size: 11px 8px;
     }
 
+    .graphic-pt {
+      background-color: #fff;
+      background-image:
+        linear-gradient(65deg, transparent 0 45%, #111 45% 49%, transparent 49%),
+        linear-gradient(115deg, transparent 0 45%, #111 45% 49%, transparent 49%),
+        radial-gradient(circle, #111 0 .8px, transparent 1px);
+      background-size: 12px 12px, 12px 12px, 12px 12px;
+    }
+
+    .graphic-dual,
     .graphic-mix {
-      background-color: #f4e7bf;
+      background-color: #fff;
       background-image:
-        radial-gradient(#b77c13 1.1px, transparent 1.2px),
-        linear-gradient(45deg, rgba(100, 107, 94, .28) 1px, transparent 1px),
-        linear-gradient(0deg, rgba(121, 75, 48, .20) 2px, transparent 2px);
-      background-size: 7px 7px, 10px 10px, 100% 12px;
+        radial-gradient(circle, #111 0 1px, transparent 1.2px),
+        repeating-linear-gradient(45deg, transparent 0 5px, #111 5px 6px, transparent 6px 11px);
+      background-size: 7px 7px, 100% 100%;
     }
 
     .sample-type {
@@ -2523,7 +2587,8 @@
       <input type="search" value="" placeholder="Search projects or jobs...">
       <div id="desktopBoringList"></div>
       <button class="secondary" type="button" data-add-boring>+ Add Boring</button>
-      <button class="primary" type="button" data-print-boring>Generate PDF</button>
+      <button class="primary" type="button" data-print-boring data-pdf-mode="simple">Simple PDF</button>
+      <button class="secondary" type="button" data-print-boring data-pdf-mode="full">Full PDF</button>
     </aside>
 
     <div class="page-wrap">
@@ -2867,7 +2932,8 @@
               <button class="option-card active" type="button"><span class="check">x</span><span><strong>Firm Letterhead</strong><br><small>Logo + branding header</small></span></button>
               <button class="option-card" type="button"><span></span><span><strong>Minimal</strong><br><small>Clean single-line header</small></span></button>
               <button class="option-card" type="button"><span></span><span><strong>ASTM Standard</strong><br><small>Full field-grid, D1586</small></span></button>
-              <button class="primary" type="button" data-print-boring>Generate PDF</button>
+              <button class="primary" type="button" data-print-boring data-pdf-mode="simple">Simple PDF</button>
+              <button class="secondary" type="button" data-print-boring data-pdf-mode="full">Full PDF</button>
             </div>
           </div>
         </article>
@@ -4062,17 +4128,9 @@ on conflict (id) do nothing;`;
 
     function graphicClass(uscs = "") {
       const code = uscs.toUpperCase();
-      if (code.includes("-")) return "graphic-mix";
-      if (code.startsWith("GW") || code.startsWith("GP")) {
-        if (code.includes("S") || code.includes("M") || code.includes("C")) return "graphic-gravel-sand";
-        return "graphic-gravel";
-      }
-      if (code.startsWith("GM") || code.startsWith("GC")) return "graphic-gravel-sand";
-      if (code === "SM" || code.includes("-SM")) return "graphic-silty-sand";
-      if (code === "SC" || code.includes("-SC")) return "graphic-clayey-sand";
-      if (code.startsWith("SW") || code.startsWith("SP")) return "graphic-sand";
-      if (code.startsWith("ML") || code.startsWith("MH")) return "graphic-silt";
-      if (code.startsWith("CL") || code.startsWith("CH")) return "graphic-clay";
+      const normalized = code.replace(/[^A-Z-]/g, "");
+      if (normalized.includes("-")) return "graphic-dual";
+      if (layerOptions.uscs.includes(normalized)) return `graphic-${normalized.toLowerCase()}`;
       return "graphic-mix";
     }
 
@@ -4294,12 +4352,13 @@ on conflict (id) do nothing;`;
       });
     }
 
-    function pdfFileName() {
+    function pdfFileName(mode = "simple") {
       const project = activeProject();
       const boring = activeBoring();
       const base = [
         project?.number || project?.name || "boring-log",
-        boring?.id || "log"
+        boring?.id || "log",
+        mode === "full" ? "full" : ""
       ].join("-");
       return `${base.replace(/[^a-z0-9-]+/gi, "-").replace(/^-+|-+$/g, "") || "boring-log"}.pdf`;
     }
@@ -4318,11 +4377,12 @@ on conflict (id) do nothing;`;
       window.print();
     }
 
-    async function downloadBoringPdf() {
+    async function downloadBoringPdf(mode = "simple") {
       if (!openBoringWorkspace("output")) return;
       renderOutput();
       await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js", () => Boolean(window.jspdf?.jsPDF));
       const pdf = new jspdf.jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
+      const isFull = mode === "full";
       const project = activeProject();
       const boring = activeBoring();
       const info = boring?.info || blankInfo("");
@@ -4394,8 +4454,10 @@ on conflict (id) do nothing;`;
         const n = sampleN(sample);
         const blows = (sample.blows || []).filter(Boolean).join("/");
         const lines = [`${sample.type || "SS"} @ ${sample.depth || "-"} ft`];
+        if (isFull && sample.recovery) lines.push(`Recovery: ${sample.recovery}`);
         if (blows) lines.push(`Blows: ${blows}`);
         if (blows) lines.push(`N: ${n} ${densityFromN(n)}`);
+        if (isFull && sample.notes) lines.push(`Notes: ${sample.notes}`);
         return lines.join("\n");
       }
 
@@ -4430,28 +4492,123 @@ on conflict (id) do nothing;`;
 
       function drawPattern(code, x, y, w, h) {
         const upper = String(code || "").toUpperCase();
-        pdf.setDrawColor(180, 135, 32);
-        pdf.setFillColor(255, 248, 224);
-        pdf.rect(x + 7, y + 7, w - 14, h - 14, "F");
-        if (upper === "SC" || upper.includes("-SC")) {
-          pdf.setLineWidth(.45);
-          const ix = x + 7;
-          const iy = y + 7;
-          const iw = w - 14;
-          const ih = h - 14;
-          for (let offset = -ih; offset < iw; offset += 8) {
-            const start = Math.max(0, -offset);
-            const end = Math.min(ih, iw - offset);
-            if (end <= start) continue;
-            pdf.line(ix + offset + start, iy + start, ix + offset + end, iy + end);
-          }
-        } else {
-          pdf.setFillColor(184, 126, 20);
-          for (let dotY = y + 10; dotY < y + h - 8; dotY += 7) {
-            for (let dotX = x + 10; dotX < x + w - 8; dotX += 7) {
-              pdf.circle(dotX, dotY, .9, "F");
+        const ix = x + 7;
+        const iy = y + 7;
+        const iw = Math.max(1, w - 14);
+        const ih = Math.max(1, h - 14);
+        const parts = upper.includes("-") ? upper.split("-") : [upper];
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(ix, iy, iw, ih, "F");
+
+        const withClip = (leftX, topY, areaW, areaH, draw) => {
+          pdf.saveGraphicsState();
+          pdf.rect(leftX, topY, areaW, areaH, null);
+          pdf.clip();
+          draw(leftX, topY, areaW, areaH);
+          pdf.restoreGraphicsState();
+        };
+
+        const drawDots = (leftX, topY, areaW, areaH, step = 6, radius = .55, gray = 20) => {
+          pdf.setFillColor(gray, gray, gray);
+          for (let dotY = topY + 3; dotY < topY + areaH; dotY += step) {
+            for (let dotX = leftX + 3; dotX < leftX + areaW; dotX += step) {
+              pdf.circle(dotX, dotY, radius, "F");
             }
           }
+        };
+
+        const drawOpenPebbles = (leftX, topY, areaW, areaH, filled = false) => {
+          pdf.setDrawColor(15, 15, 15);
+          pdf.setFillColor(15, 15, 15);
+          pdf.setLineWidth(.55);
+          const offsets = [[3, 3, 1.5], [10, 6, 2], [6, 12, 1.7], [14, 15, 1.4]];
+          for (let rowY = topY; rowY < topY + areaH + 16; rowY += 16) {
+            for (let rowX = leftX; rowX < leftX + areaW + 18; rowX += 18) {
+              offsets.forEach(([ox, oy, r]) => pdf.circle(rowX + ox, rowY + oy, r, filled ? "F" : "S"));
+            }
+          }
+        };
+
+        const drawSlants = (leftX, topY, areaW, areaH, angle = 45, step = 8, color = [20, 20, 20], lineWidth = .45) => {
+          pdf.setDrawColor(...color);
+          pdf.setLineWidth(lineWidth);
+          if (angle === 135) {
+            for (let offset = 0; offset < areaW + areaH; offset += step) {
+              pdf.line(leftX + offset, topY, leftX + offset - areaH, topY + areaH);
+            }
+          } else {
+            for (let offset = -areaH; offset < areaW; offset += step) {
+              pdf.line(leftX + offset, topY + areaH, leftX + offset + areaH, topY);
+            }
+          }
+        };
+
+        const drawVerticals = (leftX, topY, areaW, areaH, step = 7, color = [20, 20, 20], lineWidth = .45) => {
+          pdf.setDrawColor(...color);
+          pdf.setLineWidth(lineWidth);
+          for (let lineX = leftX + step; lineX < leftX + areaW; lineX += step) {
+            pdf.line(lineX, topY, lineX, topY + areaH);
+          }
+        };
+
+        const drawHorizontals = (leftX, topY, areaW, areaH, step = 6, color = [90, 90, 90], lineWidth = .35) => {
+          pdf.setDrawColor(...color);
+          pdf.setLineWidth(lineWidth);
+          for (let lineY = topY + step; lineY < topY + areaH; lineY += step) {
+            pdf.line(leftX, lineY, leftX + areaW, lineY);
+          }
+        };
+
+        const drawOrganic = (leftX, topY, areaW, areaH) => {
+          pdf.setDrawColor(20, 20, 20);
+          pdf.setLineWidth(.35);
+          for (let rowY = topY + 3; rowY < topY + areaH; rowY += 5) {
+            for (let rowX = leftX + 1; rowX < leftX + areaW; rowX += 8) {
+              pdf.line(rowX, rowY, rowX + 3, rowY + 2);
+              pdf.line(rowX + 3, rowY + 2, rowX + 6, rowY);
+            }
+          }
+        };
+
+        const drawPeat = (leftX, topY, areaW, areaH) => {
+          pdf.setDrawColor(20, 20, 20);
+          pdf.setLineWidth(.35);
+          for (let rowY = topY + 4; rowY < topY + areaH; rowY += 10) {
+            for (let rowX = leftX + 4; rowX < leftX + areaW; rowX += 10) {
+              pdf.line(rowX, rowY, rowX + 4, rowY + 5);
+              pdf.line(rowX + 4, rowY, rowX, rowY + 5);
+              pdf.line(rowX + 2, rowY + 5, rowX + 2, rowY + 8);
+            }
+          }
+        };
+
+        const drawCode = (part, leftX, topY, areaW, areaH) => {
+          if (part === "GW") return drawOpenPebbles(leftX, topY, areaW, areaH, true);
+          if (part === "GP") return drawOpenPebbles(leftX, topY, areaW, areaH, false);
+          if (part === "GM") { drawVerticals(leftX, topY, areaW, areaH, 7); drawOpenPebbles(leftX, topY, areaW, areaH, false); return; }
+          if (part === "GC") { drawSlants(leftX, topY, areaW, areaH, 45, 7); drawSlants(leftX, topY, areaW, areaH, 135, 10); drawOpenPebbles(leftX, topY, areaW, areaH, false); return; }
+          if (part === "SW") return drawDots(leftX, topY, areaW, areaH, 5, .5, 20);
+          if (part === "SP") return drawDots(leftX, topY, areaW, areaH, 4.5, .35, 150);
+          if (part === "SM") { drawVerticals(leftX, topY, areaW, areaH, 6); drawDots(leftX, topY, areaW, areaH, 5, .35, 20); return; }
+          if (part === "SC") return drawSlants(leftX, topY, areaW, areaH, 45, 5);
+          if (part === "ML") return drawVerticals(leftX, topY, areaW, areaH, 7, [190, 65, 65], .35);
+          if (part === "CL") return drawSlants(leftX, topY, areaW, areaH, 45, 4, [190, 65, 65], .3);
+          if (part === "OL") return drawHorizontals(leftX, topY, areaW, areaH, 5, [80, 80, 80], .28);
+          if (part === "MH") return drawVerticals(leftX, topY, areaW, areaH, 4, [20, 20, 20], 1.1);
+          if (part === "CH") return drawSlants(leftX, topY, areaW, areaH, 135, 4, [20, 20, 20], 1.1);
+          if (part === "OH") return drawOrganic(leftX, topY, areaW, areaH);
+          if (part === "PT") return drawPeat(leftX, topY, areaW, areaH);
+          drawDots(leftX, topY, areaW, areaH, 6, .45, 20);
+          drawSlants(leftX, topY, areaW, areaH, 45, 8);
+        };
+
+        if (parts.length > 1) {
+          const halfW = iw / parts.length;
+          parts.forEach((part, index) => {
+            withClip(ix + index * halfW, iy, halfW, ih, (clipX, clipY, clipW, clipH) => drawCode(part, clipX, clipY, clipW, clipH));
+          });
+        } else {
+          withClip(ix, iy, iw, ih, (clipX, clipY, clipW, clipH) => drawCode(parts[0], clipX, clipY, clipW, clipH));
         }
         pdf.setDrawColor(20, 24, 20);
       }
@@ -4489,48 +4646,68 @@ on conflict (id) do nothing;`;
         return rowY + rowH * 6 + 2;
       }
 
-      let y = drawHeader();
       const cols = [42, 44, 34, 344, 76];
       const xs = [left];
       cols.slice(0, -1).forEach(col => xs.push(xs.at(-1) + col));
       const tableHeadH = 28;
-      pdf.setLineWidth(1.2);
-      pdf.rect(left, y, width, tableHeadH);
-      let cursorX = left;
-      cols.forEach((col, index) => {
-        if (index) pdf.line(cursorX, y, cursorX, y + tableHeadH);
-        cursorX += col;
-      });
-      drawCentered("Depth", xs[0], y, cols[0], tableHeadH, 8.5, "bold");
-      drawCentered("Graphic", xs[1], y, cols[1], tableHeadH, 7.6, "bold");
-      drawCentered("USCS", xs[2], y, cols[2], tableHeadH, 8.2, "bold");
-      drawCentered("Material description", xs[3], y, cols[3], tableHeadH, 8.5, "bold");
-      drawCentered("Samples /\nBlows / N", xs[4], y, cols[4], tableHeadH, 8.5, "bold");
-      y += tableHeadH;
+
+      function drawTableHeader(y) {
+        pdf.setLineWidth(1.2);
+        pdf.rect(left, y, width, tableHeadH);
+        let cursorX = left;
+        cols.forEach((col, index) => {
+          if (index) pdf.line(cursorX, y, cursorX, y + tableHeadH);
+          cursorX += col;
+        });
+        drawCentered("Depth", xs[0], y, cols[0], tableHeadH, 8.5, "bold");
+        drawCentered("Graphic", xs[1], y, cols[1], tableHeadH, 7.6, "bold");
+        drawCentered("USCS", xs[2], y, cols[2], tableHeadH, 8.2, "bold");
+        drawCentered("Material description", xs[3], y, cols[3], tableHeadH, 8.5, "bold");
+        drawCentered("Samples /\nBlows / N", xs[4], y, cols[4], tableHeadH, 8.5, "bold");
+        return y + tableHeadH;
+      }
+
+      function drawContinuationHeader() {
+        setFont(9.5, "bold");
+        pdf.text(`Boring Log ${boring?.id || ""} - Continued`, left, top);
+        setFont(8.5, "normal");
+        pdf.text(project?.number || project?.name || "", left, top + 12);
+        return top + 22;
+      }
+
+      let y = drawTableHeader(drawHeader());
 
       const footerReserve = 78;
       const rowModels = layers.map(layer => {
         const layerSamples = samplesInLayer(layer);
-        const materialLines = pdf.splitTextToSize(layerNote(layer), cols[3] - 12);
+        const materialText = isFull ? fullLayerNote(layer) : layerNote(layer);
+        const materialLines = pdf.splitTextToSize(materialText, cols[3] - 12);
         const sampleBlocks = layerSamples.map(sampleText).filter(Boolean);
-        const sampleLines = sampleBlocks.flatMap((block, index) => index ? ["", ...block.split("\n")] : block.split("\n"));
+        const sampleLineGroups = sampleBlocks.map(block => {
+          return block.split("\n").flatMap(lineText => pdf.splitTextToSize(lineText, cols[4] - 10));
+        });
+        const sampleLines = sampleLineGroups.flatMap((block, index) => index ? ["", ...block] : block);
         const baseH = Math.max(52, materialLines.length * 10 + 14, sampleLines.length * 9 + 14);
-        return { layer, sampleBlocks, baseH };
+        return { layer, materialText, sampleLineGroups, baseH };
       });
       const availableRowsHeight = Math.max(140, bottom - footerReserve - y);
       const totalBaseHeight = rowModels.reduce((total, row) => total + row.baseH, 0) || 1;
-      const rowScale = Math.min(1, availableRowsHeight / totalBaseHeight);
+      const rowScale = isFull ? 1 : Math.min(1, availableRowsHeight / totalBaseHeight);
 
       rowModels.forEach(model => {
-        const { layer, sampleBlocks } = model;
+        const { layer, materialText, sampleLineGroups } = model;
         const rowH = Math.max(34, Math.floor(model.baseH * rowScale));
         const sampleFont = Math.max(6.2, 7.8 * rowScale);
         const sampleLineHeight = sampleFont + 1.1;
         const materialFont = Math.max(7, 8.5 * rowScale);
         const materialLineHeight = materialFont + 1.5;
+        if (isFull && y + rowH > bottom - footerReserve) {
+          pdf.addPage();
+          y = drawTableHeader(drawContinuationHeader());
+        }
         pdf.setLineWidth(.9);
         pdf.rect(left, y, width, rowH);
-        cursorX = left;
+        let cursorX = left;
         cols.forEach((col, index) => {
           if (index) pdf.line(cursorX, y, cursorX, y + rowH);
           cursorX += col;
@@ -4538,11 +4715,10 @@ on conflict (id) do nothing;`;
         drawWrappedLimit(`${layer.from}-${layer.to} ft`, xs[0] + 5, y + 15, cols[0] - 8, Math.max(7, 8.5 * rowScale), "normal", 9.5 * rowScale, rowH - 10);
         drawPattern(layer.uscs, xs[1], y, cols[1], rowH);
         drawText(layer.uscs || "-", xs[2] + 5, y + 15, { size: Math.max(7, 8.5 * rowScale), style: "bold" });
-        drawWrappedLimit(layerNote(layer), xs[3] + 6, y + 15, cols[3] - 12, materialFont, "normal", materialLineHeight, rowH - 12);
-        if (sampleBlocks.length) {
+        drawWrappedLimit(materialText, xs[3] + 6, y + 15, cols[3] - 12, materialFont, "normal", materialLineHeight, rowH - 12);
+        if (sampleLineGroups.length) {
           let sampleY = y + sampleFont + 5;
-          sampleBlocks.forEach(block => {
-            const blockLines = block.split("\n");
+          sampleLineGroups.forEach(blockLines => {
             blockLines.forEach((lineText, index) => {
               if (sampleY > y + rowH - 4) return;
               drawText(lineText, xs[4] + 5, sampleY, { size: sampleFont, style: index === 1 || index === 2 ? "bold" : "normal" });
@@ -4556,6 +4732,10 @@ on conflict (id) do nothing;`;
         y += rowH;
       });
 
+      if (isFull && y > bottom - 126) {
+        pdf.addPage();
+        y = drawContinuationHeader();
+      }
       y = Math.min(y + 14, bottom - 58);
       y += drawLabeledLine("Termination", terminationText(), left, y, 10.5, width) + 7;
       const methodText = info.groundwaterMethod === "Not encountered" ? "Not encountered" : [info.groundwaterMethod, info.date].filter(Boolean).join(" - ") || "-";
@@ -4564,7 +4744,55 @@ on conflict (id) do nothing;`;
       pdf.text("Notes:", left, y);
       const notesX = left + pdf.getTextWidth("Notes:") + 5;
       drawWrappedLimit(info.terminationNotes || "-", notesX, y, width - (notesX - left), 10.5, "normal", 12, bottom - y);
-      pdf.save(pdfFileName());
+
+      if (isFull) {
+        const detailEntries = [];
+        layers.forEach(layer => {
+          if (layer.additional) {
+            detailEntries.push({
+              label: `Layer ${layer.from || "-"}-${layer.to || "-"} ft ${layer.uscs || ""}`.trim(),
+              text: layer.additional
+            });
+          }
+        });
+        samples.forEach(sample => {
+          const details = [];
+          if (sample.recovery) details.push(`Recovery: ${sample.recovery}`);
+          if ((sample.blows || []).some(Boolean)) details.push(`Blows: ${(sample.blows || []).filter(Boolean).join("/")}; N: ${sampleN(sample)} ${densityFromN(sampleN(sample))}`);
+          if (sample.notes) details.push(`Notes: ${sample.notes}`);
+          if (details.length) {
+            detailEntries.push({
+              label: `${sample.type || "Sample"} @ ${sample.depth || "-"} ft`,
+              text: details.join("\n")
+            });
+          }
+        });
+
+        if (detailEntries.length) {
+          pdf.addPage();
+          let detailY = top;
+          setFont(13, "bold");
+          pdf.text("Full Layer and Sample Details", left, detailY);
+          detailY += 22;
+          detailEntries.forEach(entry => {
+            const labelLines = pdf.splitTextToSize(entry.label, width);
+            const textLines = pdf.splitTextToSize(entry.text, width);
+            const blockH = labelLines.length * 11 + textLines.length * 10 + 12;
+            if (detailY + blockH > bottom) {
+              pdf.addPage();
+              detailY = top;
+            }
+            setFont(9.5, "bold");
+            pdf.text(labelLines, left, detailY);
+            detailY += labelLines.length * 11;
+            setFont(8.7, "normal");
+            pdf.text(textLines, left, detailY);
+            detailY += textLines.length * 10 + 12;
+          });
+        }
+      }
+
+      pdf.save(pdfFileName(mode));
     }
 
     function updateEntry(target) {
@@ -5093,10 +5321,11 @@ on conflict (id) do nothing;`;
     document.querySelectorAll("[data-print-boring]").forEach(button => {
       button.addEventListener("click", async () => {
         const originalText = button.textContent;
+        const mode = button.dataset.pdfMode || "simple";
         try {
           button.disabled = true;
           button.textContent = "Preparing PDF...";
-          await downloadBoringPdf();
+          await downloadBoringPdf(mode);
         } catch (error) {
           console.error(error);
           alert("The automatic PDF download could not start, so the print dialog will open for the boring log instead.");
