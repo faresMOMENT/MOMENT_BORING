@@ -301,6 +301,46 @@
     const views = ["All Samples", ...countyNames, "Bag Samples", "Arrival Pending", "Completed / Disposed"];
     const state = { data: loadData(), view: "All Samples", search: "", daysFilter: "all", daysSort: "least", importSamples: [], importMetadata: {}, rawPdfText: "" };
 
+    function parseDepthRange(value) {
+      const numbers = String(value ?? "").match(/\d+(?:\.\d+)?/g)?.map(Number) || [];
+      if (!numbers.length || numbers.some(number => !Number.isFinite(number))) return null;
+      const start = numbers[0];
+      const end = numbers.length > 1 ? numbers[1] : start;
+      return { from: Math.min(start, end), to: Math.max(start, end) };
+    }
+
+    function rangesOverlap(first, second) {
+      if (!first || !second) return false;
+      if (first.from === first.to) return first.from >= second.from && first.from <= second.to;
+      if (second.from === second.to) return second.from >= first.from && second.from <= first.to;
+      return first.from < second.to && first.to > second.from;
+    }
+
+    function layerForSampleDepth(layers, depthValue) {
+      const sampleRange = parseDepthRange(depthValue);
+      if (!sampleRange) return null;
+      const candidates = layers.map((layer, index) => ({
+        layer,
+        index,
+        range: parseDepthRange(`${layer.from} to ${layer.to}`)
+      })).filter(candidate => candidate.range);
+      const exact = candidates.find(candidate =>
+        candidate.range.from === sampleRange.from && candidate.range.to === sampleRange.to
+      );
+      if (exact) return exact.layer;
+      if (sampleRange.from === sampleRange.to) {
+        const depth = sampleRange.from;
+        const containing = candidates.filter(candidate => depth >= candidate.range.from && depth < candidate.range.to);
+        if (containing.length) return containing.sort((a, b) => b.range.from - a.range.from || b.index - a.index)[0].layer;
+        return candidates.find(candidate => depth === candidate.range.to)?.layer || null;
+      }
+      return candidates.map(candidate => ({
+        ...candidate,
+        overlap: Math.max(0, Math.min(sampleRange.to, candidate.range.to) - Math.max(sampleRange.from, candidate.range.from))
+      })).filter(candidate => candidate.overlap > 0)
+        .sort((a, b) => b.overlap - a.overlap || b.range.from - a.range.from)[0]?.layer || null;
+    }
+
     function dataFromStored(saved = {}) {
       const projects = Array.isArray(saved.projects) ? saved.projects : [];
       const borings = Array.isArray(saved.borings) ? saved.borings : [];
@@ -308,18 +348,13 @@
         homes: projects.map(project => {
           const projectBorings = borings.filter(boring => boring.projectId === project.id);
           const samples = projectBorings.flatMap(boring => (Array.isArray(boring.samples) ? boring.samples : []).map(sample => {
-            const depth = Number(sample.depth);
-            const layer = (Array.isArray(boring.layers) ? boring.layers : []).find(candidate => {
-              const from = Number(candidate.from);
-              const to = Number(candidate.to);
-              return Number.isFinite(depth) && Number.isFinite(from) && Number.isFinite(to) && depth >= from && depth <= to;
-            });
+            const layer = layerForSampleDepth(Array.isArray(boring.layers) ? boring.layers : [], sample.depth);
             return {
               id: sample.id || `${boring.id}-${sample.number || sample.depth || Math.random()}`,
               sampleNumber: `${boring.id}-${sample.number || "sample"}`,
               boringId: boring.id,
               depth: sample.depth || "",
-              classification: layer?.uscs || sample.uscs || "",
+              classification: sample.uscs || layer?.uscs || "",
               method: sample.type || "Sample",
               remarks: sample.notes || ""
             };

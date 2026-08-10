@@ -4138,6 +4138,25 @@ on conflict (id) do nothing;`;
       return [layerNote(layer), layer.additional].filter(Boolean).join(". ");
     }
 
+    function sampleDescriptionValues(sample) {
+      const layer = layerForDepth(sample.depth) || {};
+      return {
+        color: sample.color || layer.color || "Light brown",
+        moisture: sample.moisture || layer.moisture || "Moist",
+        density: sample.descriptionDensity || layer.density || densityFromN(sampleN(sample)),
+        grain: sample.grain || layer.grain || "Fine to medium Grain"
+      };
+    }
+
+    function sampleNote(sample) {
+      const values = sampleDescriptionValues(sample);
+      return `${values.color} ${materialFromUscs(sampleUscs(sample))}, ${values.moisture}, ${values.density}, ${values.grain}`;
+    }
+
+    function fullSampleNote(sample) {
+      return [sampleNote(sample), sample.notes].filter(Boolean).join(". ");
+    }
+
     function sampleN(sample) {
       const second = Number(sample.blows[1]) || 0;
       const third = Number(sample.blows[2]) || 0;
@@ -4152,27 +4171,93 @@ on conflict (id) do nothing;`;
       return "Very Dense";
     }
 
+    function parseDepthRange(value) {
+      const numbers = String(value ?? "").match(/\d+(?:\.\d+)?/g)?.map(Number) || [];
+      if (!numbers.length || numbers.some(number => !Number.isFinite(number))) return null;
+      const start = numbers[0];
+      const end = numbers.length > 1 ? numbers[1] : start;
+      return { from: Math.min(start, end), to: Math.max(start, end) };
+    }
+
+    function rangesOverlap(first, second) {
+      if (!first || !second) return false;
+      if (first.from === first.to) return first.from >= second.from && first.from <= second.to;
+      if (second.from === second.to) return second.from >= first.from && second.from <= first.to;
+      return first.from < second.to && first.to > second.from;
+    }
+
     function samplesInLayer(layer) {
-      const from = Number(layer.from);
-      const to = Number(layer.to);
-      return samples.filter(sample => {
-        const depth = Number(sample.depth);
-        return Number.isFinite(depth) && depth >= from && depth <= to;
-      });
+      return samples.filter(sample => layerForDepth(sample.depth) === layer);
     }
 
     function layerForDepth(depthValue) {
-      const depth = Number(depthValue);
-      if (!Number.isFinite(depth)) return null;
-      return layers.find(layer => {
-        const from = Number(layer.from);
-        const to = Number(layer.to);
-        return Number.isFinite(from) && Number.isFinite(to) && depth >= from && depth <= to;
-      }) || null;
+      const sampleRange = parseDepthRange(depthValue);
+      if (!sampleRange) return null;
+      const candidates = layers.map((layer, index) => ({
+        layer,
+        index,
+        range: parseDepthRange(`${layer.from} to ${layer.to}`)
+      })).filter(candidate => candidate.range);
+
+      const exact = candidates.find(candidate =>
+        candidate.range.from === sampleRange.from && candidate.range.to === sampleRange.to
+      );
+      if (exact) return exact.layer;
+
+      if (sampleRange.from === sampleRange.to) {
+        const depth = sampleRange.from;
+        const containing = candidates.filter(candidate =>
+          depth >= candidate.range.from && depth < candidate.range.to
+        );
+        if (containing.length) {
+          return containing.sort((a, b) => b.range.from - a.range.from || b.index - a.index)[0].layer;
+        }
+        return candidates.find(candidate => depth === candidate.range.to)?.layer || null;
+      }
+
+      const overlapping = candidates.map(candidate => ({
+        ...candidate,
+        overlap: Math.max(0, Math.min(sampleRange.to, candidate.range.to) - Math.max(sampleRange.from, candidate.range.from))
+      })).filter(candidate => candidate.overlap > 0);
+      return overlapping.sort((a, b) => b.overlap - a.overlap || b.range.from - a.range.from)[0]?.layer || null;
     }
 
     function sampleUscs(sample) {
-      return layerForDepth(sample.depth)?.uscs || "";
+      return sample.uscs || layerForDepth(sample.depth)?.uscs || "";
+    }
+
+    function syncSampleDepth(sample) {
+      const range = parseDepthRange(sample.depth);
+      if (!range) return;
+      // A new depth should inherit classification from its matching layer.
+      // Sample-specific USCS can still be selected afterward as an override.
+      sample.uscs = "";
+      sample.color = "";
+      sample.moisture = "";
+      sample.descriptionDensity = "";
+      sample.grain = "";
+      let layer = layerForDepth(sample.depth);
+      if (!layer && range.from !== range.to) {
+        layer = {
+          from: String(range.from),
+          to: String(range.to),
+          uscs: "SM",
+          color: "Light brown",
+          moisture: "Moist",
+          density: "Medium Dense",
+          grain: "Fine to medium Grain",
+          additional: ""
+        };
+        layers.push(layer);
+        layers.sort((a, b) => Number(a.from) - Number(b.from));
+      }
+      if (layer) {
+        sample.uscs = layer.uscs || "";
+        sample.color = layer.color || "";
+        sample.moisture = layer.moisture || "";
+        sample.descriptionDensity = layer.density || "";
+        sample.grain = layer.grain || "";
+      }
     }
 
     function currentOpenState() {
@@ -4234,7 +4319,7 @@ on conflict (id) do nothing;`;
             <span class="sample-type">${esc(sample.type)}</span>
             <span class="row-main">
               <span class="row-title">#${esc(sample.number)} @ ${esc(sample.depth)} ft <span class="soil">N=${sampleN(sample)}</span></span>
-              <span class="row-desc">${esc(sample.blows.join("/"))} - N=${sampleN(sample)} - ${esc(densityFromN(sampleN(sample)))} - Rec: ${esc(sample.recovery || "-")} - ${esc(sampleUscs(sample) || "-")} ${sample.notes ? "- " + esc(sample.notes) : ""}</span>
+              <span class="row-desc">${esc(sample.blows.join("/"))} - N=${sampleN(sample)} - ${esc(densityFromN(sampleN(sample)))} - Rec: ${esc(sample.recovery || "-")} - ${esc(sampleUscs(sample) || "-")} - ${esc(fullSampleNote(sample))}</span>
             </span>
             <span>v</span>
           </summary>
@@ -4242,15 +4327,28 @@ on conflict (id) do nothing;`;
             <div class="mini-grid sample-grid">
               <div class="field"><label>Sample Type</label><select data-field="type">${selectOptions(["SS", "RC", "SPT", "Bulk", "Grab"], sample.type)}</select></div>
               <div class="field"><label>Sample #</label><input data-field="number" value="${esc(sample.number)}"></div>
-              <div class="field"><label>Depth (ft)</label><input data-field="depth" value="${esc(sample.depth)}"></div>
-              <div class="field"><label>USCS</label><input value="${esc(sampleUscs(sample) || "Set layer depth")}" readonly></div>
+              <div class="field"><label>Depth / Range (ft)</label><input data-field="depth" placeholder="e.g. 0 to 5" value="${esc(sample.depth)}"></div>
+              <div class="field"><label>USCS</label><select data-field="uscs">${selectOptions(layerOptions.uscs, sampleUscs(sample) || "SM")}</select></div>
               <div class="field"><label>Blow 1</label><input data-field="blow0" inputmode="numeric" value="${esc(sample.blows[0])}"></div>
               <div class="field"><label>Blow 2</label><input data-field="blow1" inputmode="numeric" value="${esc(sample.blows[1])}"></div>
               <div class="field"><label>Blow 3</label><input data-field="blow2" inputmode="numeric" value="${esc(sample.blows[2])}"></div>
               <div class="field"><label>N-value</label><input value="${sampleN(sample)}" readonly></div>
               <div class="field"><label>Recovery</label><input data-field="recovery" placeholder="e.g. 12 in / 18 in" value="${esc(sample.recovery)}"></div>
-              <div class="field"><label>Density</label><input value="${esc(densityFromN(sampleN(sample)))}" readonly></div>
-              <div class="field wide"><label>Sample Notes</label><textarea data-field="notes" placeholder="Moisture, odor, refusal, poor recovery, roots, gravel, debris, color changes...">${esc(sample.notes)}</textarea></div>
+              <div class="field"><label>N-value Density</label><input value="${esc(densityFromN(sampleN(sample)))}" readonly></div>
+            </div>
+            <div class="mini-grid">
+              <div class="field"><label>Description Color</label><select data-field="color">${selectOptions(layerOptions.color, sampleDescriptionValues(sample).color)}</select></div>
+              <div class="field"><label>Description Moisture</label><select data-field="moisture">${selectOptions(layerOptions.moisture, sampleDescriptionValues(sample).moisture)}</select></div>
+              <div class="field"><label>Description Density</label><select data-field="descriptionDensity">${selectOptions(layerOptions.density, sampleDescriptionValues(sample).density)}</select></div>
+              <div class="field"><label>Grain / Plasticity</label><select data-field="grain">${selectOptions(layerOptions.grain.concat(sampleDescriptionValues(sample).grain).filter((v, i, a) => a.indexOf(v) === i), sampleDescriptionValues(sample).grain)}</select></div>
+            </div>
+            <div class="field">
+              <label>Auto-generated sample description</label>
+              <div class="generated-note">${esc(sampleNote(sample))}</div>
+            </div>
+            <div class="field">
+              <label>Additional sample notes</label>
+              <textarea data-field="notes" placeholder="Add odor, refusal, poor recovery, roots, gravel, debris, inclusions, or other observations...">${esc(sample.notes)}</textarea>
             </div>
             <button class="danger" type="button" data-delete-sample="${index}">Delete Sample</button>
           </div>
@@ -4457,7 +4555,6 @@ on conflict (id) do nothing;`;
         if (isFull && sample.recovery) lines.push(`Recovery: ${sample.recovery}`);
         if (blows) lines.push(`Blows: ${blows}`);
         if (blows) lines.push(`N: ${n} ${densityFromN(n)}`);
-        if (isFull && sample.notes) lines.push(`Notes: ${sample.notes}`);
         return lines.join("\n");
       }
 
@@ -4504,6 +4601,9 @@ on conflict (id) do nothing;`;
           pdf.saveGraphicsState();
           pdf.rect(leftX, topY, areaW, areaH, null);
           pdf.clip();
+          // jsPDF keeps the clipping rectangle as the active path. Clear it so
+          // the first filled dot/pebble does not fill the entire graphic cell.
+          pdf.discardPath();
           draw(leftX, topY, areaW, areaH);
           pdf.restoreGraphicsState();
         };
@@ -4680,7 +4780,10 @@ on conflict (id) do nothing;`;
       const footerReserve = 78;
       const rowModels = layers.map(layer => {
         const layerSamples = samplesInLayer(layer);
-        const materialText = isFull ? fullLayerNote(layer) : layerNote(layer);
+        const sampleDescriptions = isFull
+          ? layerSamples.map(sample => `Sample @ ${sample.depth || "-"} ft: ${fullSampleNote(sample)}`)
+          : [];
+        const materialText = [isFull ? fullLayerNote(layer) : layerNote(layer), ...sampleDescriptions].filter(Boolean).join("\n\n");
         const materialLines = pdf.splitTextToSize(materialText, cols[3] - 12);
         const sampleBlocks = layerSamples.map(sampleText).filter(Boolean);
         const sampleLineGroups = sampleBlocks.map(block => {
@@ -4759,7 +4862,6 @@ on conflict (id) do nothing;`;
           const details = [];
           if (sample.recovery) details.push(`Recovery: ${sample.recovery}`);
           if ((sample.blows || []).some(Boolean)) details.push(`Blows: ${(sample.blows || []).filter(Boolean).join("/")}; N: ${sampleN(sample)} ${densityFromN(sampleN(sample))}`);
-          if (sample.notes) details.push(`Notes: ${sample.notes}`);
           if (details.length) {
             detailEntries.push({
               label: `${sample.type || "Sample"} @ ${sample.depth || "-"} ft`,
@@ -4809,6 +4911,7 @@ on conflict (id) do nothing;`;
         } else {
           samples[index][field] = target.value;
         }
+        if (field === "depth") syncSampleDepth(samples[index]);
       }
 
       saveState();
@@ -5511,6 +5614,10 @@ on conflict (id) do nothing;`;
         blows: ["", "", ""],
         recovery: "",
         uscs: "",
+        color: "",
+        moisture: "",
+        descriptionDensity: "",
+        grain: "",
         notes: ""
       });
       saveState();
