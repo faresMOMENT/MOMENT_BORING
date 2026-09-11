@@ -104,6 +104,7 @@ body.has-moment-menu :is(
 body.has-moment-menu :is(label,legend) { color:#3f4943; }
 body.has-moment-menu :is(input,select,textarea) { color:#171c19; }
 body.has-moment-menu :is(input,textarea)::placeholder { color:#657068;opacity:1; }
+.job-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:16px 20px;border-bottom:1px solid #bdc7c0;background:#f5f7f5}.job-details[hidden]{display:none}.job-detail{padding:10px;border:1px solid #cbd3cd;border-radius:9px;background:#fff}.job-detail.wide{grid-column:1/-1}.job-detail>span{display:block;color:#465049;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}.job-detail>strong{display:block;margin-top:4px;color:#171c19;font-size:13px;line-height:1.5;white-space:pre-wrap}.job-person{display:flex;align-items:center;gap:6px;margin-top:4px}.job-person i{width:9px;height:9px;flex:0 0 auto;border-radius:50%}@media(max-width:700px){.job-details{grid-template-columns:1fr;padding:14px}.job-detail.wide{grid-column:auto}}
 
 /* Motion-free interface: all pages and shared navigation change immediately. */
 html { scroll-behavior:auto !important; }
