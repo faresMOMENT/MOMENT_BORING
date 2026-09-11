@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sign in · Moment Engineering</title>
+  <link rel="stylesheet" href="worker-login.css">
+  <script defer src="worker-login.js"></script>
+</head>
+<body>
+  <main class="login-shell">
+    <section class="brand-panel">
+      <div class="brand"><img class="mark" src="moment-logo.png" alt="Moment Engineering logo"><span>Moment Engineering</span></div>
+      <div class="welcome"><span class="eyebrow">Field workspace</span><h1>One place for project and field work.</h1><p>Administrators can sign in with their program account. Team members can open their assigned workspace with a code.</p></div>
+      <small>Access is based on the profile and permissions assigned by an administrator.</small>
+    </section>
+    <section class="login-panel">
+      <div class="login-card">
+        <span class="eyebrow">Welcome back</span>
+        <h2>Sign in</h2>
+        <p id="modeDescription">Use your administrator or program account.</p>
+        <div class="mode-tabs" role="tablist" aria-label="Sign-in method">
+          <button class="mode-tab active" type="button" data-login-mode="account" role="tab" aria-selected="true">Program account</button>
+          <button class="mode-tab" type="button" data-login-mode="code" role="tab" aria-selected="false">Employee code</button>
+        </div>
+        <form id="accountLoginForm">
+          <label>Email address<input id="accountEmail" type="email" autocomplete="username" required></label>
+          <label>Password<input id="accountPassword" type="password" autocomplete="current-password" required></label>
+          <button class="primary-button" type="submit">Sign in as administrator</button>
+          <button class="text-button" id="toggleAccountAction" type="button">Create a new program account</button>
+          <span class="status" id="accountStatus" aria-live="polite"></span>
+        </form>
+        <form id="codeLoginForm" hidden>
+          <label>Employee access code<input id="accessCode" type="password" inputmode="numeric" autocomplete="one-time-code" minlength="4" required></label>
+          <button class="primary-button" type="submit">Continue with code</button>
+          <button class="logout-button" id="fullLogoutButton" type="button">Fully log out of workplace</button>
+          <span class="status" id="loginStatus" aria-live="polite"></span>
+          <div id="ownerRecovery"></div>
+        </form>
+        <a class="back" href="dashboard.html">Return to current profile</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

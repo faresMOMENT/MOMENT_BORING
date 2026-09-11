@@ -1,0 +1,4238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moment Engineering Lab Work</title>
+  <style>
+    :root {
+      --bg: #f6f6f3;
+      --ink: #101820;
+      --muted: #8a9299;
+      --line: #e8e8e4;
+      --panel: #ffffff;
+      --accent: #22b99a;
+      --accent-2: #ff7a18;
+      --soft: #e9faf6;
+      --shadow: 0 10px 26px rgba(16, 24, 32, 0.07);
+      --danger: #ff4545;
+      --warning: #ff8a00;
+      --purple: #7b3ff3;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.4;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    .app-tabs { position: relative; z-index: 100; display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 12px 16px; background: #fff; border-bottom: 1px solid #e6e6e2; font-size: 15px; line-height: 1.2; }
+    .app-logo { width: 170px; height: 42px; flex: 0 0 auto; object-fit: contain; object-position: left center; margin-right: 6px; }
+    .app-tabs a { flex: 0 0 auto; padding: 10px 13px; border: 1px solid transparent; border-radius: 8px; color: #2f6f58; text-decoration: none; font-weight: 500; white-space: nowrap; }
+    .app-tabs a:hover { background: #f0f7f3; color: #205b46; }
+    .app-tabs a.active { border-color: #b9d2c6; background: #f4faf7; color: #195a42; }
+    .laptop-only-message { display: none; }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: block;
+    }
+
+    /* Keep the working interface calm and readable without heavy bold text. */
+    .app-shell,
+    .app-shell * {
+      font-weight: 400 !important;
+    }
+    .app-shell :is(h1, h2, h3, h4, strong, label, button, .county-tab, .section-label, .status-pill) {
+      font-weight: 500 !important;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      background: #ffffff;
+      border-right: 1px solid var(--line);
+      color: var(--ink);
+      padding: 22px 16px;
+      box-shadow: 7px 0 24px rgba(16, 24, 32, 0.035);
+    }
+
+    .brand h1 {
+      color: var(--ink);
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    .brand p {
+      margin: 8px 0 20px;
+      color: var(--muted);
+      line-height: 1.35;
+      font-size: 12px;
+    }
+
+    .sidebar-divider {
+      height: 1px;
+      margin: 0 0 14px;
+      background: var(--line);
+    }
+
+    .county-tabs {
+      display: grid;
+      gap: 7px;
+    }
+
+    .county-tab {
+      width: 100%;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
+      color: #5f686f;
+      padding: 9px 10px;
+      cursor: pointer;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .county-tab.active {
+      background: var(--soft);
+      border-color: #bceee4;
+      color: #0f8d78;
+    }
+
+    .county-tab-count {
+      min-width: 28px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #f0f0ed;
+      color: #6f777d;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .county-tab.active .county-tab-count {
+      background: #ffffff;
+      color: #0f8d78;
+    }
+
+    .sidebar-actions {
+      display: grid;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .sidebar-actions .btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 24px 28px 72px;
+      display: grid;
+      gap: 20px;
+      align-content: start;
+      min-width: 0;
+    }
+
+    .pipeline-tabs-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 7px 24px rgba(16, 24, 32, .045);
+    }
+
+    .pipeline-tabs-bar .county-tabs {
+      display: flex;
+      flex: 1 1 auto;
+      flex-wrap: wrap;
+      gap: 5px;
+      min-width: 0;
+      overflow: visible;
+      padding: 1px;
+    }
+
+    .pipeline-tabs-bar .county-tab {
+      width: auto;
+      min-width: max-content;
+      min-height: 38px;
+      gap: 8px;
+      padding: 7px 11px;
+      border-radius: 9px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .pipeline-tabs-bar .county-tab-count {
+      min-width: 23px;
+      padding: 2px 6px;
+      font-size: 10px;
+    }
+
+    .pipeline-tabs-bar .btn { flex: 0 0 auto; min-height: 38px; }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .topbar p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .btn {
+      background: #171717;
+      color: white;
+      border: 0;
+      border-radius: 999px;
+      padding: 9px 18px;
+      text-decoration: none;
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .btn.secondary {
+      background: #fff;
+      color: #17201d;
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    .project-status-btn {
+      justify-content: center;
+      background: #b94434;
+      color: #fff;
+      border: 0;
+    }
+
+    .project-status-btn.report-ready {
+      background: #2f7d4a;
+    }
+
+    .nav-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(150px, 1fr));
+      gap: 14px;
+    }
+
+    .metric {
+      border: 0;
+      border-radius: 14px;
+      background: #fff;
+      padding: 18px 20px 16px;
+      box-shadow: var(--shadow);
+      min-height: 122px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 7px;
+      font-size: 29px;
+      line-height: 1;
+    }
+
+    .metric small {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 15px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+    }
+
+    .panel {
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 0 0 16px;
+      border-bottom: 0;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(160px, 170px) minmax(160px, 170px) minmax(190px, 220px);
+      gap: 12px;
+      align-items: center;
+    }
+
+    .panel-header h2 {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    .notice-strip {
+      min-height: 43px;
+      border: 1px solid #ffd287;
+      border-radius: 14px;
+      background: #fff8e8;
+      color: #ff7a18;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .notice-strip summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .notice-strip summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .notice-strip summary::after {
+      content: "v";
+      color: #a7a7a2;
+    }
+
+    .notice-strip details[open] summary::after {
+      content: "^";
+    }
+
+    .notice-projects {
+      display: grid;
+      gap: 7px;
+      margin-top: 11px;
+      padding-top: 11px;
+      border-top: 1px solid #f0d59f;
+    }
+
+    .notice-project {
+      width: 100%;
+      border: 1px solid #efd39d;
+      border-radius: 9px;
+      background: #fff;
+      color: var(--ink);
+      padding: 9px 11px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .notice-project strong,
+    .notice-project span {
+      display: block;
+    }
+
+    .notice-project span {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .notice-projects .btn {
+      justify-self: start;
+    }
+
+    .notice-project-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 11px;
+      color: var(--ink);
+      background: #fff;
+      min-height: 39px;
+    }
+
+    textarea {
+      min-width: 220px;
+      min-height: 58px;
+      resize: vertical;
+    }
+
+    .compact-input {
+      min-width: 95px;
+      padding: 7px 8px;
+      min-height: 34px;
+      font-size: 12px;
+    }
+
+    .home-stack {
+      --home-grid-columns: 24px minmax(220px, 2.2fr) minmax(140px, .8fr) minmax(120px, .8fr) minmax(92px, .7fr) minmax(150px, 1fr) minmax(150px, 1fr) minmax(120px, .8fr) 76px 90px 110px 88px;
+      display: grid;
+      gap: 0;
+      padding: 0;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .home-list-header {
+      display: grid;
+      grid-template-columns: var(--home-grid-columns);
+      gap: 14px;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 14px;
+      background: #ecece8;
+      color: #9a9b9b;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .7px;
+      overflow: hidden;
+      text-transform: uppercase;
+    }
+
+    .home-list-header span {
+      min-width: 0;
+      white-space: nowrap;
+    }
+
+    .home-card {
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      border-radius: 0;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .home-card.expanded {
+      border-left: 3px solid var(--accent);
+    }
+
+    .list-filters {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .upcoming-list {
+      --upcoming-grid-columns: minmax(220px, 1.3fr) minmax(180px, 1fr) minmax(140px, .7fr) minmax(160px, 1fr) minmax(190px, 1fr) auto;
+      display: grid;
+      gap: 0;
+      padding: 0;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .upcoming-list-header {
+      display: grid;
+      grid-template-columns: var(--upcoming-grid-columns);
+      gap: 14px;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 14px;
+      background: #ecece8;
+      color: #9a9b9b;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .7px;
+      overflow: hidden;
+      text-transform: uppercase;
+    }
+
+    .upcoming-list-header span {
+      min-width: 0;
+      white-space: nowrap;
+    }
+
+    .upcoming-project {
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      border-radius: 0;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .upcoming-header {
+      display: grid;
+      grid-template-columns: var(--upcoming-grid-columns);
+      gap: 14px;
+      align-items: center;
+      padding: 12px 14px;
+    }
+
+    .upcoming-title strong {
+      display: block;
+      font-size: 14px;
+      line-height: 1.3;
+    }
+
+    .upcoming-title span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .upcoming-body {
+      border-top: 1px solid var(--line);
+      background: #fff;
+      padding: 20px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .upcoming-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .upcoming-progress {
+      font-weight: 700;
+    }
+
+    .upcoming-setup {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .setup-chip {
+      width: 22px;
+      height: 22px;
+      flex: 0 0 22px;
+      border-radius: 999px;
+      border: 2px solid var(--dot-color);
+      background: #fff;
+    }
+
+    .setup-chip.done {
+      background: var(--dot-color);
+    }
+
+    .progress-cell {
+      min-width: 130px;
+    }
+
+    .progress-bar {
+      height: 9px;
+      border-radius: 999px;
+      background: #e5ebe6;
+      overflow: hidden;
+      margin: 7px 0;
+    }
+
+    .progress-bar span {
+      display: block;
+      height: 100%;
+      background: var(--accent);
+    }
+
+    .progress-dots, .legend-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .status-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      border: 2px solid var(--dot-color);
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .status-dot.done {
+      background: var(--dot-color);
+    }
+
+    .legend-row {
+      margin: 14px 14px 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fbfcfa;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 999px;
+      background: var(--dot-color);
+      display: inline-block;
+    }
+
+    .upcoming-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 14px 14px 0;
+    }
+
+    .upcoming-title-row h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .danger-btn {
+      border: 0;
+      border-radius: 6px;
+      background: #6f2d2a;
+      color: white;
+      padding: 10px 13px;
+      min-height: 40px;
+      cursor: pointer;
+    }
+
+    .home-header {
+      display: grid;
+      grid-template-columns: var(--home-grid-columns);
+      gap: 14px;
+      padding: 11px 14px;
+      background: #fff;
+      align-items: center;
+      min-height: 50px;
+      cursor: pointer;
+    }
+
+    .home-card.expanded .home-header {
+      background: #eefcfa;
+    }
+
+    .home-title h3 {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    .home-title p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .row-cell {
+      color: #6f777d;
+      font-size: 13px;
+      min-width: 0;
+    }
+
+    .row-cell strong {
+      color: var(--ink);
+    }
+
+    .row-toggle {
+      width: 22px;
+      height: 22px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .status-pill, .priority-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 19px;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+      border: 0;
+    }
+
+    button.status-pill {
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .status-pill.status-upcoming {
+      color: var(--purple);
+      background: #f0e9ff;
+    }
+
+    .status-pill.status-report {
+      color: #a337bc;
+      background: #fbe8ff;
+    }
+
+    .status-pill.status-testing {
+      color: #ff6d00;
+      background: #fff2e2;
+    }
+
+    .status-pill.status-completed {
+      color: #5d6970;
+      background: #edf1f2;
+    }
+
+    .priority-pill {
+      color: var(--danger);
+      background: #ffecec;
+    }
+
+    .mini-meter {
+      display: grid;
+      gap: 5px;
+    }
+
+    .mini-dots {
+      display: flex;
+      gap: 4px;
+      min-height: 10px;
+    }
+
+    .mini-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 1px solid #e0e3e1;
+      background: #fff;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .mini-dot.document-done {
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .mini-dot.status-done {
+      border-color: var(--test-color);
+      background: var(--test-color);
+    }
+
+    .mini-dot.status-in-progress {
+      border-color: var(--test-color);
+      background: var(--test-color);
+      opacity: .35;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .55);
+    }
+
+    .mini-dot.status-hold {
+      border-color: var(--danger);
+      background: var(--danger);
+    }
+
+    .mini-dot.status-not-started,
+    .mini-dot.document-open {
+      border-color: #dfe3e0;
+      background: #fff;
+    }
+
+    .mini-track {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #6f777d;
+      font-size: 10px;
+    }
+
+    .mini-track::before {
+      content: "";
+      width: 52px;
+      height: 2px;
+      background: linear-gradient(to right, #20b990 var(--progress), #e4e7e5 var(--progress));
+      display: block;
+    }
+
+    .due-overdue {
+      color: var(--danger);
+      font-weight: 800;
+    }
+
+    .due-warning-text {
+      color: var(--warning);
+      font-weight: 800;
+    }
+
+    .due-ok {
+      color: #159b54;
+      font-weight: 800;
+    }
+
+    .due-date-cell {
+      font-weight: 800;
+    }
+
+    .days-hot {
+      color: var(--danger);
+      background: #ffecec;
+      border-radius: 5px;
+      padding: 2px 5px;
+      font-weight: 800;
+    }
+
+    .status-legend {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      padding: 10px 14px;
+      color: #6f777d;
+      font-size: 12px;
+      box-shadow: 0 7px 18px rgba(16, 24, 32, 0.04);
+    }
+
+    .status-legend strong {
+      color: var(--ink);
+      font-size: 12px;
+    }
+
+    .legend-swatch {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      border: 1px solid #dfe3e0;
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+
+    .legend-swatch.done { background: #2f80ed; border-color: #2f80ed; }
+    .legend-swatch.progress { background: #bfdcff; border-color: #2f80ed; }
+    .legend-swatch.hold { background: var(--danger); border-color: var(--danger); }
+    .legend-swatch.open { background: #fff; }
+
+    .test-color-list {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .progress-block {
+      display: grid;
+      gap: 7px;
+      align-content: center;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .progress-meta strong {
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .progress-track {
+      height: 12px;
+      border: 1px solid #c9d4cc;
+      border-radius: 999px;
+      background: #eef3ef;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: var(--progress);
+      background: var(--accent);
+    }
+
+    .progress-block.due-warning .progress-meta strong,
+    .progress-block.due-warning .progress-meta span {
+      color: #a63a2a;
+    }
+
+    .progress-block.due-warning .progress-track {
+      border-color: #d9a39a;
+      background: #f7e2de;
+    }
+
+    .progress-block.due-warning .progress-fill {
+      background: #c8412f;
+    }
+
+    .expand-btn {
+      border: 1px solid #ccd6cf;
+      border-radius: 6px;
+      background: #e5ebe6;
+      color: #17201d;
+      padding: 9px 12px;
+      min-height: 38px;
+      min-width: 86px;
+      cursor: pointer;
+    }
+
+    .home-card-actions {
+      display: grid;
+      gap: 8px;
+      align-content: center;
+    }
+
+    .delete-home-btn {
+      border: 1px solid #d7aaa2;
+      border-radius: 6px;
+      background: #fff1ef;
+      color: #9d2f22;
+      padding: 7px 10px;
+      min-height: 32px;
+      min-width: 0;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .home-body {
+      display: grid;
+      gap: 22px;
+      padding: 24px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .detail-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(520px, .9fr);
+      gap: 24px;
+      align-items: start;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .detail-hero h2 {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+
+    .detail-meta {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .detail-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .detail-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(100px, 1fr));
+      gap: 24px;
+      align-items: start;
+    }
+
+    .detail-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .7px;
+      text-transform: uppercase;
+    }
+
+    .detail-stat strong {
+      display: inline-block;
+      margin-top: 5px;
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .detail-stat small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .detail-stat::after {
+      content: "";
+      display: block;
+      height: 4px;
+      margin-top: 10px;
+      background: linear-gradient(to right, #20b990 var(--progress), #e6e6e1 var(--progress));
+    }
+
+    .detail-status-stack {
+      display: grid;
+      gap: 9px;
+    }
+
+    .danger-soft {
+      background: #ffe9e9;
+      color: var(--danger);
+      border-color: #ffd4d4;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .span-2 { grid-column: span 2; }
+    .span-3 { grid-column: 1 / -1; }
+
+    label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .custody-tests {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 8px;
+    }
+
+    .sample-entry {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(130px, 1fr));
+      gap: 10px;
+      align-items: end;
+    }
+
+    .section-label {
+      margin: 0 0 8px;
+      color: #34413c;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 9px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+    }
+
+    th {
+      background: #eef3ef;
+      color: #26342f;
+      font-size: 12px;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .test-name strong {
+      display: block;
+      line-height: 1.3;
+    }
+
+    .test-name span, .sample-context {
+      color: var(--muted);
+      display: block;
+      font-size: 12px;
+      margin-top: 4px;
+      line-height: 1.35;
+    }
+
+    .required-pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 3px 8px;
+      background: var(--soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .done-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 400;
+      font-size: 13px;
+    }
+
+    .done-check input {
+      width: 17px;
+      height: 17px;
+      min-height: auto;
+    }
+
+    .empty {
+      border: 1px dashed #c7cec6;
+      border-radius: 8px;
+      padding: 24px;
+      color: var(--muted);
+      text-align: center;
+      background: #fbfcfa;
+      margin: 16px;
+    }
+
+    .inline-empty {
+      border: 1px dashed #c7cec6;
+      border-radius: 8px;
+      padding: 16px;
+      color: var(--muted);
+      background: #fbfcfa;
+      font-size: 13px;
+    }
+
+    .worksheet {
+      display: grid;
+      gap: 10px;
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+    }
+
+    .worksheet.collapsed .table-wrap {
+      display: none;
+    }
+
+    .worksheet.collapsed .sieve-graph-wrap {
+      display: none;
+    }
+
+    .worksheet-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .worksheet-header h4 {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .worksheet-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .small-btn {
+      border: 1px solid #ccd6cf;
+      border-radius: 6px;
+      background: #e5ebe6;
+      color: #17201d;
+      padding: 8px 10px;
+      min-height: 34px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .md-table th, .md-table td {
+      min-width: 115px;
+    }
+
+    .md-table th:first-child, .md-table td:first-child {
+      min-width: 220px;
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: #fff;
+    }
+
+    .md-table th:first-child {
+      background: #eef3ef;
+    }
+
+    .section-row td {
+      background: #26342f;
+      color: #fff;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .calc-cell {
+      display: block;
+      min-height: 34px;
+      padding: 8px;
+      border-radius: 6px;
+      background: #f4f7f4;
+      color: #26342f;
+      font-size: 12px;
+    }
+
+    .sieve-graph-wrap {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfa;
+      padding: 12px;
+      overflow-x: auto;
+    }
+
+    .sieve-graph {
+      width: 100%;
+      min-width: 640px;
+      height: auto;
+      display: block;
+    }
+
+    .sieve-graph text {
+      fill: #34413c;
+      font-size: 11px;
+    }
+
+    .sieve-graph .axis-label {
+      font-weight: 700;
+      fill: #26342f;
+    }
+
+    .sieve-graph .grid-line {
+      stroke: #d8ddd2;
+      stroke-width: 1;
+    }
+
+    .sieve-graph .axis-line {
+      stroke: #26342f;
+      stroke-width: 1.4;
+    }
+
+    .sieve-graph .curve-line {
+      fill: none;
+      stroke: #62a4ff;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .sieve-graph .curve-point {
+      fill: #62a4ff;
+      stroke: #fff;
+      stroke-width: 2;
+    }
+
+    .sieve-graph-empty {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 24px;
+      text-align: center;
+    }
+
+    @media (max-width: 800px) {
+      .app-shell { display: block; }
+      .sidebar {
+        position: static;
+        height: auto;
+        padding: 22px 16px;
+      }
+      .brand h1 { font-size: 26px; }
+      .brand p { font-size: 15px; }
+      .county-tab { font-size: 18px; }
+      .page { padding: 16px; }
+      .panel-header, .home-header, .upcoming-header { grid-template-columns: 1fr; }
+      .form-grid, .sample-entry { grid-template-columns: 1fr; }
+      .span-2, .span-3 { grid-column: span 1; }
+      .expand-btn { width: 100%; }
+      .pipeline-tabs-bar { align-items: stretch; flex-direction: column; }
+      .pipeline-tabs-bar .county-tabs { width: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+      .pipeline-tabs-bar .btn { width: 100%; justify-content: center; }
+    }
+
+    @media (max-width: 1280px) {
+      .summary-strip { grid-template-columns: repeat(3, 1fr); }
+      .home-header {
+        overflow-x: auto;
+      }
+      .home-list-header { overflow-x: auto; }
+      .detail-hero { grid-template-columns: 1fr; }
+      .upcoming-list {
+        --upcoming-grid-columns: minmax(220px, 1fr) minmax(160px, .8fr) minmax(140px, .7fr) minmax(190px, 1fr) auto;
+      }
+      .upcoming-list-header > :nth-child(4),
+      .upcoming-header > :nth-child(4) { display: none; }
+    }
+
+    @media (max-width: 760px) {
+      body > :not(.laptop-only-message):not(.app-tabs):not(.moment-menu-toggle) { display: none !important; }
+      .app-tabs { position: relative; padding: 8px; gap: 2px; font-size: 13px; }
+      .app-tabs a { padding: 9px 10px; }
+      .laptop-only-message { min-height: calc(100vh - 57px); display: grid; place-items: center; padding: 28px; background: #fff; color: #202722; text-align: center; font-size: 18px; font-weight: 400; }
+      .page { padding: 16px; }
+      .topbar, .nav-actions { align-items: flex-start; }
+      .summary-strip { grid-template-columns: 1fr; }
+      .panel-header { grid-template-columns: 1fr; }
+      .home-list-header { display: none; }
+      .home-header { grid-template-columns: 24px 1fr; }
+      .home-header > :nth-child(n+4) { display: none; }
+      .detail-stats { grid-template-columns: repeat(2, 1fr); }
+      .upcoming-list-header { display: none; }
+      .upcoming-header { grid-template-columns: 1fr; }
+      .upcoming-header > :nth-child(n) { display: grid; }
+    }
+
+    body.embedded {
+      padding: 0;
+      background: transparent;
+    }
+
+    body.embedded .app-shell {
+      display: block;
+    }
+
+    body.embedded .sidebar {
+      display: none;
+    }
+
+    body.embedded .page {
+      padding: 0;
+    }
+
+    body.embedded .topbar {
+      display: none;
+    }
+
+    /* Higher-contrast pipeline treatment for faster scanning. */
+    :root {
+      --bg: #f2f4f1;
+      --ink: #202923;
+      --muted: #5f6b64;
+      --line: #cfd8d1;
+      --soft: #dcefe7;
+      --shadow: 0 8px 24px rgba(25, 42, 32, .08);
+    }
+    .pipeline-tabs-bar { border-color:#c4cfc7; box-shadow:0 6px 18px rgba(25,42,32,.07); }
+    .pipeline-tabs-bar .county-tab { border-color:#d1d9d3; background:#f3f5f3; color:#46524b; }
+    .pipeline-tabs-bar .county-tab:hover { border-color:#90aa9d; background:#e7eee9; color:#244d3d; }
+    .pipeline-tabs-bar .county-tab.active { border-color:#397a62; background:#397a62; color:#fff; }
+    .pipeline-tabs-bar .county-tab-count { background:#dfe5e1; color:#455149; }
+    .pipeline-tabs-bar .county-tab.active .county-tab-count { background:#fff; color:#2d6c55; }
+    .metric { border:1px solid #d4dcd6; }
+    .metric span,.metric small,.home-title p,.row-cell { color:#5e6962; }
+    .notice-strip { border-color:#e2b85f; background:#fff6df; color:#9b5a10; }
+    .panel-header input,.panel-header select { border-color:#c6d0c8; background:#fff; color:#28322c; }
+    .home-card { border-color:#cbd4cd; box-shadow:0 4px 14px rgba(28,43,34,.055); }
+    .home-header { background:#fff; }
+    .home-card.expanded .home-header { background:#e5f2ec; }
+    .home-title h3,.row-cell strong { color:#202923; }
+    .status-legend { border-color:#ccd5ce; background:#fff; color:#4e5a53; }
+    .app-shell .home-list-header,.app-shell .home-list-header span { color:#4f5b54; font-weight:600 !important; }
+    .app-shell .home-header .row-cell,.app-shell .home-title p { color:#4f5b54; font-weight:550 !important; }
+    .app-shell .home-title h3 { font-weight:600 !important; }
+    .app-shell .home-header .due-date-cell,.app-shell .home-header .days-hot { font-weight:650 !important; }
+    .app-shell .detail-meta { color:#505c55; font-weight:500 !important; }
+    .app-shell .detail-meta strong,.app-shell .detail-stat span,.app-shell .detail-stat strong { font-weight:600 !important; }
+    .app-shell .metric span,.app-shell .metric small,.app-shell .status-legend strong { font-weight:600 !important; }
+  </style>
+</head>
+<body>
+  <link rel="stylesheet" href="app-shell.css"><script src="app-shell.js"></script>
+  <nav class="app-tabs" aria-label="Main pages">
+    <img class="app-logo" src="moment-engineering-logo.png" alt="Moment Engineering">
+    <a href="index.html">Boring Logs</a><a href="job-calendar.html">Calendar</a><a href="lab-inventory.html">Inventory</a><a class="active" href="lab-work.html">Lab Work</a><a href="lab-manual.html">Lab Manual</a><a href="contacts.html">Contacts</a><a href="me.html">Me</a>
+  </nav>
+  <div class="laptop-only-message">Lab Work is only available in laptop view.</div>
+  <div class="app-shell">
+    <main class="page">
+      <div class="pipeline-tabs-bar">
+        <div class="county-tabs" id="countyTabs" aria-label="Lab Pipeline categories"></div>
+        <button class="btn" type="button" id="addHomeBtn">+ New Sample</button>
+      </div>
+
+      <div class="summary-strip" id="summaryStrip"></div>
+      <div class="notice-strip" id="noticeStrip"></div>
+      <div class="status-legend">
+        <strong>Circle legend</strong>
+        <span><span class="legend-swatch open"></span>Not started</span>
+        <span><span class="legend-swatch progress"></span>Faded color = in progress</span>
+        <span><span class="legend-swatch done"></span>Full color = done</span>
+        <span><span class="legend-swatch hold"></span>Hold / overdue</span>
+        <span class="test-color-list" id="testColorLegend"></span>
+      </div>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Lab Work</h2>
+          <input id="searchInput" placeholder="Search client, project number...">
+          <select id="sortSelect" aria-label="Sort houses">
+            <option value="newest">Newest in lab</option>
+            <option value="completion-low">Lowest completion</option>
+            <option value="completion-high">Highest completion</option>
+            <option value="oldest">Longest in lab</option>
+            <option value="address">Address A-Z</option>
+            <option value="required">Most required tests</option>
+          </select>
+          <input id="projectStatusFilter" type="hidden" value="all">
+        </div>
+        <div id="houseLabWork"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    if (new URLSearchParams(location.search).get("embedded") === "1") {
+      document.body.classList.add("embedded");
+    }
+
+    const storageKey = "moment-lab-custody-v1";
+    const archiveStorageKey = "moment-lab-custody-archive-v1";
+    const cleanWorkspaceFlag = "moment-lab-clean-workspace-v1";
+    const storageBackupKey = "moment-lab-custody-v1-before-last-save";
+    if (!localStorage.getItem(cleanWorkspaceFlag)) {
+      const previousLabData = localStorage.getItem(storageKey);
+      if (previousLabData) localStorage.setItem(archiveStorageKey, previousLabData);
+      localStorage.setItem(storageKey, JSON.stringify({ homes: [], upcomingProjects: [] }));
+      localStorage.setItem(cleanWorkspaceFlag, new Date().toISOString());
+    }
+    const testOptions = [
+      ["moisture", "Moisture Content & Dry Density", "ASTM D2216"],
+      ["sieve", "Sieve Analysis", "ASTM D422 / C136"],
+      ["proctor", "Modified Proctor", "ASTM D1557"],
+      ["atterberg", "Atterberg Limits", "ASTM D4318"],
+      ["directShear", "Direct Shear", "ASTM D3080"],
+      ["consolidation", "Consolidation", "ASTM D2435"]
+    ];
+    const testColors = {
+      moisture: { color: "#2f80ed", soft: "#bfdcff" },
+      sieve: { color: "#13a87f", soft: "#bceee3" },
+      proctor: { color: "#f2994a", soft: "#ffe0bf" },
+      atterberg: { color: "#9b51e0", soft: "#dfc5ff" },
+      directShear: { color: "#eb5757", soft: "#ffc8c8" },
+      consolidation: { color: "#2d9cdb", soft: "#bfe6fb" }
+    };
+    const documentOptions = [
+      ["locationMap", "Location Map"],
+      ["boringMap", "Boring Map"],
+      ["boringLogs", "Boring Logs"]
+    ];
+    const sampleNumbers = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10"];
+    const depthOptions = ["2", "5", "10", "15", "20", "25", "30", "35", "40", "45", "50"];
+    const soilClassifications = [
+      ["GW", "Well-graded gravel"],
+      ["GP", "Poorly graded gravel"],
+      ["GM", "Silty gravel"],
+      ["GC", "Clayey gravel"],
+      ["SW", "Well-graded sand"],
+      ["SP", "Poorly graded sand"],
+      ["SM", "Silty sand"],
+      ["SC", "Clayey sand"],
+      ["SW-SC", "Well-graded sand with clay"],
+      ["CL", "Lean clay"],
+      ["ML", "Silt"],
+      ["OL", "Organic clay / organic silt"],
+      ["CH", "Fat clay"],
+      ["MH", "Elastic silt"],
+      ["OH", "Organic clay / organic silt"],
+      ["PT", "Peat"]
+    ];
+    const categoryTabs = [
+      "Home",
+      "Bag Samples",
+      "San Diego County",
+      "LA County",
+      "Orange County",
+      "Other County",
+      "Upcoming Projects",
+      "Completed"
+    ];
+    const counties = ["San Diego County", "LA County", "Orange County", "Other County"];
+    const upcomingChecklist = [
+      ["boringMap", "Boring Map", "#d59c33"],
+      ["boringLogs", "Boring Logs", "#3f7f93"],
+      ["locationMap", "Location Map", "#8b5f9f"]
+    ];
+
+    const state = {
+      search: "",
+      sort: "newest",
+      category: "Home",
+      projectStatusFilter: "all",
+      expandedHomes: new Set(),
+      expandedMoistureTables: new Set(),
+      expandedSieveTables: new Set(),
+      expandedUpcoming: new Set(),
+      data: loadData()
+    };
+
+    function loadData() {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        try { return normalizeData(syncArrivedInventoryProjects(JSON.parse(saved))); } catch (error) {}
+      }
+      return normalizeData(syncArrivedInventoryProjects({ homes: [] }));
+    }
+
+    function syncArrivedInventoryProjects(labData) {
+      let boringState = {};
+      try { boringState = JSON.parse(localStorage.getItem("boringLogAppState") || "{}"); } catch (error) { return labData; }
+      if (!Array.isArray(boringState.projects) || !Array.isArray(boringState.borings)) return labData;
+      if (!Array.isArray(labData.homes)) labData.homes = [];
+      if (!Array.isArray(labData.upcomingProjects)) labData.upcomingProjects = [];
+      boringState.projects.forEach(project => {
+        const jobNumber = String(project.number || "").trim().toLowerCase();
+        const projectBorings = boringState.borings.filter(boring => boring.projectId === project.id);
+        if (!projectBorings.some(boring => Array.isArray(boring.samples) && boring.samples.length)) return;
+        const upcomingMatch = item => item.sourceProjectId === project.id || (jobNumber && String(item.projectNumber || "").trim().toLowerCase() === jobNumber);
+        if (!project.labCheckInDate) {
+          const upcomingFields = { sourceProjectId: project.id, clientName: project.client || "", projectNumber: project.number || "", address: project.address || project.name || "", county: project.county || "Other County", boringMap: false, boringLogs: true, locationMap: false, notes: "Waiting for inventory arrival date", updatedAt: project.updatedAt || new Date().toISOString() };
+          const upcoming = labData.upcomingProjects.find(upcomingMatch);
+          if (upcoming) Object.assign(upcoming, upcomingFields); else labData.upcomingProjects.push({ id: `upcoming-${project.id}`, ...upcomingFields });
+          return;
+        }
+        labData.upcomingProjects = labData.upcomingProjects.filter(item => !upcomingMatch(item));
+        let home = labData.homes.find(item => item.sourceProjectId === project.id || item.id === project.id);
+        if (!home && jobNumber) home = labData.homes.find(item => String(item.projectNumber || "").trim().toLowerCase() === jobNumber);
+        const samples = projectBorings.flatMap(boring => (boring.samples || []).map(sample => ({
+          id: sample.id || `${boring.id}-${sample.number || sample.depth}`,
+          sampleNumber: `${boring.id}-${sample.number || "sample"}`,
+          boringId: boring.id,
+          depth: sample.depth || "",
+          classification: sample.uscs || "",
+          method: sample.type || "Sample",
+          remarks: sample.notes || ""
+        })));
+        const fields = { sourceProjectId: project.id, projectName: project.name || project.address || project.number || "", projectNumber: project.number || "", clientName: project.client || "", address: project.address || "", county: project.county || "Other County", dateSampling: projectBorings[0]?.info?.date || "", labCheckInDate: project.labCheckInDate, samples, updatedAt: project.updatedAt || new Date().toISOString() };
+        if (home) Object.assign(home, fields); else labData.homes.push({ id: project.id, ...fields, technician: "Fares Krichati", labManager: "Corey Mims", engineer: "Fahad Masud", projectStatus: "Testing", completedAt: "", tests: {}, notes: "Synced from inventory" });
+      });
+      localStorage.setItem(storageKey, JSON.stringify(labData));
+      return labData;
+    }
+
+    function normalizeData(data) {
+      return {
+        ...data,
+        homes: Array.isArray(data?.homes)
+          ? data.homes.map(home => ({
+            ...home,
+            projectStatus: projectStatusValue(home.projectStatus),
+            completedAt: typeof home.completedAt === "string" ? home.completedAt : ""
+          }))
+          : [],
+        upcomingProjects: Array.isArray(data?.upcomingProjects) ? data.upcomingProjects : []
+      };
+    }
+
+    function newId() {
+      return crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+    }
+
+    function blankHome(county = state.category) {
+      const homeCounty = counties.includes(county) ? county : counties[0];
+      return {
+        id: newId(),
+        county: homeCounty,
+        clientName: "",
+        projectNumber: "",
+        address: "",
+        dateSampling: "",
+        reportDueDate: "",
+        labCheckInDate: "",
+        technician: "Fares Krichati",
+        labManager: "Corey Mims",
+        engineer: "Fahad Masud",
+        projectStatus: "Testing",
+        completedAt: "",
+        samples: [],
+        tests: {},
+        notes: "",
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    function blankUpcomingProject() {
+      return {
+        id: newId(),
+        county: "Other County",
+        clientName: "",
+        projectNumber: "",
+        address: "",
+        boringMap: false,
+        boringLogs: false,
+        locationMap: false,
+        notes: "",
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    function saveData() {
+      const previous = localStorage.getItem(storageKey);
+      if (previous) localStorage.setItem(storageBackupKey, previous);
+      localStorage.setItem(storageKey, JSON.stringify(state.data));
+    }
+
+    function syncCompletionToCustody(home) {
+      try {
+        const fieldKey = "boringLogAppState";
+        const fieldState = JSON.parse(localStorage.getItem(fieldKey) || "{}");
+        const project = (fieldState.projects || []).find(item => item.id === home.sourceProjectId || item.id === home.id || (home.projectNumber && item.number === home.projectNumber));
+        if (!project) return;
+        project.inventoryCompletedAt = home.completedAt || "";
+        project.updatedAt = home.updatedAt || new Date().toISOString();
+        localStorage.setItem(fieldKey, JSON.stringify(fieldState));
+      } catch (error) {
+        console.warn("Custody completion could not be synchronized.", error);
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatDate(value) {
+      if (!value) return "";
+      const [year, month, day] = value.split("-");
+      if (!year || !month || !day) return value;
+      return `${month}/${day}/${year}`;
+    }
+
+    function parseLocalDate(value) {
+      if (!value) return null;
+      const [year, month, day] = value.split("-").map(Number);
+      if (!year || !month || !day) return null;
+      return new Date(year, month - 1, day);
+    }
+
+    function formatIsoDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function addBusinessDays(value, days) {
+      const date = parseLocalDate(value);
+      if (!date) return "";
+      let added = 0;
+      while (added < days) {
+        date.setDate(date.getDate() + 1);
+        const day = date.getDay();
+        if (day !== 0 && day !== 6) added += 1;
+      }
+      return formatIsoDate(date);
+    }
+
+    function reportDueDateFor(value) {
+      return addBusinessDays(value, 20);
+    }
+
+    function calendarDaysBetween(startValue, endValue) {
+      const start = parseLocalDate(startValue);
+      const end = parseLocalDate(endValue);
+      if (!start || !end) return null;
+      const msPerDay = 24 * 60 * 60 * 1000;
+      return Math.round((end - start) / msPerDay);
+    }
+
+    function reportDueStatus(home, completion) {
+      const dueDate = reportDueDateFor(home.dateSampling);
+      if (!dueDate) {
+        return {
+          dueDate: "",
+          label: "Add sampling date",
+          detail: "No due date set",
+          percent: 0,
+          isWarning: false
+        };
+      }
+      const today = formatIsoDate(new Date());
+      const daysLeft = calendarDaysBetween(today, dueDate);
+      const totalDays = Math.max(calendarDaysBetween(home.dateSampling, dueDate) || 1, 1);
+      const elapsedDays = Math.max(totalDays - daysLeft, 0);
+      const percent = Math.min(Math.round((elapsedDays / totalDays) * 100), 100);
+      const isComplete = completion.total === 0 || completion.done === completion.total;
+      const isOverdue = daysLeft < 0;
+      const absDays = Math.abs(daysLeft);
+      const label = isOverdue
+        ? `${absDays} day${absDays === 1 ? "" : "s"} overdue`
+        : daysLeft === 0
+          ? "Due today"
+          : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`;
+      return {
+        dueDate,
+        label,
+        detail: `Due ${formatDate(dueDate)}`,
+        percent: isOverdue ? 100 : percent,
+        daysLeft,
+        isWarning: isOverdue && !isComplete
+      };
+    }
+
+    function daysInLab(value) {
+      if (!value) return "";
+      const [year, month, day] = value.split("-").map(Number);
+      if (!year || !month || !day) return "";
+      const checkIn = new Date(year, month - 1, day);
+      const today = new Date();
+      const start = new Date(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate());
+      const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const difference = end - start;
+      if (difference < 0) return "0";
+      return String(Math.floor(difference / 86400000));
+    }
+
+    function formatDaysInLab(value) {
+      const days = daysInLab(value);
+      if (days === "") return "Add check-in date";
+      return `${days} day${days === "1" ? "" : "s"}`;
+    }
+
+    function formatClassification(symbol) {
+      const found = soilClassifications.find(([value]) => value === symbol);
+      return found ? `${found[0]} - ${found[1]}` : symbol;
+    }
+
+    function sampleOptions(options, selectedValue = "") {
+      return [`<option value=""></option>`, ...options.map(([value, text]) => {
+        const selected = value === selectedValue ? "selected" : "";
+        return `<option value="${escapeHtml(value)}" ${selected}>${escapeHtml(text)}</option>`;
+      })].join("");
+    }
+
+    function sampleField(home, sample, index, field, value, type = "input") {
+      const common = `data-sample-field="${field}" data-sample-home="${home.id}" data-sample-id="${escapeHtml(sample.id || "")}" data-sample-index="${index}"`;
+      if (type === "classification") {
+        return `<select ${common} aria-label="Classification">${sampleOptions(soilClassifications.map(([symbol, name]) => [symbol, `${symbol} - ${name}`]), value)}</select>`;
+      }
+      if (type === "method") {
+        return `<select ${common} aria-label="Method">${sampleOptions(["Core", "Bag", "SPT", "Other"].map(item => [item, item]), value)}</select>`;
+      }
+      if (type === "textarea") {
+        return `<textarea ${common} placeholder="Add sample notes">${escapeHtml(value)}</textarea>`;
+      }
+      const list = field === "sampleNumber" ? `list="labSampleNumbers" data-suggest-restore="true"` : field === "depth" ? `list="labDepthOptions" inputmode="decimal" data-suggest-restore="true"` : "";
+      return `<input ${common} ${list} value="${escapeHtml(value)}" autocomplete="off">`;
+    }
+
+    function findSample(homeId, sampleId, sampleIndex) {
+      const home = state.data.homes.find(item => item.id === homeId);
+      const sample = sampleId
+        ? home?.samples?.find(item => item.id === sampleId)
+        : home?.samples?.[Number(sampleIndex)];
+      return { home, sample };
+    }
+
+    function custodyField(home, field, label, type = "text", className = "") {
+      if (field === "county") {
+        return `<label class="${className}">${label}
+          <select data-custody-field="${field}" data-custody-home="${home.id}">
+            ${["San Diego County", "LA County", "Orange County", "Other County"].map(county => `<option value="${county}" ${county === home.county ? "selected" : ""}>${county}</option>`).join("")}
+          </select>
+        </label>`;
+      }
+      if (type === "textarea") {
+        return `<label class="${className}">${label}<textarea data-custody-field="${field}" data-custody-home="${home.id}">${escapeHtml(home[field])}</textarea></label>`;
+      }
+      return `<label class="${className}">${label}<input type="${type}" data-custody-field="${field}" data-custody-home="${home.id}" value="${escapeHtml(home[field])}"></label>`;
+    }
+
+    function renderCustodyDetails(home) {
+      return `
+        <section>
+          <div class="worksheet-header">
+            <h4 class="section-label">Custody Fill Out</h4>
+            <div class="worksheet-actions">
+              <button class="small-btn" type="button" data-custody-pdf-home="${home.id}">Save Custody PDF</button>
+            </div>
+          </div>
+          <div class="form-grid">
+            ${custodyField(home, "clientName", "Client Name")}
+            ${custodyField(home, "projectNumber", "Project Number")}
+            ${custodyField(home, "county", "County")}
+            ${custodyField(home, "address", "Project Address", "text", "span-3")}
+            ${custodyField(home, "dateSampling", "Date Sampling", "date")}
+            <label>Report Due Date
+              <input type="date" value="${escapeHtml(reportDueDateFor(home.dateSampling))}" readonly>
+            </label>
+            ${custodyField(home, "labCheckInDate", "Lab Check-in Date", "date")}
+            ${custodyField(home, "technician", "Field Technician")}
+            ${custodyField(home, "labManager", "Lab Manager")}
+            ${custodyField(home, "engineer", "Engineer")}
+            ${custodyField(home, "notes", "Comment / Notes", "textarea", "span-3")}
+          </div>
+        </section>
+        <section>
+          <h4 class="section-label">Requested Tests</h4>
+          <div class="custody-tests">
+            ${testOptions.map(([key, label, astm]) => `
+              <label class="done-check">
+                <input type="checkbox" data-custody-test="${key}" data-custody-home="${home.id}" ${home.tests?.[key] ? "checked" : ""}>
+                <span>${escapeHtml(label)} <span class="sample-context">${escapeHtml(astm)}</span></span>
+              </label>
+            `).join("")}
+          </div>
+        </section>
+        <section>
+          <h4 class="section-label">Add Sample</h4>
+          <datalist id="labSampleNumbers">
+            ${sampleNumbers.map(value => `<option value="${value}"></option>`).join("")}
+          </datalist>
+          <datalist id="labDepthOptions">
+            ${depthOptions.map(value => `<option value="${value}"></option>`).join("")}
+          </datalist>
+          <div class="sample-entry">
+            <label>Sample #
+              <input data-new-sample-field="sampleNumber" data-new-sample-home="${home.id}" list="labSampleNumbers" autocomplete="off">
+            </label>
+            <label>Classification
+              <select data-new-sample-field="classification" data-new-sample-home="${home.id}">
+                ${sampleOptions(soilClassifications.map(([symbol, name]) => [symbol, `${symbol} - ${name}`]))}
+              </select>
+            </label>
+            <label>Depth
+              <input data-new-sample-field="depth" data-new-sample-home="${home.id}" list="labDepthOptions" inputmode="decimal" autocomplete="off">
+            </label>
+            <label>Method
+              <select data-new-sample-field="method" data-new-sample-home="${home.id}">
+                ${sampleOptions(["Core", "Bag", "SPT", "Other"].map(item => [item, item]), "Core")}
+              </select>
+            </label>
+            <label>Remarks
+              <input data-new-sample-field="remarks" data-new-sample-home="${home.id}" autocomplete="off">
+            </label>
+            <button class="btn" type="button" data-add-sample-home="${home.id}">Add Sample</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function requiredTests(home) {
+      return testOptions.filter(([key]) => home.tests?.[key]);
+    }
+
+    function ensureLabTests(home) {
+      if (!home.labTests || typeof home.labTests !== "object") home.labTests = {};
+      requiredTests(home).forEach(([key]) => {
+        if (!home.labTests[key] || typeof home.labTests[key] !== "object") {
+          home.labTests[key] = { status: "Not Started", completedDate: "", notes: "" };
+        }
+        if (typeof home.labTests[key].completedDate !== "string") home.labTests[key].completedDate = "";
+      });
+      return home.labTests;
+    }
+
+    function setTestStatus(test, status) {
+      test.status = status;
+      if (status === "Done") {
+        if (!test.completedDate) test.completedDate = formatIsoDate(new Date());
+      } else {
+        test.completedDate = "";
+      }
+    }
+
+    function completionForHome(home) {
+      const tests = requiredTests(home);
+      const labTests = ensureLabTests(home);
+      const done = tests.filter(([key]) => labTests[key]?.status === "Done").length;
+      const inProgress = tests.filter(([key]) => labTests[key]?.status === "In Progress").length;
+      const total = tests.length;
+      const completedUnits = done + (inProgress * 0.5);
+      return {
+        done,
+        inProgress,
+        total,
+        percent: total ? Math.round((completedUnits / total) * 100) : 100
+      };
+    }
+
+    function ensureDocumentChecklist(home) {
+      if (!home.documents || typeof home.documents !== "object") home.documents = {};
+      documentOptions.forEach(([key]) => {
+        if (typeof home.documents[key] !== "boolean") home.documents[key] = false;
+      });
+      return home.documents;
+    }
+
+    function documentCompletionForHome(home) {
+      const documents = ensureDocumentChecklist(home);
+      const done = documentOptions.filter(([key]) => documents[key]).length;
+      const total = documentOptions.length;
+      return {
+        done,
+        total,
+        percent: Math.round((done / total) * 100)
+      };
+    }
+
+    function statusOptions(value) {
+      return ["Not Started", "In Progress", "Done", "Hold"].map(status => {
+        return `<option value="${status}" ${status === (value || "Not Started") ? "selected" : ""}>${status}</option>`;
+      }).join("");
+    }
+
+    function projectStatusValue(value) {
+      return value === "Open to Report" || value === "Report" ? "Report" : "Testing";
+    }
+
+    function projectStatusOptions(value) {
+      const current = projectStatusValue(value);
+      return ["Testing", "Report"].map(status => {
+        return `<option value="${status}" ${status === current ? "selected" : ""}>${status}</option>`;
+      }).join("");
+    }
+
+    function projectStatusButtonClass(home) {
+      return projectStatusValue(home.projectStatus) === "Report" ? "report-ready" : "still-testing";
+    }
+
+    function toggleProjectStatus(home) {
+      home.projectStatus = projectStatusValue(home.projectStatus) === "Report" ? "Testing" : "Report";
+      saveData();
+      render();
+    }
+
+    function homeMatchesSearch(home) {
+      const q = state.search.trim().toLowerCase();
+      if (!q) return true;
+      const requested = requiredTests(home).map(([, label, astm]) => `${label} ${astm}`);
+      const documents = documentOptions.map(([, label]) => label);
+      const samples = (home.samples || []).map(sample => [
+        sample.sampleNumber,
+        sample.classification,
+        sample.depth,
+        sample.method,
+        sample.labWork
+      ].join(" "));
+      return [
+        home.address,
+        home.projectNumber,
+        home.clientName,
+        home.county,
+        projectStatusValue(home.projectStatus),
+        ...documents,
+        ...requested,
+        ...samples
+      ].join(" ").toLowerCase().includes(q);
+    }
+
+    function sampleMethod(sample) {
+      return String(sample?.method || "").trim().toLowerCase();
+    }
+
+    function allSamples(homes) {
+      return homes.flatMap(home => Array.isArray(home.samples) ? home.samples : []);
+    }
+
+    function bagSamples(homes) {
+      return allSamples(homes).filter(sample => sampleMethod(sample) === "bag");
+    }
+
+    function coreSamples(homes) {
+      return allSamples(homes).filter(sample => sampleMethod(sample) !== "bag");
+    }
+
+    function baseHomesForCategory() {
+      if (state.category === "Upcoming Projects") {
+        return [];
+      }
+      if (state.category === "Completed") {
+        return state.data.homes.filter(home => home.completedAt);
+      }
+      const activeHomes = state.data.homes.filter(home => !home.completedAt);
+      if (state.category === "Bag Samples") {
+        return activeHomes.filter(home => bagSamples([home]).length);
+      }
+      if (["San Diego County", "LA County", "Orange County", "Other County"].includes(state.category)) {
+        return activeHomes.filter(home => (home.county || "Other County") === state.category);
+      }
+      return activeHomes;
+    }
+
+    function filteredHomes() {
+      const homes = baseHomesForCategory()
+        .filter(home => {
+          if (state.projectStatusFilter === "all") return true;
+          return projectStatusValue(home.projectStatus) === state.projectStatusFilter;
+        })
+        .filter(homeMatchesSearch);
+      return homes.sort((a, b) => {
+        const completionA = completionForHome(a);
+        const completionB = completionForHome(b);
+        const daysA = Number(daysInLab(a.labCheckInDate) || -1);
+        const daysB = Number(daysInLab(b.labCheckInDate) || -1);
+        if (state.sort === "completion-high") return completionB.percent - completionA.percent || completionB.total - completionA.total;
+        if (state.sort === "oldest") return daysB - daysA;
+        if (state.sort === "newest") return daysA - daysB;
+        if (state.sort === "address") return (a.address || "").localeCompare(b.address || "");
+        if (state.sort === "required") return completionB.total - completionA.total || completionA.percent - completionB.percent;
+        return completionA.percent - completionB.percent || completionB.total - completionA.total;
+      });
+    }
+
+    function categoryCount(category) {
+      const activeHomes = state.data.homes.filter(home => !home.completedAt);
+      if (category === "Home") return activeHomes.length;
+      if (category === "Completed") return state.data.homes.filter(home => home.completedAt).length;
+      if (category === "Bag Samples") return bagSamples(activeHomes).length;
+      if (category === "Upcoming Projects") return state.data.upcomingProjects.length;
+      return activeHomes.filter(home => (home.county || "Other County") === category).length;
+    }
+
+    function renderCategoryTabs() {
+      document.getElementById("countyTabs").innerHTML = categoryTabs.map(category => `
+        <button class="county-tab ${state.category === category ? "active" : ""}" type="button" data-category-tab="${escapeHtml(category)}">
+          <span>${escapeHtml(category)}</span>
+          <span class="county-tab-count">${categoryCount(category)}</span>
+        </button>
+      `).join("");
+    }
+
+    function renderTestColorLegend() {
+      const legend = document.getElementById("testColorLegend");
+      if (!legend) return;
+      legend.innerHTML = testOptions.map(([key, label]) => {
+        const colors = testColors[key] || { color: "#20b990" };
+        return `<span><span class="legend-swatch" style="background: ${colors.color}; border-color: ${colors.color};"></span>${escapeHtml(label)}</span>`;
+      }).join("");
+    }
+
+    function upcomingDoneCount(project) {
+      return upcomingChecklist.filter(([key]) => project?.[key]).length;
+    }
+
+    function upcomingProgress(project) {
+      return Math.round((upcomingDoneCount(project) / upcomingChecklist.length) * 100);
+    }
+
+    function upcomingMatchesSearch(project) {
+      const q = state.search.trim().toLowerCase();
+      if (!q) return true;
+      return [
+        project.address,
+        project.projectNumber,
+        project.clientName,
+        project.county,
+        project.notes
+      ].join(" ").toLowerCase().includes(q);
+    }
+
+    function filteredUpcomingProjects() {
+      return [...state.data.upcomingProjects]
+        .filter(upcomingMatchesSearch)
+        .sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+    }
+
+    function renderUpcomingProjects(projects) {
+      return `
+        <div class="upcoming-title-row">
+          <h3>Upcoming Projects</h3>
+          <button class="btn" type="button" id="newUpcomingProjectBtn">New Project</button>
+        </div>
+        <div class="notice-strip">
+          ${projects.length} geotech project${projects.length === 1 ? "" : "s"} without lab samples
+        </div>
+        <div class="legend-row">
+          ${upcomingChecklist.map(([, label, color]) => `
+            <span class="legend-item"><span class="legend-dot" style="--dot-color: ${color};"></span>${escapeHtml(label)}</span>
+          `).join("")}
+        </div>
+        <div class="upcoming-list">
+          <div class="upcoming-list-header">
+            <span>Project</span>
+            <span>Client / Number</span>
+            <span>County</span>
+            <span>Setup</span>
+            <span>Progress</span>
+            <span>Actions</span>
+          </div>
+          ${projects.map(renderUpcomingProjectCard).join("") || `<div class="empty">Add projects here before samples come in.</div>`}
+        </div>
+      `;
+    }
+
+    function renderUpcomingProjectCard(project) {
+      const progress = upcomingProgress(project);
+      const isExpanded = state.expandedUpcoming.has(project.id);
+      const title = project.address || "Untitled project";
+      const detail = `${project.clientName || "No client"} | ${project.projectNumber || "No project number"}`;
+      return `
+        <article class="upcoming-project">
+          <div class="upcoming-header">
+            <div class="upcoming-title">
+              <strong>${escapeHtml(title)}</strong>
+              <span>${escapeHtml(detail)}</span>
+            </div>
+            <div class="row-cell">${escapeHtml(project.clientName || "No client")}<br><span>${escapeHtml(project.projectNumber || "No project number")}</span></div>
+            <div class="row-cell">${escapeHtml(project.county || "Other County")}</div>
+            <div class="upcoming-setup">
+              ${upcomingChecklist.map(([key, label, color]) => `<span class="setup-chip ${project[key] ? "done" : ""}" style="--dot-color: ${color};" title="${escapeHtml(label)}"></span>`).join("")}
+            </div>
+            <div class="progress-cell">
+              <strong class="upcoming-progress">${progress}%</strong>
+              <div class="progress-bar"><span style="width: ${progress}%;"></span></div>
+              <div class="progress-dots">
+                ${upcomingChecklist.map(([key, label, color]) => `
+                  <button class="status-dot ${project[key] ? "done" : ""}" type="button" style="--dot-color: ${color};" data-upcoming-check="${key}" data-upcoming-id="${project.id}" title="${escapeHtml(label)}"></button>
+                `).join("")}
+              </div>
+            </div>
+            <button class="small-btn" type="button" data-toggle-upcoming="${project.id}" aria-expanded="${isExpanded ? "true" : "false"}">${isExpanded ? "Close" : "Open"}</button>
+          </div>
+          ${isExpanded ? `
+            <div class="upcoming-body">
+              <div class="form-grid">
+                <label>Project Address
+                  <input data-upcoming-field="address" data-upcoming-id="${project.id}" value="${escapeHtml(project.address)}" placeholder="Project address">
+                </label>
+                <label>Project Number
+                  <input data-upcoming-field="projectNumber" data-upcoming-id="${project.id}" value="${escapeHtml(project.projectNumber)}" placeholder="Project number">
+                </label>
+                <label>Client Name
+                  <input data-upcoming-field="clientName" data-upcoming-id="${project.id}" value="${escapeHtml(project.clientName)}" placeholder="Client name">
+                </label>
+                <label>County
+                  <select data-upcoming-field="county" data-upcoming-id="${project.id}">
+                    ${counties.map(county => `<option value="${county}" ${county === project.county ? "selected" : ""}>${county}</option>`).join("")}
+                  </select>
+                </label>
+                <label class="span-3">Notes
+                  <textarea data-upcoming-field="notes" data-upcoming-id="${project.id}" placeholder="Notes">${escapeHtml(project.notes)}</textarea>
+                </label>
+              </div>
+              <div class="upcoming-actions">
+                <button class="small-btn" type="button" data-promote-upcoming="${project.id}">Add to Tracker</button>
+                <button class="danger-btn" type="button" data-delete-upcoming="${project.id}">Delete</button>
+              </div>
+            </div>
+          ` : ""}
+        </article>
+      `;
+    }
+
+    function renderSummary(homes) {
+      if (state.category === "Upcoming Projects") {
+        const projects = filteredUpcomingProjects();
+        const average = projects.length
+          ? Math.round(projects.reduce((total, project) => total + upcomingProgress(project), 0) / projects.length)
+          : 0;
+        const ready = projects.filter(project => upcomingProgress(project) === 100).length;
+        document.getElementById("summaryStrip").innerHTML = [
+          ["Projects", projects.length],
+          ["Average Done", `${average}%`],
+          ["Ready", ready],
+          ["Open Items", (projects.length * upcomingChecklist.length) - projects.reduce((total, project) => total + upcomingDoneCount(project), 0)]
+        ].map(([label, value]) => `<div class="metric"><span>${label}</span><strong>${value}</strong></div>`).join("");
+        renderUpcomingNotice();
+        return;
+      }
+      if (state.category === "Completed") {
+        const samples = allSamples(homes);
+        document.getElementById("summaryStrip").innerHTML = [
+          `<div class="metric"><span>Completed Projects</span><strong>${homes.length}</strong></div>`,
+          `<div class="metric"><span>Total Samples</span><strong>${samples.length}</strong></div>`,
+          `<div class="metric"><span>Total Bag Samples</span><strong>${bagSamples(homes).length}</strong></div>`,
+          `<div class="metric"><span>Required Tests</span><strong>${homes.reduce((total, home) => total + requiredTests(home).length, 0)}</strong></div>`
+        ].join("");
+        document.getElementById("noticeStrip").textContent = "Completed projects remain saved with all custody, sample, test, and worksheet data.";
+        return;
+      }
+      const samples = allSamples(homes);
+      const requiredTestItems = homes.flatMap(home => requiredTests(home).map(([key]) => ({ home, key })));
+      const completedTestItems = requiredTestItems.filter(({ home, key }) => ensureLabTests(home)[key]?.status === "Done").length;
+      const testCompletion = requiredTestItems.length ? Math.round((completedTestItems / requiredTestItems.length) * 100) : 100;
+      const completed = homes.filter(home => projectStatusValue(home.projectStatus) === "Report").length;
+      const overdue = homes.filter(home => reportDueStatus(home, completionForHome(home)).isWarning).length;
+      const averageDays = homes.length
+        ? Math.round(homes.reduce((total, home) => total + Number(daysInLab(home.labCheckInDate) || 0), 0) / homes.length)
+        : 0;
+      const upcomingCount = state.data.upcomingProjects.length;
+      document.getElementById("summaryStrip").innerHTML = [
+        `<div class="metric"><span>Active Samples</span><strong>${homes.length}</strong><small><span>Completed</span><b>${completed}</b></small></div>`,
+        `<div class="metric"><span>Avg Days In Lab</span><strong>${averageDays}</strong></div>`,
+        `<div class="metric"><span>Testing Completion</span><strong>${testCompletion}%</strong></div>`,
+        `<div class="metric"><span>Overdue Reports</span><strong style="color: var(--accent);">${overdue}</strong></div>`,
+        `<div class="metric"><span>Total Samples</span><strong>${samples.length}</strong></div>`,
+        `<div class="metric"><span>Total Bag Samples</span><strong>${bagSamples(homes).length}</strong></div>`
+      ].join("");
+      renderUpcomingNotice();
+    }
+
+    function renderUpcomingNotice() {
+      const projects = state.data.upcomingProjects;
+      const notice = document.getElementById("noticeStrip");
+      if (!projects.length) {
+        notice.textContent = "No geotech projects are waiting for lab samples.";
+        return;
+      }
+      notice.innerHTML = `
+        <details>
+          <summary>${projects.length} geotech project${projects.length === 1 ? "" : "s"} without lab samples</summary>
+          <div class="notice-projects">
+            ${projects.map(project => `
+              <div class="notice-project-row">
+                <button class="notice-project" type="button" data-open-upcoming-project="${project.id}">
+                  <strong>${escapeHtml(project.address || project.clientName || "Untitled project")}</strong>
+                  <span>${escapeHtml(project.clientName || "No client")} | ${escapeHtml(project.projectNumber || "No project number")} | ${escapeHtml(project.county || "Other County")}</span>
+                </button>
+                <button class="small-btn" type="button" data-promote-upcoming="${project.id}">Add to Custody Tracker</button>
+              </div>
+            `).join("")}
+            <button class="btn" type="button" data-open-upcoming>Open Upcoming Projects</button>
+          </div>
+        </details>
+      `;
+    }
+
+    function statusPill(home, dueStatus, completion) {
+      if (home.completedAt) return `<span class="status-pill status-completed">Completed</span>`;
+      const status = projectStatusValue(home.projectStatus);
+      if (status === "Report") return `<button class="status-pill status-report" type="button" data-toggle-project-status="${home.id}">Report</button>`;
+      return `<button class="status-pill status-testing" type="button" data-toggle-project-status="${home.id}">Testing In Progress</button>`;
+    }
+
+    function statusClass(value) {
+      if (value === "Done") return "status-done";
+      if (value === "In Progress") return "status-in-progress";
+      if (value === "Hold") return "status-hold";
+      return "status-not-started";
+    }
+
+    function nextTestStatus(value) {
+      if (value === "Not Started" || !value) return "In Progress";
+      if (value === "In Progress") return "Done";
+      return "Not Started";
+    }
+
+    function dueToneClass(dueStatus) {
+      if (!dueStatus.dueDate) return "";
+      if (dueStatus.daysLeft < 0) return "due-overdue";
+      if (dueStatus.daysLeft <= 2) return "due-warning-text";
+      return "due-ok";
+    }
+
+    function testMeter(home, completion) {
+      const tests = requiredTests(home);
+      const labTests = ensureLabTests(home);
+      const dots = tests.map(([key, label]) => {
+        const status = labTests[key]?.status || "Not Started";
+        const completedDate = labTests[key]?.completedDate;
+        const colors = testColors[key] || { color: "#20b990", soft: "#c8f4e9" };
+        const dateText = status === "Done" && completedDate ? ` on ${formatDate(completedDate)}` : "";
+        return `<button class="mini-dot ${statusClass(status)}" type="button" style="--test-color: ${colors.color}; --test-soft: ${colors.soft};" data-row-test-home="${home.id}" data-row-test-key="${key}" title="${escapeHtml(label)}: ${escapeHtml(status + dateText)}" aria-label="${escapeHtml(label)} ${escapeHtml(status + dateText)}"></button>`;
+      }).join("");
+      return `
+        <div class="mini-meter">
+          <div class="mini-dots">${dots}</div>
+          <div class="mini-track" style="--progress: ${completion.percent}%;"><span>${completion.percent}%</span></div>
+        </div>
+      `;
+    }
+
+    function documentMeter(home, documentCompletion) {
+      const documents = ensureDocumentChecklist(home);
+      const dots = documentOptions.map(([key, label]) => {
+        const done = documents[key];
+        return `<button class="mini-dot ${done ? "document-done" : "document-open"}" type="button" data-row-document-home="${home.id}" data-row-document-key="${key}" title="${escapeHtml(label)}: ${done ? "Done" : "Not started"}" aria-label="${escapeHtml(label)} ${done ? "Done" : "Not started"}"></button>`;
+      }).join("");
+      return `
+        <div class="mini-meter">
+          <div class="mini-dots">${dots}</div>
+          <div class="mini-track" style="--progress: ${documentCompletion.percent}%;"><span>${documentCompletion.percent}%</span></div>
+        </div>
+      `;
+    }
+
+    function projectType(home) {
+      const samples = home.samples || [];
+      if (!samples.length) return "BULK";
+      if (bagSamples([home]).length === samples.length) return "Composite";
+      const method = samples.find(sample => sample.method)?.method;
+      return method || "Remolded";
+    }
+
+    function renderRequiredTests(home) {
+      const tests = requiredTests(home);
+      const labTests = ensureLabTests(home);
+      if (!tests.length) {
+        return `<div class="inline-empty">No required lab tests are marked in custody for this house.</div>`;
+      }
+      return `
+        <div>
+          <h4 class="section-label">Required Tests</h4>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Test</th><th>Required</th><th>Status</th><th>Date Completed</th><th>Lab Notes</th></tr>
+              </thead>
+              <tbody>
+                ${tests.map(([key, label, astm]) => `
+                  <tr>
+                    <td class="test-name"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(astm)}</span></td>
+                    <td><span class="required-pill">Required</span></td>
+                    <td>
+                      <select data-test-status-home="${home.id}" data-test-status-key="${key}" aria-label="${escapeHtml(label)} status">
+                        ${statusOptions(labTests[key]?.status)}
+                      </select>
+                    </td>
+                    <td>
+                      <input type="date" data-test-date-home="${home.id}" data-test-date-key="${key}" value="${escapeHtml(labTests[key]?.completedDate)}" aria-label="${escapeHtml(label)} completion date">
+                    </td>
+                    <td><textarea data-test-notes-home="${home.id}" data-test-notes-key="${key}" placeholder="Add test notes">${escapeHtml(labTests[key]?.notes)}</textarea></td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDocumentChecklist(home) {
+      const documents = ensureDocumentChecklist(home);
+      return `
+        <div>
+          <h4 class="section-label">Maps & Logs</h4>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Item</th><th>Done</th></tr>
+              </thead>
+              <tbody>
+                ${documentOptions.map(([key, label]) => `
+                  <tr>
+                    <td>${escapeHtml(label)}</td>
+                    <td>
+                      <label class="done-check">
+                        <input type="checkbox" data-document-home="${home.id}" data-document-key="${key}" ${documents[key] ? "checked" : ""}>
+                        <span>${documents[key] ? "Complete" : "Not complete"}</span>
+                      </label>
+                    </td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderSamples(home) {
+      const samples = home.samples || [];
+      if (!samples.length) {
+        return `<div class="inline-empty">No samples added for this house yet.</div>`;
+      }
+      return `
+        <div>
+          <h4 class="section-label">Samples</h4>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Sample</th><th>Classification</th><th>Depth</th><th>Method</th><th>Days in Lab</th><th>Sample Lab Notes</th><th>Action</th></tr>
+              </thead>
+              <tbody>
+                ${samples.map((sample, index) => `
+                  <tr>
+                    <td>${sampleField(home, sample, index, "sampleNumber", sample.sampleNumber)}</td>
+                    <td>${sampleField(home, sample, index, "classification", sample.classification, "classification")}</td>
+                    <td>${sampleField(home, sample, index, "depth", sample.depth)}</td>
+                    <td>${sampleField(home, sample, index, "method", sample.method, "method")}</td>
+                    <td>${escapeHtml(formatDaysInLab(home.labCheckInDate))}</td>
+                    <td>${sampleField(home, sample, index, "labWork", sample.labWork, "textarea")}</td>
+                    <td>
+                      <button class="small-btn" type="button"
+                        data-delete-sample-home="${home.id}"
+                        data-delete-sample-id="${escapeHtml(sample.id || "")}"
+                        data-delete-sample-index="${index}">Delete</button>
+                    </td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function mdColumns(home) {
+      const samples = (home.samples || []).slice(0, 12);
+      if (samples.length) {
+        return samples.map((sample, index) => ({
+          id: sample.id || `sample-${index}`,
+          index,
+          label: `${sample.sampleNumber || `Sample ${index + 1}`}${sample.depth ? ` - ${sample.depth} FT` : ""}`,
+          sample
+        }));
+      }
+      return Array.from({ length: 3 }, (_, index) => ({
+        id: `blank-${index + 1}`,
+        index,
+        label: `Specimen ${index + 1}`,
+        sample: null
+      }));
+    }
+
+    function ensureMoistureDensity(home) {
+      if (!home.moistureDensity || typeof home.moistureDensity !== "object") {
+        home.moistureDensity = { cells: {} };
+      }
+      if (!home.moistureDensity.cells || typeof home.moistureDensity.cells !== "object") {
+        home.moistureDensity.cells = {};
+      }
+      return home.moistureDensity;
+    }
+
+    function mdKey(row, columnId) {
+      return `${row}__${columnId}`;
+    }
+
+    function classificationSymbol(value) {
+      const text = String(value || "").trim();
+      const direct = soilClassifications.find(([symbol]) => symbol === text);
+      if (direct) return direct[0];
+      const fromLabel = soilClassifications.find(([symbol, name]) => {
+        return text === `${symbol} - ${name}` || text.toLowerCase() === name.toLowerCase();
+      });
+      return fromLabel ? fromLabel[0] : text;
+    }
+
+    function legacyMdValue(worksheet, row, column) {
+      const sample = column.sample || {};
+      const candidates = [
+        mdKey(row, `sample-${column.index}`),
+        mdKey(row, column.label),
+        mdKey(row, `${sample.sampleNumber || ""} - ${sample.depth || ""} FT`),
+        mdKey(row, sample.sampleNumber || ""),
+        `${row}_${column.index}`,
+        `${row}-${column.index}`
+      ].filter(Boolean);
+      for (const key of candidates) {
+        if (worksheet.cells[key] !== undefined) return worksheet.cells[key];
+      }
+      return undefined;
+    }
+
+    function mdValue(home, row, column, fallback = "") {
+      const worksheet = ensureMoistureDensity(home);
+      const key = mdKey(row, column.id);
+      const saved = worksheet.cells[key];
+      if (saved !== undefined) return saved;
+      const legacy = legacyMdValue(worksheet, row, column);
+      if (legacy !== undefined) {
+        worksheet.cells[key] = legacy;
+        return legacy;
+      }
+      if (row === "soilClass" && column.sample?.classification) return formatClassification(column.sample.classification);
+      if (row === "ringNo") return "1";
+      if (row === "ringVolume") return "0.00266";
+      return fallback;
+    }
+
+    function mdNumber(home, row, column) {
+      const value = parseFloat(String(mdValue(home, row, column)).replace(/,/g, ""));
+      return Number.isFinite(value) ? value : null;
+    }
+
+    function calcNumber(value, decimals = 2) {
+      if (!Number.isFinite(value)) return "";
+      return String(Math.round(value * Math.pow(10, decimals)) / Math.pow(10, decimals));
+    }
+
+    function mdCalc(home, row, column) {
+      const soilRing = mdNumber(home, "soilRing", column);
+      const ringWeight = mdNumber(home, "ringWeight", column);
+      const ringNo = mdNumber(home, "ringNo", column);
+      const ringVolume = mdNumber(home, "ringVolume", column);
+      const wetSoil = soilRing !== null && ringWeight !== null && ringNo ? (soilRing - ringWeight) / ringNo : null;
+      const wetDensity = wetSoil !== null && ringVolume ? wetSoil / ringVolume / 453 : null;
+      const wa = mdNumber(home, "wa", column);
+      const wb = mdNumber(home, "wb", column);
+      const wc = mdNumber(home, "wc", column);
+      const water = wa !== null && wc !== null ? wa - wc : null;
+      const drySoil = wc !== null && wb !== null ? wc - wb : null;
+      const moisture = water !== null && drySoil ? water / drySoil : null;
+      const dryDensity = wetDensity !== null && moisture !== null ? wetDensity / (1 + moisture) : null;
+      const values = {
+        wetSoil: calcNumber(wetSoil),
+        wetDensity: calcNumber(wetDensity),
+        water: calcNumber(water),
+        drySoil: calcNumber(drySoil),
+        moisture: moisture === null ? "" : calcNumber(moisture * 100, 1) + "%",
+        dryDensity: calcNumber(dryDensity)
+      };
+      return values[row] || "";
+    }
+
+    function mdInput(home, row, column, fallback = "") {
+      if (row === "soilClass" && column.sample) {
+        const selected = classificationSymbol(mdValue(home, row, column, fallback) || column.sample.classification);
+        return `<select class="compact-input" data-md-cell-home="${home.id}" data-md-cell-row="${row}" data-md-cell-column="${column.id}" data-md-sample-id="${escapeHtml(column.sample.id || "")}" data-md-sample-index="${column.index}" aria-label="Soils Class">${sampleOptions(soilClassifications.map(([symbol, name]) => [symbol, `${symbol} - ${name}`]), selected)}</select>`;
+      }
+      return `<input class="compact-input" data-md-cell-home="${home.id}" data-md-cell-row="${row}" data-md-cell-column="${column.id}" value="${escapeHtml(mdValue(home, row, column, fallback))}">`;
+    }
+
+    function mdRow(home, columns, label, row, type = "input") {
+      return `<tr>
+        <td>${escapeHtml(label)}</td>
+        ${columns.map(column => `<td>${type === "calc" ? `<span class="calc-cell">${escapeHtml(mdCalc(home, row, column))}</span>` : mdInput(home, row, column)}</td>`).join("")}
+      </tr>`;
+    }
+
+    function renderMoistureDensityWorksheet(home) {
+      if (!home.tests?.moisture) return "";
+      const columns = mdColumns(home);
+      const isExpanded = state.expandedMoistureTables.has(home.id);
+      return `
+        <div class="worksheet ${isExpanded ? "" : "collapsed"}">
+          <div class="worksheet-header">
+              <h4>MD&DD Table</h4>
+            <div class="worksheet-actions">
+              <button class="small-btn" type="button" data-toggle-md-home="${home.id}" aria-expanded="${isExpanded ? "true" : "false"}">${isExpanded ? "Close MD&DD Table" : "Open MD&DD Table"}</button>
+              <button class="small-btn" type="button" data-md-pdf-home="${home.id}">Save MD&DD PDF</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="md-table">
+              <thead>
+                <tr>
+                  <th>Boring/Test Pit Depth (ft)</th>
+                  ${columns.map(column => `<th>${escapeHtml(column.label)}</th>`).join("")}
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="section-row"><td colspan="${columns.length + 1}">MOISTURE CONTENT</td></tr>
+                ${mdRow(home, columns, "Soils Class", "soilClass")}
+                ${mdRow(home, columns, "Notes", "soilNotes")}
+                ${mdRow(home, columns, "Wt of Soil + Ring (A)", "soilRing")}
+                ${mdRow(home, columns, "Weight of Ring (B)", "ringWeight")}
+                ${mdRow(home, columns, "No. of Ring (D)", "ringNo")}
+                ${mdRow(home, columns, "Weight of Soils (C = A-B/D)", "wetSoil", "calc")}
+                ${mdRow(home, columns, "Volume of Ring (E)", "ringVolume")}
+                ${mdRow(home, columns, "Wet Density (Wd = C / E / 453)", "wetDensity", "calc")}
+                <tr class="section-row"><td colspan="${columns.length + 1}">DRY DENSITY</td></tr>
+                ${mdRow(home, columns, "Weight of Soil + Pan (Wa)", "wa")}
+                ${mdRow(home, columns, "Pan ID", "panId")}
+                ${mdRow(home, columns, "Weight of Pan (Wb)", "wb")}
+                ${mdRow(home, columns, "Weight of Dry Soil + Pan (Wc)", "wc")}
+                ${mdRow(home, columns, "Weight of Water (Ww = Wa-Wc)", "water", "calc")}
+                ${mdRow(home, columns, "Weight of Dry Soil (Ws = Wc-Wb)", "drySoil", "calc")}
+                ${mdRow(home, columns, "% Moisture (M = Ww/Ws x 100)", "moisture", "calc")}
+                ${mdRow(home, columns, "Dry Density (Dd = Wd/(1+M))", "dryDensity", "calc")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    const sieveRows = [
+      { key: "s4", label: "#4", diameter: "4.75" },
+      { key: "s10", label: "#10", diameter: "2" },
+      { key: "s20", label: "#20", diameter: "0.85" },
+      { key: "s40", label: "#40", diameter: "0.425" },
+      { key: "s100", label: "#100", diameter: "0.15" },
+      { key: "s200", label: "#200", diameter: "0.075" },
+      { key: "pan", label: "Pan", diameter: "" }
+    ];
+
+    function ensureSieveAnalysis(home) {
+      if (!home.sieveAnalysis || typeof home.sieveAnalysis !== "object") {
+        home.sieveAnalysis = { cells: {} };
+      }
+      if (!home.sieveAnalysis.cells || typeof home.sieveAnalysis.cells !== "object") {
+        home.sieveAnalysis.cells = {};
+      }
+      return home.sieveAnalysis;
+    }
+
+    function sieveKey(row, field = "") {
+      return field ? `${row}__${field}` : row;
+    }
+
+    function sieveValue(home, row, field = "", fallback = "") {
+      const worksheet = ensureSieveAnalysis(home);
+      const saved = worksheet.cells[sieveKey(row, field)];
+      if (saved !== undefined) return saved;
+      if (row === "testedBy") return home.technician || "";
+      if (row === "checkedBy") return home.engineer || "";
+      if (row === "dateTested") return home.labCheckInDate || home.dateSampling || "";
+      if (row === "uscs") return (home.samples || []).map(sample => sample.classification).filter(Boolean).join(", ");
+      return fallback;
+    }
+
+    function sieveNumber(home, row, field = "") {
+      const value = parseFloat(String(sieveValue(home, row, field)).replace(/,/g, ""));
+      return Number.isFinite(value) ? value : null;
+    }
+
+    function sieveInput(home, row, field = "", fallback = "", type = "text") {
+      return `<input class="compact-input" type="${type}" data-sieve-cell-home="${home.id}" data-sieve-cell-row="${row}" data-sieve-cell-field="${field}" value="${escapeHtml(sieveValue(home, row, field, fallback))}">`;
+    }
+
+    function sieveRetained(home, row) {
+      const sieveMass = sieveNumber(home, row.key, "massSieve");
+      const sieveSoil = sieveNumber(home, row.key, "massSieveSoil");
+      return sieveMass !== null && sieveSoil !== null ? sieveSoil - sieveMass : null;
+    }
+
+    function sieveRetainedPercent(home, row) {
+      const retained = sieveRetained(home, row);
+      const drySample = sieveNumber(home, "drySample");
+      return retained !== null && drySample ? retained / drySample * 100 : null;
+    }
+
+    function sievePassingPercent(home, rowIndex) {
+      let passing = 100;
+      for (let index = 0; index <= rowIndex; index += 1) {
+        const retainedPercent = sieveRetainedPercent(home, sieveRows[index]);
+        if (retainedPercent === null) return null;
+        passing -= retainedPercent;
+      }
+      return Math.max(0, Math.min(100, passing));
+    }
+
+    function sieveCalcCell(value, decimals = 2, suffix = "") {
+      return `<span class="calc-cell">${escapeHtml(value === null ? "" : `${calcNumber(value, decimals)}${suffix}`)}</span>`;
+    }
+
+    function sieveTotalRetained(home) {
+      const values = sieveRows.map(row => sieveRetained(home, row)).filter(Number.isFinite);
+      return values.length ? values.reduce((total, value) => total + value, 0) : null;
+    }
+
+    function sieveGroupPercent(home, keys) {
+      const total = sieveTotalRetained(home);
+      if (!total) return null;
+      const retained = sieveRows
+        .filter(row => keys.includes(row.key))
+        .map(row => sieveRetained(home, row))
+        .filter(Number.isFinite)
+        .reduce((sum, value) => sum + value, 0);
+      return retained / total * 100;
+    }
+
+    function sieveCu(home) {
+      const d10 = sieveNumber(home, "d10");
+      const d60 = sieveNumber(home, "d60");
+      return d10 && d60 ? d60 / d10 : null;
+    }
+
+    function sieveCc(home) {
+      const d10 = sieveNumber(home, "d10");
+      const d30 = sieveNumber(home, "d30");
+      const d60 = sieveNumber(home, "d60");
+      return d10 && d30 && d60 ? (d30 * d30) / (d60 * d10) : null;
+    }
+
+    function sieveContainerSoil(home) {
+      const containerWeight = sieveNumber(home, "containerWeight");
+      const drySample = sieveNumber(home, "drySample");
+      return containerWeight !== null && drySample !== null ? containerWeight + drySample : null;
+    }
+
+    function sieveGraphPoints(home) {
+      const usableRows = sieveRows.filter(row => Number.isFinite(parseFloat(row.diameter)));
+      return usableRows.map(row => {
+        const rowIndex = sieveRows.findIndex(item => item.key === row.key);
+        const diameter = parseFloat(row.diameter);
+        const passing = sievePassingPercent(home, rowIndex);
+        return Number.isFinite(passing) ? { ...row, diameter, passing } : null;
+      }).filter(Boolean);
+    }
+
+    function sieveGraphCoordinate(point, graph) {
+      const minDiameter = 0.01;
+      const maxDiameter = 10;
+      const minLog = Math.log10(minDiameter);
+      const maxLog = Math.log10(maxDiameter);
+      const logValue = Math.log10(point.diameter);
+      return {
+        x: graph.left + ((maxLog - logValue) / (maxLog - minLog)) * graph.width,
+        y: graph.top + graph.height - (point.passing / 100) * graph.height
+      };
+    }
+
+    function sieveGraphVerticalTicks() {
+      const ticks = [];
+      [10, 1, 0.1].forEach(base => {
+        for (let step = 1; step < 10; step += 1) {
+          const diameter = base / step;
+          if (diameter <= 10 && diameter >= 0.01) {
+            ticks.push({ diameter, major: step === 1 });
+          }
+        }
+      });
+      ticks.push({ diameter: 0.01, major: true });
+      return ticks;
+    }
+
+    function sieveGraphMajorXTicks() {
+      return [
+        { label: "10.00", diameter: 10 },
+        { label: "1.00", diameter: 1 },
+        { label: "0.10", diameter: 0.1 },
+        { label: "0.01", diameter: 0.01 }
+      ];
+    }
+
+    function sieveGraphSieveMarkers() {
+      return [
+        { label: "#4", diameter: 4.75 },
+        { label: "#10", diameter: 2 },
+        { label: "#40", diameter: 0.425 },
+        { label: "#200", diameter: 0.075 }
+      ];
+    }
+
+    function sieveGraphZones() {
+      return [
+        { label: "GRAVEL", diameter: 7.2, color: "#000000" },
+        { label: "Coarse\nSAND", diameter: 3.0, color: "#c43c00" },
+        { label: "Medium\nSAND", diameter: 0.95, color: "#f06400" },
+        { label: "Fine\nSAND", diameter: 0.2, color: "#ff8a00" },
+        { label: "SILT/CLAY", diameter: 0.025, color: "#0a6f18" }
+      ];
+    }
+
+    function renderSieveGraph(home) {
+      const points = sieveGraphPoints(home);
+      if (!points.length) {
+        return `<div class="sieve-graph-empty">Enter the dry sample weight and sieve masses to build the grain-size curve.</div>`;
+      }
+      const graph = { left: 72, top: 58, width: 640, height: 280 };
+      const svgWidth = 760;
+      const svgHeight = 405;
+      const yTicks = Array.from({ length: 11 }, (_, index) => index * 10);
+      const verticalTicks = sieveGraphVerticalTicks();
+      const majorXTicks = sieveGraphMajorXTicks();
+      const sieveMarkers = sieveGraphSieveMarkers();
+      const zones = sieveGraphZones();
+      const coords = points.map(point => ({ ...point, ...sieveGraphCoordinate(point, graph) }));
+      const path = coords.map((point, index) => `${index ? "L" : "M"} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(" ");
+      return `
+        <svg class="sieve-graph" viewBox="0 0 ${svgWidth} ${svgHeight}" role="img" aria-label="Grain size distribution curve">
+          ${zones.map(zone => {
+            const { x } = sieveGraphCoordinate({ diameter: zone.diameter, passing: 0 }, graph);
+            return zone.label.split("\n").map((line, index) => `<text class="axis-label" x="${x}" y="${20 + (index * 13)}" text-anchor="middle" fill="${zone.color}">${line}</text>`).join("");
+          }).join("")}
+          ${sieveMarkers.map(marker => {
+            const { x } = sieveGraphCoordinate({ diameter: marker.diameter, passing: 0 }, graph);
+            return `<text x="${x}" y="${graph.top - 18}" text-anchor="middle" fill="#0000aa">${marker.label}</text><line x1="${x}" y1="${graph.top - 10}" x2="${x}" y2="${graph.top + 8}" stroke="#0000aa" stroke-width="1.2"></line>`;
+          }).join("")}
+          ${yTicks.map(tick => {
+            const y = graph.top + graph.height - (tick / 100) * graph.height;
+            return `<line class="grid-line" x1="${graph.left}" y1="${y}" x2="${graph.left + graph.width}" y2="${y}"></line><text x="${graph.left - 10}" y="${y + 4}" text-anchor="end">${tick}</text>`;
+          }).join("")}
+          ${verticalTicks.map(tick => {
+            const { x } = sieveGraphCoordinate({ diameter: tick.diameter, passing: 0 }, graph);
+            return `<line x1="${x}" y1="${graph.top}" x2="${x}" y2="${graph.top + graph.height}" stroke="#2c3230" stroke-width="${tick.major ? 1.2 : 0.55}"></line>`;
+          }).join("")}
+          ${majorXTicks.map(tick => {
+            const { x } = sieveGraphCoordinate({ diameter: tick.diameter, passing: 0 }, graph);
+            return `<text x="${x}" y="${graph.top + graph.height + 22}" text-anchor="middle">${tick.label}</text>`;
+          }).join("")}
+          <line class="axis-line" x1="${graph.left}" y1="${graph.top}" x2="${graph.left}" y2="${graph.top + graph.height}"></line>
+          <line class="axis-line" x1="${graph.left}" y1="${graph.top + graph.height}" x2="${graph.left + graph.width}" y2="${graph.top + graph.height}"></line>
+          <line class="axis-line" x1="${graph.left}" y1="${graph.top}" x2="${graph.left + graph.width}" y2="${graph.top}"></line>
+          <line class="axis-line" x1="${graph.left + graph.width}" y1="${graph.top}" x2="${graph.left + graph.width}" y2="${graph.top + graph.height}"></line>
+          <path class="curve-line" d="${path}"></path>
+          ${coords.map(point => `<circle class="curve-point" cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="5"><title>${escapeHtml(point.label)}: ${calcNumber(point.passing, 1)}% passing</title></circle>`).join("")}
+          <text class="axis-label" x="22" y="${graph.top + graph.height / 2}" transform="rotate(-90 22 ${graph.top + graph.height / 2})" text-anchor="middle">% Passing</text>
+          <text class="axis-label" x="${graph.left + graph.width / 2}" y="${svgHeight - 16}" text-anchor="middle">Particle Diameter (mm)</text>
+        </svg>
+      `;
+    }
+
+    function renderSieveAnalysisWorksheet(home) {
+      if (!home.tests?.sieve) return "";
+      const isExpanded = state.expandedSieveTables.has(home.id);
+      const totalRetained = sieveTotalRetained(home);
+      return `
+        <div class="worksheet ${isExpanded ? "" : "collapsed"}">
+          <div class="worksheet-header">
+            <h4>Sieve Table</h4>
+            <div class="worksheet-actions">
+              <button class="small-btn" type="button" data-toggle-sieve-home="${home.id}" aria-expanded="${isExpanded ? "true" : "false"}">${isExpanded ? "Close Sieve Table" : "Open Sieve Table"}</button>
+              <button class="small-btn" type="button" data-sieve-pdf-home="${home.id}">Save Sieve PDF</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <tbody>
+                <tr class="section-row"><td colspan="4">PROJECT AND SAMPLE INFO</td></tr>
+                <tr><td>Project Name</td><td>${escapeHtml(home.clientName || "")}</td><td>Project Number</td><td>${escapeHtml(home.projectNumber || "")}</td></tr>
+                <tr><td>Location</td><td>${escapeHtml(home.address || "")}</td><td>Test Number</td><td>${sieveInput(home, "testNumber")}</td></tr>
+                <tr><td>Boring Number</td><td>${sieveInput(home, "boringNumber")}</td><td>Depth</td><td>${sieveInput(home, "boringDepth")}</td></tr>
+                <tr><td>Tested By</td><td>${sieveInput(home, "testedBy")}</td><td>Date</td><td>${sieveInput(home, "dateTested", "", "", "date")}</td></tr>
+                <tr><td>Checked By</td><td>${sieveInput(home, "checkedBy")}</td><td>AASHTO Soil Classification</td><td>${sieveInput(home, "aashto")}</td></tr>
+                <tr><td>USCS Soil Classification</td><td colspan="3">${sieveInput(home, "uscs")}</td></tr>
+                <tr class="section-row"><td colspan="4">SAMPLE WEIGHTS</td></tr>
+                <tr><td>Weight of Container (g)</td><td>${sieveInput(home, "containerWeight")}</td><td>Weight of Dry Sample (g)</td><td>${sieveInput(home, "drySample")}</td></tr>
+                <tr><td>Weight of Container & Soil (g)</td><td>${sieveCalcCell(sieveContainerSoil(home))}</td><td>Total Soil Retained (g)</td><td>${sieveCalcCell(totalRetained)}</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Sieve Number</th><th>Diameter (mm)</th><th>Mass of Sieve (g)</th><th>Mass of Sieve & Soil (g)</th><th>Soil Retained (g)</th><th>Soil Retained (%)</th><th>Soil Passing (%)</th></tr>
+              </thead>
+              <tbody>
+                ${sieveRows.map((row, index) => {
+                  const retained = sieveRetained(home, row);
+                  const retainedPercent = sieveRetainedPercent(home, row);
+                  const passing = sievePassingPercent(home, index);
+                  return `<tr>
+                    <td>${escapeHtml(row.label)}</td>
+                    <td>${escapeHtml(row.diameter)}</td>
+                    <td>${sieveInput(home, row.key, "massSieve")}</td>
+                    <td>${sieveInput(home, row.key, "massSieveSoil")}</td>
+                    <td>${sieveCalcCell(retained)}</td>
+                    <td>${sieveCalcCell(retainedPercent, 1, "%")}</td>
+                    <td>${sieveCalcCell(passing, 1, "%")}</td>
+                  </tr>`;
+                }).join("")}
+              </tbody>
+            </table>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <tbody>
+                <tr class="section-row"><td colspan="4">GRAIN SIZE DISTRIBUTION CURVE RESULTS</td></tr>
+                <tr><td>% Gravel</td><td>${sieveCalcCell(sieveGroupPercent(home, ["s4"]), 1, "%")}</td><td>D10</td><td>${sieveInput(home, "d10")}</td></tr>
+                <tr><td>% Sand</td><td>${sieveCalcCell(sieveGroupPercent(home, ["s10", "s20", "s40", "s100"]), 1, "%")}</td><td>D30</td><td>${sieveInput(home, "d30")}</td></tr>
+                <tr><td>% Fines</td><td>${sieveCalcCell(sieveGroupPercent(home, ["s200", "pan"]), 1, "%")}</td><td>D60</td><td>${sieveInput(home, "d60")}</td></tr>
+                <tr><td>Cu</td><td>${sieveCalcCell(sieveCu(home), 2)}</td><td>Cc</td><td>${sieveCalcCell(sieveCc(home), 2)}</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="sieve-graph-wrap">
+            ${renderSieveGraph(home)}
+          </div>
+        </div>
+      `;
+    }
+
+    function pdfSafe(value) {
+      return String(value || "")
+        .replace(/[^\x20-\x7E]/g, " ")
+        .replace(/\\/g, "\\\\")
+        .replace(/\(/g, "\\(")
+        .replace(/\)/g, "\\)");
+    }
+
+    function plainText(value) {
+      return String(value || "").replace(/[^\x20-\x7E]/g, " ");
+    }
+
+    function wrapText(value, maxChars) {
+      const words = plainText(value).split(/\s+/).filter(Boolean);
+      const lines = [];
+      let line = "";
+      words.forEach(word => {
+        const next = line ? `${line} ${word}` : word;
+        if (next.length > maxChars && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = next;
+        }
+      });
+      if (line) lines.push(line);
+      return lines.length ? lines : [""];
+    }
+
+    function mdPdfName(home) {
+      const jobNumber = String(home?.projectNumber || "NO-JOB-NUMBER")
+        .trim()
+        .replace(/[^a-z0-9_-]+/gi, "-")
+        .replace(/^-+|-+$/g, "");
+      return `MD&DD_${jobNumber || "NO-JOB-NUMBER"}.pdf`;
+    }
+
+    function custodyPdfName(home) {
+      const jobNumber = String(home?.projectNumber || "NO-JOB-NUMBER")
+        .trim()
+        .replace(/[^a-z0-9_-]+/gi, "-")
+        .replace(/^-+|-+$/g, "");
+      return `CUSTODY_${jobNumber || "NO-JOB-NUMBER"}.pdf`;
+    }
+
+    function sievePdfName(home) {
+      const jobNumber = String(home?.projectNumber || "NO-JOB-NUMBER")
+        .trim()
+        .replace(/[^a-z0-9_-]+/gi, "-")
+        .replace(/^-+|-+$/g, "");
+      return `SIEVE_${jobNumber || "NO-JOB-NUMBER"}.pdf`;
+    }
+
+    function buildCustodyPdf(home) {
+      const content = [];
+      const pageWidth = 612;
+      const pageHeight = 792;
+      const margin = 42;
+      const contentWidth = pageWidth - (margin * 2);
+      let y = 750;
+
+      function text(x, yValue, value, size = 9, bold = false) {
+        content.push(`BT /${bold ? "F2" : "F1"} ${size} Tf ${x} ${yValue} Td (${pdfSafe(value)}) Tj ET`);
+      }
+
+      function center(yValue, value, size = 14, bold = false) {
+        const approxWidth = plainText(value).length * size * 0.5;
+        text((pageWidth - approxWidth) / 2, yValue, value, size, bold);
+      }
+
+      function box(x, yTop, width, height) {
+        content.push(`${x} ${yTop - height} ${width} ${height} re S`);
+      }
+
+      function row(cells, widths, height = 18, options = {}) {
+        let x = margin;
+        cells.forEach((cell, index) => {
+          box(x, y, widths[index], height);
+          const lines = wrapText(cell, Math.max(8, Math.floor(widths[index] / 5.2))).slice(0, options.maxLines || 2);
+          lines.forEach((lineText, lineIndex) => {
+            text(x + 4, y - 12 - (lineIndex * 10), lineText, options.size || 8, options.bold || false);
+          });
+          x += widths[index];
+        });
+        y -= height;
+      }
+
+      center(y, "Moment Engineering", 18, true);
+      y -= 18;
+      center(y, "Laboratory Testing & Custody Log", 12, true);
+      y -= 28;
+
+      text(margin, y, "Client Information", 11, true);
+      y -= 13;
+      [
+        ["Client Name", home.clientName],
+        ["Project Number", home.projectNumber],
+        ["Project Address", home.address],
+        ["County", home.county],
+        ["Date Sampling", formatDate(home.dateSampling)],
+        ["Report Due", formatDate(reportDueDateFor(home.dateSampling))],
+        ["Lab Check in Date", formatDate(home.labCheckInDate)]
+      ].forEach(([label, value]) => {
+        text(margin, y, `${label}:`, 9, true);
+        text(margin + 95, y, value, 9);
+        y -= 12;
+      });
+
+      y -= 6;
+      text(margin, y, "Sample Information", 11, true);
+      y -= 10;
+      const sampleWidths = [50, 140, 54, 74, 210];
+      row(["Sample #", "Classification", "Depth", "Method", "Remarks"], sampleWidths, 18, { bold: true, size: 7, maxLines: 1 });
+      const sampleRows = (home.samples && home.samples.length)
+        ? home.samples
+        : [{ sampleNumber: "", classification: "", depth: "", method: "", remarks: "" }];
+      sampleRows.slice(0, 12).forEach(sample => {
+        row([
+          sample.sampleNumber,
+          formatClassification(sample.classification),
+          sample.depth,
+          sample.method,
+          sample.remarks
+        ], sampleWidths, 24, { size: 7, maxLines: 2 });
+      });
+
+      y -= 10;
+      text(margin, y, "Testing Requested", 11, true);
+      y -= 13;
+      testOptions.forEach(([key, label, astm], index) => {
+        const x = index % 2 === 0 ? margin : 315;
+        if (index > 0 && index % 2 === 0) y -= 12;
+        text(x, y, `${home.tests?.[key] ? "[X]" : "[ ]"} ${label} ${astm}`, 8);
+      });
+
+      y -= 22;
+      text(margin, y, "Custody & Review", 11, true);
+      y -= 10;
+      const custodyWidths = [180, 220, 128];
+      row(["Activity", "Name/Signature", "Date"], custodyWidths, 18, { bold: true, size: 8, maxLines: 1 });
+      [
+        ["Received by Field Technician", home.technician, formatDate(home.dateSampling)],
+        ["Received by Field Technician", home.technician, formatDate(home.labCheckInDate)],
+        ["Reviewed by Lab Manager", home.labManager, formatDate(home.labCheckInDate)],
+        ["Reviewed by Engineer", home.engineer, formatDate(home.labCheckInDate)]
+      ].forEach(item => row(item, custodyWidths, 20, { size: 8, maxLines: 1 }));
+
+      y -= 10;
+      text(margin, y, "Comment / Notes", 11, true);
+      y -= 14;
+      box(margin, y + 8, contentWidth, 42);
+      wrapText(home.notes, 105).slice(0, 3).forEach((lineText, index) => text(margin + 4, y - 6 - (index * 10), lineText, 8));
+
+      const stream = content.join("\n");
+      const objects = [
+        "<< /Type /Catalog /Pages 2 0 R >>",
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>`,
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
+        `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`
+      ];
+      let pdf = "%PDF-1.4\n";
+      const offsets = [0];
+      objects.forEach((object, index) => {
+        offsets.push(pdf.length);
+        pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+      });
+      const xref = pdf.length;
+      pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+      offsets.slice(1).forEach(offset => {
+        pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+      });
+      pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+      return pdf;
+    }
+
+    function downloadCustodyPdf(home) {
+      const blob = new Blob([buildCustodyPdf(home)], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = custodyPdfName(home);
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function mdReportRows(home, columns) {
+      return [
+        ["MOISTURE CONTENT", "section"],
+        ["Soils Class", "soilClass", "input"],
+        ["Notes", "soilNotes", "input"],
+        ["Wt of Soil + Ring (A)", "soilRing", "input"],
+        ["Weight of Ring (B)", "ringWeight", "input"],
+        ["No. of Ring (D)", "ringNo", "input"],
+        ["Weight of Soils (C = A-B/D)", "wetSoil", "calc"],
+        ["Volume of Ring (E)", "ringVolume", "input"],
+        ["Wet Density (Wd = C / E / 453)", "wetDensity", "calc"],
+        ["DRY DENSITY", "section"],
+        ["Weight of Soil + Pan (Wa)", "wa", "input"],
+        ["Pan ID", "panId", "input"],
+        ["Weight of Pan (Wb)", "wb", "input"],
+        ["Weight of Dry Soil + Pan (Wc)", "wc", "input"],
+        ["Weight of Water (Ww = Wa-Wc)", "water", "calc"],
+        ["Weight of Dry Soil (Ws = Wc-Wb)", "drySoil", "calc"],
+        ["% Moisture (M = Ww/Ws x 100)", "moisture", "calc"],
+        ["Dry Density (Dd = Wd/(1+M))", "dryDensity", "calc"]
+      ];
+    }
+
+    function buildMoistureDensityPdf(home) {
+      const columns = mdColumns(home);
+      const content = [];
+      const pageWidth = 1008;
+      const pageHeight = 612;
+      const margin = 18;
+      const tableWidth = pageWidth - (margin * 2);
+      let y = 594;
+
+      function color([r, g, b], stroke = false) {
+        content.push(`${r} ${g} ${b} ${stroke ? "RG" : "rg"}`);
+      }
+
+      function text(x, yValue, value, size = 7, bold = false, fill = [0.16, 0.20, 0.23]) {
+        color(fill);
+        content.push(`BT /${bold ? "F2" : "F1"} ${size} Tf ${x} ${yValue} Td (${pdfSafe(value)}) Tj ET`);
+      }
+
+      function rect(x, yTop, width, height, fill = [1, 1, 1]) {
+        color(fill);
+        content.push(`${x} ${yTop - height} ${width} ${height} re f`);
+        color([0.76, 0.78, 0.76], true);
+        content.push(`${x} ${yTop - height} ${width} ${height} re S`);
+      }
+
+      function row(cells, widths, height = 16, options = {}) {
+        let x = margin;
+        cells.forEach((cell, index) => {
+          const fill = options.fills?.[index] || options.fill || [1, 1, 1];
+          rect(x, y, widths[index], height, fill);
+          const maxChars = Math.max(8, Math.floor(widths[index] / 4.8));
+          wrapText(cell, maxChars).slice(0, options.maxLines || 2).forEach((line, lineIndex) => {
+            const textColor = options.textColor || [0.16, 0.20, 0.23];
+            const centered = options.center && index > 0;
+            const approx = plainText(line).length * (options.size || 7) * 0.45;
+            const tx = centered ? x + Math.max(3, (widths[index] - approx) / 2) : x + 3;
+            text(tx, y - 10 - (lineIndex * 7), line, options.size || 7, options.bold || false, textColor);
+          });
+          x += widths[index];
+        });
+        y -= height;
+      }
+
+      function center(yValue, value, size = 14, bold = false) {
+        const approxWidth = plainText(value).length * size * 0.45;
+        text((pageWidth - approxWidth) / 2, yValue, value, size, bold, [0, 0, 0]);
+      }
+
+      center(y, "Moment Engineering", 18, true);
+      y -= 18;
+      center(y, "Moisture Content & Dry Density Test", 13, true);
+      y -= 24;
+      text(margin + 10, y, `Client: ${home.clientName || ""}`, 8, true, [0, 0, 0]);
+      text(365, y, `Job No.: ${home.projectNumber || ""}`, 8, true, [0, 0, 0]);
+      text(640, y, `Date: ${formatDate(new Date().toISOString().slice(0, 10))}`, 8, true, [0, 0, 0]);
+      y -= 12;
+      text(margin + 10, y, `Project Address: ${home.address || ""}`, 8, true, [0, 0, 0]);
+      y -= 18;
+
+      function sectionHeader(title) {
+        const labelWidth = Math.max(150, Math.min(260, tableWidth - (columns.length * 54)));
+        const columnWidth = (tableWidth - labelWidth) / Math.max(columns.length, 1);
+        const widths = [labelWidth, ...columns.map(() => columnWidth)];
+        row([title, ...columns.map(column => column.label)], widths, 15, {
+          fill: [0.12, 0.34, 0.21],
+          textColor: [1, 1, 1],
+          bold: true,
+          center: true,
+          maxLines: 1
+        });
+        return widths;
+      }
+
+      function displayValue(rowKey, column, type) {
+        const value = type === "calc" ? mdCalc(home, rowKey, column) : mdValue(home, rowKey, column);
+        return type === "calc" && !value ? "--" : value;
+      }
+
+      function tableRow(widths, label, rowKey, type = "input") {
+        const isCalc = type === "calc";
+        const rowHeight = rowKey === "soilClass" ? 22 : 16;
+        const fills = [[0.96, 0.96, 0.96], ...columns.map(column => {
+          if (!isCalc) return [1, 1, 1];
+          return mdCalc(home, rowKey, column) ? [0.89, 0.96, 0.90] : [1, 0.91, 0.92];
+        })];
+        row([label, ...columns.map(column => displayValue(rowKey, column, type))], widths, rowHeight, {
+          fills,
+          bold: false,
+          center: true,
+          maxLines: rowKey === "soilClass" ? 2 : 1
+        });
+      }
+
+      const moistureWidths = sectionHeader("MOISTURE CONTENT");
+      tableRow(moistureWidths, "Soil Class", "soilClass");
+      tableRow(moistureWidths, "A. Wt Soil+Ring (g)", "soilRing");
+      tableRow(moistureWidths, "B. Wt Ring (g)", "ringWeight");
+      tableRow(moistureWidths, "D. No. of Rings", "ringNo");
+      tableRow(moistureWidths, "E. Vol. Ring (ft3)", "ringVolume");
+      tableRow(moistureWidths, "C. Wt Soils (g)", "wetSoil", "calc");
+      tableRow(moistureWidths, "Wet Density (PCF)", "wetDensity", "calc");
+
+      y -= 10;
+      const dryWidths = sectionHeader("DRY DENSITY");
+      tableRow(dryWidths, "Wa. Wt Soil+Pan (g)", "wa");
+      tableRow(dryWidths, "Pan ID", "panId");
+      tableRow(dryWidths, "Wb. Wt Pan (g)", "wb");
+      tableRow(dryWidths, "Wc. Wt DrySoil+Pan (g)", "wc");
+      tableRow(dryWidths, "Ww. Wt Water (g)", "water", "calc");
+      tableRow(dryWidths, "Ws. Wt Dry Soil (g)", "drySoil", "calc");
+      tableRow(dryWidths, "% Moisture", "moisture", "calc");
+      tableRow(dryWidths, "Dry Density (PCF)", "dryDensity", "calc");
+
+      const moistureValues = columns.map(column => parseFloat(mdCalc(home, "moisture", column))).filter(Number.isFinite);
+      const dryDensityValues = columns.map(column => parseFloat(mdCalc(home, "dryDensity", column))).filter(Number.isFinite);
+      const validCount = columns.filter(column => mdCalc(home, "moisture", column) && mdCalc(home, "dryDensity", column)).length;
+      const range = values => {
+        if (!values.length) return "--";
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const avg = values.reduce((sum, value) => sum + value, 0) / values.length;
+        return `${calcNumber(min)} - ${calcNumber(max)} (avg ${calcNumber(avg)})`;
+      };
+
+      y -= 12;
+      row(["SUMMARY", ""], [tableWidth, 0], 15, {
+        fill: [0.12, 0.34, 0.21],
+        textColor: [1, 1, 1],
+        bold: true,
+        maxLines: 1
+      });
+      row(["Dry Density Range (PCF)", range(dryDensityValues)], [170, tableWidth - 170], 16, { fill: [0.96, 0.96, 0.96], bold: true });
+      row(["Moisture Range (%)", range(moistureValues)], [170, tableWidth - 170], 16, { fill: [0.96, 0.96, 0.96], bold: true });
+      row(["Valid Columns", `${validCount} of ${columns.length}`], [170, tableWidth - 170], 16, { fill: [0.96, 0.96, 0.96], bold: true });
+
+      y -= 12;
+      text(margin, y, "Notes:", 8, false, [0.16, 0.20, 0.23]);
+      y -= 12;
+      columns.forEach(column => {
+        const note = mdValue(home, "soilNotes", column);
+        if (!note) return;
+        wrapText(`${column.label}: ${note}`, 120).slice(0, 2).forEach(line => {
+          text(margin + 4, y, line, 7, false, [0.16, 0.20, 0.23]);
+          y -= 10;
+        });
+      });
+
+      const stream = content.join("\n");
+      const objects = [
+        "<< /Type /Catalog /Pages 2 0 R >>",
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>`,
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
+        `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`
+      ];
+      let pdf = "%PDF-1.4\n";
+      const offsets = [0];
+      objects.forEach((object, index) => {
+        offsets.push(pdf.length);
+        pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+      });
+      const xref = pdf.length;
+      pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+      offsets.slice(1).forEach(offset => {
+        pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+      });
+      pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+      return pdf;
+    }
+
+    function downloadMoistureDensityPdf(home) {
+      const blob = new Blob([buildMoistureDensityPdf(home)], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = mdPdfName(home);
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function buildSieveAnalysisPdf(home) {
+      const content = [];
+      const pageWidth = 1008;
+      const pageHeight = 612;
+      const margin = 18;
+      const tableWidth = pageWidth - (margin * 2);
+      let y = 588;
+      const green = [0.12, 0.34, 0.21];
+      const textColor = [0.16, 0.20, 0.23];
+      const labelFill = [0.96, 0.96, 0.96];
+      const calcGoodFill = [0.89, 0.96, 0.90];
+      const calcMissingFill = [1, 0.91, 0.92];
+
+      function color([r, g, b], stroke = false) {
+        content.push(`${r} ${g} ${b} ${stroke ? "RG" : "rg"}`);
+      }
+
+      function text(x, yValue, value, size = 7, bold = false, fill = textColor) {
+        color(fill);
+        content.push(`BT /${bold ? "F2" : "F1"} ${size} Tf ${x} ${yValue} Td (${pdfSafe(value)}) Tj ET`);
+      }
+
+      function center(yValue, value, size = 14, bold = false) {
+        const approxWidth = plainText(value).length * size * 0.45;
+        text((pageWidth - approxWidth) / 2, yValue, value, size, bold, [0, 0, 0]);
+      }
+
+      function rotatedText(x, yValue, value, size = 7, bold = false, fill = textColor) {
+        color(fill);
+        content.push(`q 0 1 -1 0 ${x} ${yValue} cm BT /${bold ? "F2" : "F1"} ${size} Tf 0 0 Td (${pdfSafe(value)}) Tj ET Q`);
+      }
+
+      function rect(x, yTop, width, height, fill = [1, 1, 1]) {
+        color(fill);
+        content.push(`${x} ${yTop - height} ${width} ${height} re f`);
+        color([0.76, 0.78, 0.76], true);
+        content.push(`${x} ${yTop - height} ${width} ${height} re S`);
+      }
+
+      function row(cells, widths, height = 16, options = {}, xStart = margin) {
+        let x = xStart;
+        cells.forEach((cell, index) => {
+          if (!widths[index]) return;
+          const fill = options.fills?.[index] || options.fill || [1, 1, 1];
+          rect(x, y, widths[index], height, fill);
+          const maxChars = Math.max(7, Math.floor(widths[index] / 4.7));
+          wrapText(cell, maxChars).slice(0, options.maxLines || 1).forEach((line, lineIndex) => {
+            const centered = options.center && index > 0;
+            const approx = plainText(line).length * (options.size || 7) * 0.45;
+            const tx = centered ? x + Math.max(3, (widths[index] - approx) / 2) : x + 3;
+            text(tx, y - 10 - (lineIndex * 7), line, options.size || 7, options.bold || false, options.textColor || [0.16, 0.20, 0.23]);
+          });
+          x += widths[index];
+        });
+        y -= height;
+      }
+
+      function rowAt(yTop, cells, widths, height = 16, options = {}, xStart = margin) {
+        const oldY = y;
+        y = yTop;
+        row(cells, widths, height, options, xStart);
+        const nextY = y;
+        y = oldY;
+        return nextY;
+      }
+
+      function section(title, width = tableWidth, xStart = margin) {
+        row([title], [width], 15, {
+          fill: green,
+          textColor: [1, 1, 1],
+          bold: true,
+          maxLines: 1
+        }, xStart);
+      }
+
+      function valueOrDash(value) {
+        return value === null || value === undefined || value === "" ? "--" : value;
+      }
+
+      function percentOrDash(value) {
+        return value === null || value === undefined || value === "" ? "--" : `${calcNumber(value, 1)}%`;
+      }
+
+      function pdfGraphPoint(point, graph) {
+        const coord = sieveGraphCoordinate(point, { left: graph.left, top: graph.top, width: graph.width, height: graph.height });
+        return { x: coord.x, y: pageHeight - coord.y };
+      }
+
+      function graphZoneColor(zone) {
+        if (zone.color === "#c43c00") return [0.77, 0.24, 0];
+        if (zone.color === "#f06400") return [0.94, 0.39, 0];
+        if (zone.color === "#ff8a00") return [1, 0.54, 0];
+        if (zone.color === "#0a6f18") return [0.04, 0.44, 0.09];
+        return [0, 0, 0];
+      }
+
+      center(y, "Moment Engineering", 18, true);
+      y -= 18;
+      center(y, "Sieve Analysis Test", 13, true);
+      y -= 22;
+      text(margin + 10, y, `Client: ${home.clientName || ""}`, 8, true, [0, 0, 0]);
+      text(365, y, `Job No.: ${home.projectNumber || ""}`, 8, true, [0, 0, 0]);
+      text(640, y, `Date: ${formatDate(sieveValue(home, "dateTested")) || formatDate(new Date().toISOString().slice(0, 10))}`, 8, true, [0, 0, 0]);
+      y -= 12;
+      text(margin + 10, y, `Project Address: ${home.address || ""}`, 8, true, [0, 0, 0]);
+      y -= 18;
+
+      section("PROJECT AND SAMPLE INFO");
+      const infoWidths = [130, 330, 120, tableWidth - 580];
+      row(["Test Number", sieveValue(home, "testNumber"), "Tested By", sieveValue(home, "testedBy")], infoWidths, 16, {
+        fills: [labelFill, [1, 1, 1], labelFill, [1, 1, 1]],
+        bold: true
+      });
+      row(["Boring Number", sieveValue(home, "boringNumber"), "Depth", sieveValue(home, "boringDepth")], infoWidths, 16, {
+        fills: [labelFill, [1, 1, 1], labelFill, [1, 1, 1]],
+        bold: true
+      });
+      row(["Checked By", sieveValue(home, "checkedBy"), "AASHTO", sieveValue(home, "aashto")], infoWidths, 16, {
+        fills: [labelFill, [1, 1, 1], labelFill, [1, 1, 1]],
+        bold: true
+      });
+      row(["USCS", sieveValue(home, "uscs"), "Location", home.address || ""], infoWidths, 18, {
+        fills: [labelFill, [1, 1, 1], labelFill, [1, 1, 1]],
+        bold: true,
+        maxLines: 2
+      });
+      y -= 8;
+
+      const leftX = margin;
+      const leftWidth = 600;
+      const rightX = margin + leftWidth + 14;
+      const rightWidth = tableWidth - leftWidth - 14;
+      const leftStartY = y;
+      let leftY = y;
+      let rightY = y;
+
+      y = leftY;
+      section("SIEVE ANALYSIS", leftWidth, leftX);
+      const sieveWidths = [78, 78, 100, 120, 100, 62, 62];
+      row(["Sieve No.", "Dia. (mm)", "Mass Sieve", "Mass Sieve + Soil", "Soil Retained", "Ret. %", "Pass. %"], sieveWidths, 20, {
+        fill: green,
+        textColor: [1, 1, 1],
+        bold: true,
+        center: true,
+        maxLines: 2,
+        size: 6.5
+      }, leftX);
+      sieveRows.forEach((sieveRow, index) => {
+        const retained = sieveRetained(home, sieveRow);
+        const retainedPercent = sieveRetainedPercent(home, sieveRow);
+        const passing = sievePassingPercent(home, index);
+        row([
+          sieveRow.label,
+          sieveRow.diameter,
+          sieveValue(home, sieveRow.key, "massSieve"),
+          sieveValue(home, sieveRow.key, "massSieveSoil"),
+          valueOrDash(calcNumber(retained)),
+          percentOrDash(retainedPercent),
+          percentOrDash(passing)
+        ], sieveWidths, 18, {
+          center: true,
+          fills: [
+            labelFill,
+            labelFill,
+            [1, 1, 1],
+            [1, 1, 1],
+            retained === null ? calcMissingFill : calcGoodFill,
+            retainedPercent === null ? calcMissingFill : calcGoodFill,
+            passing === null ? calcMissingFill : calcGoodFill
+          ]
+        }, leftX);
+      });
+      leftY = y;
+
+      y = rightY;
+      section("SAMPLE WEIGHTS", rightWidth, rightX);
+      const weightWidths = [150, rightWidth - 150];
+      row(["Weight of Container (g)", sieveValue(home, "containerWeight")], weightWidths, 18, {
+        fills: [labelFill, [1, 1, 1]],
+        bold: true
+      }, rightX);
+      row(["Weight of Dry Sample (g)", sieveValue(home, "drySample")], weightWidths, 18, {
+        fills: [labelFill, [1, 1, 1]],
+        bold: true
+      }, rightX);
+      row(["Weight of Container & Soil (g)", valueOrDash(calcNumber(sieveContainerSoil(home)))], weightWidths, 18, {
+        fills: [labelFill, sieveContainerSoil(home) === null ? calcMissingFill : calcGoodFill],
+        bold: true
+      }, rightX);
+      row(["Total Soil Retained (g)", valueOrDash(calcNumber(sieveTotalRetained(home)))], weightWidths, 18, {
+        fills: [labelFill, sieveTotalRetained(home) === null ? calcMissingFill : calcGoodFill],
+        bold: true
+      }, rightX);
+      y -= 8;
+
+      section("GRAIN SIZE DISTRIBUTION CURVE RESULTS", rightWidth, rightX);
+      const resultWidths = [90, 90, 90, rightWidth - 270];
+      row(["% Gravel", percentOrDash(sieveGroupPercent(home, ["s4"])), "D10", valueOrDash(sieveValue(home, "d10"))], resultWidths, 18, {
+        fills: [labelFill, sieveGroupPercent(home, ["s4"]) === null ? calcMissingFill : calcGoodFill, labelFill, [1, 1, 1]],
+        bold: true
+      }, rightX);
+      row(["% Sand", percentOrDash(sieveGroupPercent(home, ["s10", "s20", "s40", "s100"])), "D30", valueOrDash(sieveValue(home, "d30"))], resultWidths, 18, {
+        fills: [labelFill, sieveGroupPercent(home, ["s10", "s20", "s40", "s100"]) === null ? calcMissingFill : calcGoodFill, labelFill, [1, 1, 1]],
+        bold: true
+      }, rightX);
+      row(["% Fines", percentOrDash(sieveGroupPercent(home, ["s200", "pan"])), "D60", valueOrDash(sieveValue(home, "d60"))], resultWidths, 18, {
+        fills: [labelFill, sieveGroupPercent(home, ["s200", "pan"]) === null ? calcMissingFill : calcGoodFill, labelFill, [1, 1, 1]],
+        bold: true
+      }, rightX);
+      row(["Cu", valueOrDash(calcNumber(sieveCu(home), 2)), "Cc", valueOrDash(calcNumber(sieveCc(home), 2))], resultWidths, 18, {
+        fills: [labelFill, sieveCu(home) === null ? calcMissingFill : calcGoodFill, labelFill, sieveCc(home) === null ? calcMissingFill : calcGoodFill],
+        bold: true
+      }, rightX);
+      rightY = y;
+
+      y = Math.min(leftY, rightY) - 14;
+      section("GRAIN SIZE DISTRIBUTION CURVE");
+      const graph = { left: margin + 72, top: pageHeight - (y - 34), width: tableWidth - 110, height: 158 };
+      const graphPdfTop = pageHeight - graph.top;
+      const graphPdfBottom = pageHeight - (graph.top + graph.height);
+      const graphPdfLeft = graph.left;
+      const graphPdfRight = graph.left + graph.width;
+      const points = sieveGraphPoints(home);
+
+      sieveGraphZones().forEach(zone => {
+        const px = pdfGraphPoint({ diameter: zone.diameter, passing: 0 }, graph).x;
+        zone.label.split("\n").forEach((line, index) => {
+          text(px - (plainText(line).length * 2.1), graphPdfTop + 18 - (index * 9), line, 7, true, graphZoneColor(zone));
+        });
+      });
+      sieveGraphSieveMarkers().forEach(marker => {
+        const px = pdfGraphPoint({ diameter: marker.diameter, passing: 0 }, graph).x;
+        text(px - 7, graphPdfTop + 4, marker.label, 7, false, [0, 0, 0.68]);
+        color([0, 0, 0.68], true);
+        content.push(`${px} ${graphPdfTop - 4} m ${px} ${graphPdfTop - 18} l S`);
+      });
+
+      color([0.84, 0.87, 0.82], true);
+      Array.from({ length: 11 }, (_, index) => index * 10).forEach(tick => {
+        const py = graphPdfBottom + (tick / 100) * graph.height;
+        content.push(`${graphPdfLeft} ${py} m ${graphPdfRight} ${py} l S`);
+        text(graphPdfLeft - 22, py - 3, `${tick}`, 7, false, [0.16, 0.20, 0.23]);
+      });
+      sieveGraphVerticalTicks().forEach(tick => {
+        const px = pdfGraphPoint({ diameter: tick.diameter, passing: 0 }, graph).x;
+        color([0.16, 0.20, 0.23], true);
+        content.push(`${tick.major ? "1.2" : "0.55"} w ${px} ${graphPdfBottom} m ${px} ${graphPdfTop} l S 1 w`);
+      });
+      sieveGraphMajorXTicks().forEach(tick => {
+        const px = pdfGraphPoint({ diameter: tick.diameter, passing: 0 }, graph).x;
+        text(px - 12, graphPdfBottom - 16, tick.label, 7, false, [0.16, 0.20, 0.23]);
+      });
+      color([0.16, 0.20, 0.23], true);
+      content.push(`${graphPdfLeft} ${graphPdfBottom} m ${graphPdfLeft} ${graphPdfTop} l ${graphPdfRight} ${graphPdfTop} l ${graphPdfRight} ${graphPdfBottom} l h S`);
+      if (points.length) {
+        color([0.38, 0.64, 1], true);
+        content.push("3 w");
+        points.forEach((point, index) => {
+          const coord = pdfGraphPoint(point, graph);
+          content.push(`${coord.x} ${coord.y} ${index ? "l" : "m"}`);
+        });
+        content.push("S 1 w");
+        color([0.38, 0.64, 1]);
+        points.forEach(point => {
+          const coord = pdfGraphPoint(point, graph);
+          content.push(`${coord.x - 3} ${coord.y - 3} 6 6 re f`);
+        });
+      } else {
+        text(graphPdfLeft + 180, graphPdfBottom + 80, "Enter dry sample weight and sieve masses to build the curve.", 9, false, [0.40, 0.44, 0.48]);
+      }
+      text(graphPdfLeft + 330, graphPdfBottom - 36, "Particle Diameter (mm)", 10, true, [0.16, 0.20, 0.23]);
+      rotatedText(graphPdfLeft - 58, graphPdfBottom + 50, "% Passing", 10, true, [0.16, 0.20, 0.23]);
+
+      const stream = content.join("\n");
+      const objects = [
+        "<< /Type /Catalog /Pages 2 0 R >>",
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>`,
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
+        `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`
+      ];
+      let pdf = "%PDF-1.4\n";
+      const offsets = [0];
+      objects.forEach((object, index) => {
+        offsets.push(pdf.length);
+        pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+      });
+      const xref = pdf.length;
+      pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+      offsets.slice(1).forEach(offset => {
+        pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+      });
+      pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+      return pdf;
+    }
+
+    function downloadSieveAnalysisPdf(home) {
+      const blob = new Blob([buildSieveAnalysisPdf(home)], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = sievePdfName(home);
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function renderHome(home) {
+      const completion = completionForHome(home);
+      const documentCompletion = documentCompletionForHome(home);
+      const dueStatus = reportDueStatus(home, completion);
+      const title = home.address || "Untitled home";
+      const isExpanded = state.expandedHomes.has(home.id);
+      const samples = home.samples || [];
+      const bagCount = bagSamples([home]).length;
+      const dueClass = dueToneClass(dueStatus);
+      const days = daysInLab(home.labCheckInDate);
+      const daysDisplay = days === "" ? "--" : days;
+      const daysClass = Number(days || 0) >= 21 ? "days-hot" : "";
+      const projectAction = home.completedAt
+        ? `<button class="small-btn" type="button" data-restore-home="${home.id}">Restore</button>`
+        : `<button class="small-btn" type="button" data-complete-home="${home.id}">Complete</button>`;
+      const deleteAction = `<button class="small-btn danger-soft" type="button" data-delete-home="${home.id}">Delete</button>`;
+      return `
+        <article class="home-card ${isExpanded ? "expanded" : ""}">
+          <div class="home-header" data-home-row="${home.id}">
+            <button class="row-toggle" type="button" data-toggle-home="${home.id}" aria-expanded="${isExpanded ? "true" : "false"}">${isExpanded ? "v" : ">"}</button>
+            <div class="home-title">
+              <h3>${escapeHtml(title)}</h3>
+              <p>${escapeHtml(home.clientName || "No client")} &nbsp;|&nbsp; ${escapeHtml(home.projectNumber || "No project number")} &nbsp;|&nbsp; ${escapeHtml(home.county || "")}</p>
+            </div>
+            <div class="row-cell">${statusPill(home, dueStatus, completion)}</div>
+            <div class="row-cell due-date-cell ${dueClass}">${dueStatus.daysLeft < 0 ? "! " : ""}${escapeHtml(formatDate(dueStatus.dueDate) || dueStatus.label)}</div>
+            <div class="row-cell">${dueStatus.daysLeft < 0 ? `<span class="priority-pill">Rush</span>` : dueStatus.daysLeft <= 2 && dueStatus.dueDate ? `<span class="priority-pill">High</span>` : "--"}</div>
+            <div class="row-cell">${testMeter(home, completion)}</div>
+            <div class="row-cell">${documentMeter(home, documentCompletion)}</div>
+            <div class="row-cell">${escapeHtml(projectType(home))}</div>
+            <div class="row-cell"><span class="${daysClass}">${escapeHtml(daysDisplay)}</span></div>
+            <div class="row-cell"><strong>${samples.length}</strong></div>
+            <div class="row-cell"><strong>${bagCount}</strong></div>
+            <div class="row-cell">
+              ${projectAction}
+            </div>
+          </div>
+          ${isExpanded ? `
+            <div class="home-body">
+              <div class="detail-hero">
+                <div>
+                  <h2>${escapeHtml(title)}</h2>
+                  <div class="detail-meta">
+                    <strong>${escapeHtml(home.clientName || "No client")}</strong>
+                    &nbsp; | &nbsp; ${escapeHtml(home.projectNumber || "No project number")}
+                    &nbsp; | &nbsp; ${escapeHtml(home.county || "")}<br>
+                    Lab Check-in ${escapeHtml(formatDate(home.labCheckInDate) || "--")}
+                    &nbsp; | &nbsp; Report Due <strong>${escapeHtml(formatDate(dueStatus.dueDate) || "--")}</strong>
+                    ${home.completedAt ? `&nbsp; | &nbsp; Completed <strong>${escapeHtml(formatDate(home.completedAt))}</strong>` : ""}
+                    &nbsp; | &nbsp; <strong>${samples.length}</strong> samples
+                  </div>
+                  <div class="detail-actions">
+                    <button class="btn" type="button" data-custody-pdf-home="${home.id}">Save Custody PDF</button>
+                  </div>
+                </div>
+                <div class="detail-stats">
+                  <div class="detail-stat" style="--progress: ${dueStatus.percent}%;"><span>Report Due</span><strong>${escapeHtml(dueStatus.label)}</strong><small> ${escapeHtml(dueStatus.detail)}</small></div>
+                  <div class="detail-stat" style="--progress: ${documentCompletion.percent}%;"><span>Maps & Logs</span><strong>${documentCompletion.percent}</strong><small> %</small></div>
+                  <div class="detail-stat" style="--progress: ${completion.percent}%;"><span>Test Completion</span><strong>${completion.percent}</strong><small> %</small></div>
+                  <div class="detail-status-stack">
+                    ${statusPill(home, dueStatus, completion)}
+                    <button class="small-btn" type="button" data-toggle-home="${home.id}">Close</button>
+                    ${projectAction}
+                    ${deleteAction}
+                  </div>
+                </div>
+              </div>
+              ${renderCustodyDetails(home)}
+              ${renderSamples(home)}
+              ${renderDocumentChecklist(home)}
+              ${renderRequiredTests(home)}
+              ${renderMoistureDensityWorksheet(home)}
+              ${renderSieveAnalysisWorksheet(home)}
+            </div>
+          ` : ""}
+        </article>
+      `;
+    }
+
+    function render() {
+      const homes = filteredHomes();
+      const upcomingProjects = filteredUpcomingProjects();
+      renderCategoryTabs();
+      renderTestColorLegend();
+      renderSummary(homes);
+      document.getElementById("sortSelect").value = state.sort;
+      document.getElementById("projectStatusFilter").value = state.projectStatusFilter;
+      if (state.category === "Upcoming Projects") {
+        document.getElementById("houseLabWork").innerHTML = renderUpcomingProjects(upcomingProjects);
+        return;
+      }
+      document.getElementById("houseLabWork").innerHTML = homes.length
+        ? `<div class="home-stack">
+            <div class="home-list-header">
+              <span></span>
+              <span>Client / Project</span>
+              <span>Status</span>
+              <span>Report Due</span>
+              <span>Priority</span>
+              <span>Tests</span>
+              <span>Deliverables</span>
+              <span>Type</span>
+              <span>Days</span>
+              <span>Samples</span>
+              <span>Bag Samples</span>
+              <span></span>
+            </div>
+            ${homes.map(renderHome).join("")}
+          </div>`
+        : `<div class="empty">No houses match this search.</div>`;
+    }
+
+    document.addEventListener("input", event => {
+      if (event.target.dataset.suggestRestore) {
+        event.target.dataset.suggestDirty = "true";
+      }
+
+      if (event.target.id === "searchInput") {
+        state.search = event.target.value;
+        render();
+        return;
+      }
+
+      const mdRowKey = event.target.dataset.mdCellRow;
+      if (mdRowKey) {
+        const home = state.data.homes.find(item => item.id === event.target.dataset.mdCellHome);
+        if (!home) return;
+        const worksheet = ensureMoistureDensity(home);
+        worksheet.cells[mdKey(mdRowKey, event.target.dataset.mdCellColumn)] = event.target.value;
+        if (mdRowKey === "soilClass") {
+          const sampleId = event.target.dataset.mdSampleId;
+          const sample = sampleId
+            ? home.samples?.find(item => item.id === sampleId)
+            : home.samples?.[Number(event.target.dataset.mdSampleIndex)];
+          if (sample) sample.classification = classificationSymbol(event.target.value);
+        }
+        home.updatedAt = new Date().toISOString();
+        saveData();
+        return;
+      }
+
+      const sieveRowKey = event.target.dataset.sieveCellRow;
+      if (sieveRowKey) {
+        const home = state.data.homes.find(item => item.id === event.target.dataset.sieveCellHome);
+        if (!home) return;
+        const worksheet = ensureSieveAnalysis(home);
+        worksheet.cells[sieveKey(sieveRowKey, event.target.dataset.sieveCellField)] = event.target.value;
+        home.updatedAt = new Date().toISOString();
+        saveData();
+        return;
+      }
+
+      const testNotesKey = event.target.dataset.testNotesKey;
+      if (testNotesKey) {
+        const home = state.data.homes.find(item => item.id === event.target.dataset.testNotesHome);
+        if (!home) return;
+        const labTests = ensureLabTests(home);
+        labTests[testNotesKey].notes = event.target.value;
+        saveData();
+        return;
+      }
+
+      const custodyFieldName = event.target.dataset.custodyField;
+      if (custodyFieldName) {
+        const home = state.data.homes.find(item => item.id === event.target.dataset.custodyHome);
+        if (!home) return;
+        home[custodyFieldName] = event.target.value;
+        if (custodyFieldName === "dateSampling") home.reportDueDate = reportDueDateFor(event.target.value);
+        home.updatedAt = new Date().toISOString();
+        saveData();
+        return;
+      }
+
+      const upcomingField = event.target.dataset.upcomingField;
+      if (upcomingField) {
+        const project = state.data.upcomingProjects.find(item => item.id === event.target.dataset.upcomingId);
+        if (!project) return;
+        project[upcomingField] = event.target.value;
+        project.updatedAt = new Date().toISOString();
+        saveData();
+        return;
+      }
+
+      const sampleFieldName = event.target.dataset.sampleField;
+      if (!sampleFieldName) return;
+      const { home, sample } = findSample(event.target.dataset.sampleHome, event.target.dataset.sampleId, event.target.dataset.sampleIndex);
+      if (!home || !sample) return;
+      sample[sampleFieldName] = event.target.value;
+      home.updatedAt = new Date().toISOString();
+      saveData();
+    });
+
+    document.addEventListener("change", event => {
+      if (event.target.id === "sortSelect") {
+        state.sort = event.target.value;
+        render();
+        return;
+      }
+
+      if (event.target.id === "projectStatusFilter") {
+        state.projectStatusFilter = event.target.value;
+        render();
+        return;
+      }
+
+      const mdChangeRow = event.target.dataset.mdCellRow;
+      if (mdChangeRow) {
+        const home = state.data.homes.find(item => item.id === event.target.dataset.mdCellHome);
+        if (home) {
+          const worksheet = ensureMoistureDensity(home);
+          worksheet.cells[mdKey(mdChangeRow, event.target.dataset.mdCellColumn)] = event.target.value;
+          if (mdChangeRow === "soilClass") {
+            const sampleId = event.target.dataset.mdSampleId;
+            const sample = sampleId
+              ? home.samples?.find(item => item.id === sampleId)
+              : home.samples?.[Number(event.target.dataset.mdSampleIndex)];
+            if (sample) sample.classification = classificationSymbol(event.target.value);
+          }
+          home.updatedAt = new Date().toISOString();
+          saveData();
+        }
+        render();
+        return;
+      }
+
+      const sieveChangeRow = event.target.dataset.sieveCellRow;
+      if (sieveChangeRow) {
+        const home = state.data.homes.find(item => item.id === event.target.dataset.sieveCellHome);
+        if (home) {
+          const worksheet = ensureSieveAnalysis(home);
+          worksheet.cells[sieveKey(sieveChangeRow, event.target.dataset.sieveCellField)] = event.target.value;
+          home.updatedAt = new Date().toISOString();
+          saveData();
+        }
+        render();
+        return;
+      }
+
+      const sampleFieldName = event.target.dataset.sampleField;
+      if (sampleFieldName) {
+        const { home, sample } = findSample(event.target.dataset.sampleHome, event.target.dataset.sampleId, event.target.dataset.sampleIndex);
+        if (!home || !sample) return;
+        sample[sampleFieldName] = event.target.value;
+        home.updatedAt = new Date().toISOString();
+        saveData();
+        render();
+        return;
+      }
+
+      const custodyFieldName = event.target.dataset.custodyField;
+      if (custodyFieldName) {
+        const home = state.data.homes.find(item => item.id === event.target.dataset.custodyHome);
+        if (!home) return;
+        home[custodyFieldName] = event.target.value;
+        if (custodyFieldName === "dateSampling") home.reportDueDate = reportDueDateFor(event.target.value);
+        home.updatedAt = new Date().toISOString();
+        saveData();
+        render();
+        return;
+      }
+
+      const custodyTest = event.target.dataset.custodyTest;
+      if (custodyTest) {
+        const home = state.data.homes.find(item => item.id === event.target.dataset.custodyHome);
+        if (!home) return;
+        home.tests = home.tests || {};
+        home.tests[custodyTest] = event.target.checked;
+        home.updatedAt = new Date().toISOString();
+        saveData();
+        render();
+        return;
+      }
+
+      const upcomingField = event.target.dataset.upcomingField;
+      if (upcomingField) {
+        const project = state.data.upcomingProjects.find(item => item.id === event.target.dataset.upcomingId);
+        if (!project) return;
+        project[upcomingField] = event.target.value;
+        project.updatedAt = new Date().toISOString();
+        saveData();
+        render();
+        return;
+      }
+
+      const documentKey = event.target.dataset.documentKey;
+      if (documentKey) {
+        const home = state.data.homes.find(item => item.id === event.target.dataset.documentHome);
+        if (!home) return;
+        const documents = ensureDocumentChecklist(home);
+        documents[documentKey] = event.target.checked;
+        saveData();
+        render();
+        return;
+      }
+
+      const testDateKey = event.target.dataset.testDateKey;
+      if (testDateKey) {
+        const home = state.data.homes.find(item => item.id === event.target.dataset.testDateHome);
+        if (!home) return;
+        const labTests = ensureLabTests(home);
+        labTests[testDateKey].completedDate = event.target.value;
+        home.updatedAt = new Date().toISOString();
+        saveData();
+        render();
+        return;
+      }
+
+      const testKey = event.target.dataset.testStatusKey;
+      if (!testKey) return;
+      const home = state.data.homes.find(item => item.id === event.target.dataset.testStatusHome);
+      if (!home) return;
+      const labTests = ensureLabTests(home);
+      setTestStatus(labTests[testKey], event.target.value);
+      home.updatedAt = new Date().toISOString();
+      saveData();
+      render();
+    });
+
+    document.addEventListener("click", event => {
+      const upcomingProjectLink = event.target.closest("[data-open-upcoming-project]");
+      if (upcomingProjectLink) {
+        state.category = "Upcoming Projects";
+        state.search = "";
+        state.expandedUpcoming.add(upcomingProjectLink.dataset.openUpcomingProject);
+        render();
+        return;
+      }
+
+      const upcomingLink = event.target.closest("[data-open-upcoming]");
+      if (upcomingLink) {
+        state.category = "Upcoming Projects";
+        state.search = "";
+        render();
+        return;
+      }
+
+      if (event.target.id === "addHomeBtn") {
+        const home = blankHome();
+        state.data.homes.push(home);
+        state.category = home.county;
+        state.projectStatusFilter = "all";
+        state.search = "";
+        state.expandedHomes.add(home.id);
+        saveData();
+        render();
+        return;
+      }
+
+      if (event.target.id === "newUpcomingProjectBtn") {
+        const project = blankUpcomingProject();
+        state.data.upcomingProjects.push(project);
+        state.category = "Upcoming Projects";
+        state.search = "";
+        state.expandedUpcoming.add(project.id);
+        saveData();
+        render();
+        return;
+      }
+
+      const categoryBtn = event.target.closest("[data-category-tab]");
+      if (categoryBtn) {
+        state.category = categoryBtn.dataset.categoryTab;
+        render();
+        return;
+      }
+
+      const toggleUpcoming = event.target.closest("[data-toggle-upcoming]");
+      if (toggleUpcoming) {
+        const projectId = toggleUpcoming.dataset.toggleUpcoming;
+        if (state.expandedUpcoming.has(projectId)) {
+          state.expandedUpcoming.delete(projectId);
+        } else {
+          state.expandedUpcoming.add(projectId);
+        }
+        render();
+        return;
+      }
+
+      const upcomingCheckBtn = event.target.closest("[data-upcoming-check]");
+      if (upcomingCheckBtn) {
+        const project = state.data.upcomingProjects.find(item => item.id === upcomingCheckBtn.dataset.upcomingId);
+        if (!project) return;
+        project[upcomingCheckBtn.dataset.upcomingCheck] = !project[upcomingCheckBtn.dataset.upcomingCheck];
+        project.updatedAt = new Date().toISOString();
+        saveData();
+        render();
+        return;
+      }
+
+      const promoteUpcoming = event.target.closest("[data-promote-upcoming]");
+      if (promoteUpcoming) {
+        const projectId = promoteUpcoming.dataset.promoteUpcoming;
+        const project = state.data.upcomingProjects.find(item => item.id === projectId);
+        if (!project) return;
+        const home = {
+          ...blankHome(project.county),
+          clientName: project.clientName || "",
+          projectNumber: project.projectNumber || "",
+          address: project.address || "",
+          notes: project.notes || "",
+          updatedAt: new Date().toISOString()
+        };
+        state.data.homes.push(home);
+        state.data.upcomingProjects = state.data.upcomingProjects.filter(item => item.id !== projectId);
+        state.expandedUpcoming.delete(projectId);
+        state.category = home.county;
+        state.expandedHomes.add(home.id);
+        saveData();
+        render();
+        return;
+      }
+
+      const deleteUpcoming = event.target.closest("[data-delete-upcoming]");
+      if (deleteUpcoming) {
+        if (!confirm("Delete this upcoming project?")) return;
+        state.data.upcomingProjects = state.data.upcomingProjects.filter(item => item.id !== deleteUpcoming.dataset.deleteUpcoming);
+        state.expandedUpcoming.delete(deleteUpcoming.dataset.deleteUpcoming);
+        saveData();
+        render();
+        return;
+      }
+
+      const completeHomeBtn = event.target.closest("[data-complete-home]");
+      if (completeHomeBtn) {
+        const home = state.data.homes.find(item => item.id === completeHomeBtn.dataset.completeHome);
+        if (!home) return;
+        const name = home.address || home.projectNumber || home.clientName || "this home";
+        if (!confirm(`Move ${name} to Completed? All project data will remain saved.`)) return;
+        home.completedAt = formatIsoDate(new Date());
+        home.updatedAt = new Date().toISOString();
+        syncCompletionToCustody(home);
+        state.expandedHomes.delete(home.id);
+        state.expandedMoistureTables.delete(home.id);
+        state.expandedSieveTables.delete(home.id);
+        state.category = "Completed";
+        state.projectStatusFilter = "all";
+        saveData();
+        render();
+        return;
+      }
+
+      const restoreHomeBtn = event.target.closest("[data-restore-home]");
+      if (restoreHomeBtn) {
+        const home = state.data.homes.find(item => item.id === restoreHomeBtn.dataset.restoreHome);
+        if (!home) return;
+        home.completedAt = "";
+        home.updatedAt = new Date().toISOString();
+        syncCompletionToCustody(home);
+        state.expandedHomes.delete(home.id);
+        state.category = home.county || "Home";
+        state.projectStatusFilter = "all";
+        saveData();
+        render();
+        return;
+      }
+
+      const deleteHomeBtn = event.target.closest("[data-delete-home]");
+      if (deleteHomeBtn) {
+        const home = state.data.homes.find(item => item.id === deleteHomeBtn.dataset.deleteHome);
+        if (!home) return;
+        const name = home.address || home.projectNumber || home.clientName || "this project";
+        if (!confirm(`Permanently delete ${name}? This will remove all samples, custody details, tests, and worksheets and cannot be undone.`)) return;
+        state.data.homes = state.data.homes.filter(item => item.id !== home.id);
+        state.expandedHomes.delete(home.id);
+        state.expandedMoistureTables.delete(home.id);
+        state.expandedSieveTables.delete(home.id);
+        saveData();
+        render();
+        return;
+      }
+
+      const statusBtn = event.target.closest("[data-toggle-project-status]");
+      if (statusBtn) {
+        const home = state.data.homes.find(item => item.id === statusBtn.dataset.toggleProjectStatus);
+        if (home) toggleProjectStatus(home);
+        return;
+      }
+
+      const rowTestBtn = event.target.closest("[data-row-test-home]");
+      if (rowTestBtn) {
+        const home = state.data.homes.find(item => item.id === rowTestBtn.dataset.rowTestHome);
+        if (!home) return;
+        const labTests = ensureLabTests(home);
+        const key = rowTestBtn.dataset.rowTestKey;
+        setTestStatus(labTests[key], nextTestStatus(labTests[key]?.status));
+        home.updatedAt = new Date().toISOString();
+        saveData();
+        render();
+        return;
+      }
+
+      const rowDocumentBtn = event.target.closest("[data-row-document-home]");
+      if (rowDocumentBtn) {
+        const home = state.data.homes.find(item => item.id === rowDocumentBtn.dataset.rowDocumentHome);
+        if (!home) return;
+        const documents = ensureDocumentChecklist(home);
+        const key = rowDocumentBtn.dataset.rowDocumentKey;
+        documents[key] = !documents[key];
+        home.updatedAt = new Date().toISOString();
+        saveData();
+        render();
+        return;
+      }
+
+      const mdPdfHomeId = event.target.dataset.mdPdfHome;
+      if (mdPdfHomeId) {
+        const home = state.data.homes.find(item => item.id === mdPdfHomeId);
+        if (home) downloadMoistureDensityPdf(home);
+        return;
+      }
+
+      const sievePdfHomeId = event.target.dataset.sievePdfHome;
+      if (sievePdfHomeId) {
+        const home = state.data.homes.find(item => item.id === sievePdfHomeId);
+        if (home) downloadSieveAnalysisPdf(home);
+        return;
+      }
+
+      const custodyPdfHomeId = event.target.dataset.custodyPdfHome;
+      if (custodyPdfHomeId) {
+        const home = state.data.homes.find(item => item.id === custodyPdfHomeId);
+        if (home) downloadCustodyPdf(home);
+        return;
+      }
+
+      const addSampleHomeId = event.target.dataset.addSampleHome;
+      if (addSampleHomeId) {
+        const home = state.data.homes.find(item => item.id === addSampleHomeId);
+        if (!home) return;
+        const fields = [...document.querySelectorAll(`[data-new-sample-home="${addSampleHomeId}"]`)];
+        const values = Object.fromEntries(fields.map(field => [field.dataset.newSampleField, field.value.trim()]));
+        if (!values.sampleNumber && !values.classification && !values.remarks) return;
+        home.samples = home.samples || [];
+        home.samples.push({
+          id: newId(),
+          sampleNumber: values.sampleNumber || "",
+          classification: values.classification || "",
+          depth: values.depth || "",
+          method: values.method || "Core",
+          remarks: values.remarks || "",
+          labStatus: "Not Started",
+          labWork: ""
+        });
+        home.updatedAt = new Date().toISOString();
+        saveData();
+        render();
+        return;
+      }
+
+      const deleteSampleBtn = event.target.closest("[data-delete-sample-home]");
+      if (deleteSampleBtn) {
+        const home = state.data.homes.find(item => item.id === deleteSampleBtn.dataset.deleteSampleHome);
+        if (!home) return;
+        const sampleId = deleteSampleBtn.dataset.deleteSampleId;
+        const sampleIndex = Number(deleteSampleBtn.dataset.deleteSampleIndex);
+        const sample = sampleId
+          ? home.samples?.find(item => item.id === sampleId)
+          : home.samples?.[sampleIndex];
+        if (!sample) return;
+        const sampleName = sample.sampleNumber || `Sample ${sampleIndex + 1}`;
+        if (!confirm(`Delete ${sampleName}?`)) return;
+        home.samples = sampleId
+          ? home.samples.filter(item => item.id !== sampleId)
+          : home.samples.filter((item, index) => index !== sampleIndex);
+        home.updatedAt = new Date().toISOString();
+        saveData();
+        render();
+        return;
+      }
+
+      const toggleMdHomeId = event.target.dataset.toggleMdHome;
+      if (toggleMdHomeId) {
+        if (state.expandedMoistureTables.has(toggleMdHomeId)) {
+          state.expandedMoistureTables.delete(toggleMdHomeId);
+        } else {
+          state.expandedMoistureTables.add(toggleMdHomeId);
+        }
+        render();
+        return;
+      }
+
+      const toggleSieveHomeId = event.target.dataset.toggleSieveHome;
+      if (toggleSieveHomeId) {
+        if (state.expandedSieveTables.has(toggleSieveHomeId)) {
+          state.expandedSieveTables.delete(toggleSieveHomeId);
+        } else {
+          state.expandedSieveTables.add(toggleSieveHomeId);
+        }
+        render();
+        return;
+      }
+
+      const homeRow = event.target.closest("[data-home-row]");
+      if (homeRow && !event.target.closest("button, a, input, select, textarea, label")) {
+        const homeId = homeRow.dataset.homeRow;
+        if (state.expandedHomes.has(homeId)) {
+          state.expandedHomes.delete(homeId);
+        } else {
+          state.expandedHomes.add(homeId);
+        }
+        render();
+        return;
+      }
+
+      const toggleHomeId = event.target.dataset.toggleHome;
+      if (!toggleHomeId) return;
+      if (state.expandedHomes.has(toggleHomeId)) {
+        state.expandedHomes.delete(toggleHomeId);
+      } else {
+        state.expandedHomes.add(toggleHomeId);
+      }
+      render();
+    });
+
+    document.addEventListener("focusin", event => {
+      if (!event.target.dataset.suggestRestore) return;
+      event.target.dataset.previousValue = event.target.value;
+      event.target.dataset.suggestDirty = "false";
+      event.target.value = "";
+    });
+
+    document.addEventListener("focusout", event => {
+      if (!event.target.dataset.suggestRestore) return;
+      if (!event.target.value && event.target.dataset.suggestDirty !== "true") {
+        event.target.value = event.target.dataset.previousValue || "";
+      }
+      delete event.target.dataset.previousValue;
+      delete event.target.dataset.suggestDirty;
+    });
+
+    const pageParams = new URLSearchParams(location.search);
+    const dashboardProjectId = pageParams.get("project");
+    let dashboardHome = null;
+    if (dashboardProjectId) {
+      dashboardHome = state.data.homes.find(home => home.id === dashboardProjectId || home.sourceProjectId === dashboardProjectId);
+      const dashboardUpcoming = state.data.upcomingProjects.find(project => project.id === dashboardProjectId || project.sourceProjectId === dashboardProjectId);
+      if (dashboardHome) {
+        state.category = dashboardHome.completedAt ? "Completed" : "Home";
+        state.expandedHomes.add(dashboardHome.id);
+      } else if (dashboardUpcoming) {
+        state.category = "Upcoming Projects";
+        state.expandedUpcoming.add(dashboardUpcoming.id);
+      }
+    }
+    render();
+    const requestedDownload = pageParams.get("download");
+    if (dashboardHome && requestedDownload) {
+      setTimeout(() => {
+        if (requestedDownload === "custody") downloadCustodyPdf(dashboardHome);
+        if (requestedDownload === "md" && dashboardHome.tests?.moisture) downloadMoistureDensityPdf(dashboardHome);
+        if (requestedDownload === "sieve" && dashboardHome.tests?.sieve) downloadSieveAnalysisPdf(dashboardHome);
+      }, 120);
+    }
+  </script>
+</body>
+</html>

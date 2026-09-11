@@ -1,0 +1,1 @@
+document.addEventListener('DOMContentLoaded',()=>{const page=document.body.dataset.page||'Workspace';const group=document.body.dataset.group||'Workspace';document.title=`${page} · Moment Engineering`;document.querySelector('[data-title]').textContent=page;document.querySelector('.starter-eyebrow').textContent=group;});

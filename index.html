@@ -33,6 +33,24 @@
       font-family: var(--sans);
       font-size: 15px;
     }
+    .app-tabs { position: relative; z-index: 100; display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 12px 16px; background: #fff; border-bottom: 1px solid #e6e6e2; font-family: var(--sans); font-size: 15px; line-height: 1.2; }
+    .app-logo { width: 170px; height: 42px; flex: 0 0 auto; object-fit: contain; object-position: left center; margin-right: 6px; }
+    .app-tabs a { flex: 0 0 auto; padding: 10px 13px; border: 1px solid transparent; border-radius: 8px; color: #2f6f58; text-decoration: none; font-weight: 500; white-space: nowrap; }
+    .app-tabs a:hover { background: #f0f7f3; color: #205b46; }
+    .app-tabs a.active { border-color: #b9d2c6; background: #f4faf7; color: #195a42; }
+    .app-tabs-spacer { flex: 1 1 auto; min-width: 18px; }
+    .app-tabs .project-chip { flex: 0 0 auto; white-space: nowrap; }
+    .app-tabs .user-chip { flex: 0 0 auto; white-space: nowrap; }
+    #topbar { display: none !important; }
+    .project-scheduler { display:none !important; }
+    .project-scheduler h3 { margin: 0 0 4px; font-size: 16px; }.project-scheduler p { margin: 0; color: var(--muted); font-size: 12px; }
+    .schedule-dialog { width: min(720px, calc(100% - 24px)); max-height: calc(100vh - 24px); padding: 0; overflow: auto; border: 0; border-radius: 14px; box-shadow: 0 25px 70px rgba(20,30,24,.25); }
+    .schedule-dialog::backdrop { background: rgba(20,30,24,.48); }.schedule-dialog-head { padding: 18px 20px; display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }.schedule-dialog-head h2 { margin: 0; }.schedule-close { border: 0; background: transparent; font-size: 24px; color: var(--muted); }
+    .schedule-form { padding: 20px; display: grid; gap: 16px; }.schedule-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }.schedule-grid label { display: grid; gap: 5px; color: var(--muted); font-size: 11px; }.schedule-grid input, .schedule-grid select { width: 100%; min-height: 42px; border: 1px solid var(--line); border-radius: 7px; background: #fff; padding: 8px 10px; }.contact-group { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 9px; }.contact-group strong { grid-column: 1 / -1; font-size: 13px; }.schedule-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .schedule-grid textarea { width: 100%; min-height: 88px; resize: vertical; border: 1px solid var(--line); border-radius: 7px; background: #fff; padding: 9px 10px; font: inherit; }.schedule-full { grid-column: 1 / -1; }.contact-email-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 7px; align-items: end; }.email-btn { min-height: 42px; border: 1px solid #b9d2c6; border-radius: 7px; background: #f4faf7; color: #195a42; padding: 8px 10px; white-space: nowrap; }.mock-email { display: none; padding: 14px; border: 1px solid #b9d2c6; border-radius: 9px; background: #f8fcfa; }.mock-email.active { display: grid; gap: 10px; }.mock-email-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }.mock-email-head h3 { margin: 0; font-size: 15px; }.gmail-placeholder { padding: 9px 11px; border-radius: 7px; background: #edf2ef; color: #647169; font-size: 12px; }.mock-email label { display: grid; gap: 5px; color: var(--muted); font-size: 11px; }.mock-email input, .mock-email textarea { width: 100%; border: 1px solid var(--line); border-radius: 7px; background: #fff; padding: 9px 10px; font: inherit; }.mock-email textarea { min-height: 150px; resize: vertical; }
+    .assignee-picker{grid-column:1/-1;display:grid;gap:8px;padding:12px;border:1px solid var(--line);border-radius:9px}.assignee-picker>strong{font-size:13px}.assignee-options{display:grid;gap:7px}.assignee-option{display:grid;grid-template-columns:auto 12px minmax(100px,.7fr) minmax(170px,1fr) auto;gap:8px;align-items:center;padding:8px;border:1px solid #eceeea;border-radius:7px}.assignee-option input[type=checkbox]{width:18px;height:18px;min-height:18px}.assignee-color{width:11px;height:11px;border-radius:50%}.assignee-option input[type=email]{min-height:38px}
+    @media (max-width: 760px) { .project-scheduler { align-items: stretch; flex-direction: column; }.schedule-grid, .contact-group { grid-template-columns: 1fr; }.contact-group strong { grid-column: auto; }.schedule-grid input, .schedule-grid select { font-size: 16px; }.assignee-option{grid-template-columns:auto 12px 1fr}.assignee-option input[type=email],.assignee-option .email-btn{grid-column:1/-1;width:100%}.schedule-actions { align-items: stretch; flex-direction: column-reverse; }.schedule-actions button { width: 100%; } }
+    @media (max-width: 760px) { .app-tabs { padding: 8px; gap: 2px; font-size: 13px; }.app-logo { width: 126px; height: 36px; margin-right: 3px; } .app-tabs a { padding: 9px 10px; }.app-tabs-spacer { display: none; }.app-tabs .project-chip,.app-tabs .user-chip { flex: 0 0 auto; } }
 
     button,
     input,
@@ -2480,7 +2498,7 @@
     @media (min-width: 760px) {
       .app {
         display: grid;
-        grid-template-columns: 220px minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr);
         padding-bottom: 0;
       }
 
@@ -2489,13 +2507,7 @@
       }
 
       .desktop-sidebar {
-        display: grid;
-        align-content: start;
-        gap: 12px;
-        min-height: calc(100vh - 58px);
-        padding: 16px 12px;
-        border-right: 1px solid var(--line);
-        background: #f0f1ec;
+        display: none;
       }
 
       .page-wrap {
@@ -2563,6 +2575,14 @@
   </style>
 </head>
 <body>
+  <link rel="stylesheet" href="app-shell.css"><script src="app-shell.js"></script>
+  <nav class="app-tabs" aria-label="Main pages">
+    <img class="app-logo" src="moment-engineering-logo.png" alt="Moment Engineering">
+    <a class="active" href="index.html">Boring Logs</a><a href="job-calendar.html">Calendar</a><a href="lab-inventory.html">Inventory</a><a href="lab-work.html">Lab Work</a><a href="lab-manual.html">Lab Manual</a><a href="contacts.html">Contacts</a><a href="me.html">Me</a>
+    <span class="app-tabs-spacer"></span>
+    <div class="project-chip" id="activeProjectChip">No active project</div>
+    <div class="user-chip" id="userChip"><button id="signedInUser" type="button" title="Open settings"></button><button class="text-button" type="button" id="logoutButton">Logout</button></div>
+  </nav>
   <main class="app">
     <header class="topbar home-mode" id="topbar">
       <button class="icon-button back-button" type="button" title="Back" hidden>&lt;</button>
@@ -2575,11 +2595,6 @@
         <strong>Select a project</strong>
       </div>
       <a class="top-link" id="inventoryTopLink" href="lab-inventory.html" target="_blank" rel="noopener">Sample Inventory</a>
-      <div class="project-chip" id="activeProjectChip">No active project</div>
-      <div class="user-chip" id="userChip">
-        <button id="signedInUser" type="button" title="Open settings"></button>
-        <button class="text-button" type="button" id="logoutButton">Logout</button>
-      </div>
     </header>
 
     <aside class="desktop-sidebar">
@@ -2714,6 +2729,7 @@
                 </div>
                 <button class="primary" type="button" id="startBoringButton">Start Boring Log</button>
               </div>
+              <section class="project-scheduler"><div><h3>Schedule this job</h3><p>Assign people and contacts, then add the selected project to Calendar.</p></div><button class="primary" id="openProjectScheduler" type="button">Schedule Job</button></section>
               <div class="tools-grid">
                 <button class="tool-card" type="button" data-open-workspace>
                   <span class="tool-icon">BL</span>
@@ -2740,6 +2756,11 @@
                   <span><h3>Sample Inventory</h3><small>Synced with boring logs</small></span>
                   <span>&gt;</span>
                 </a>
+                <button class="tool-card" type="button" id="editProjectButton">
+                  <span class="tool-icon">EP</span>
+                  <span><h3>Edit Project</h3><small>Update project details</small></span>
+                  <span>&gt;</span>
+                </button>
               </div>
             </section>
           </div>
@@ -2768,8 +2789,8 @@
           </div>
           <div class="form-grid">
             <div class="field required wide">
-              <label>Boring ID</label>
-              <input id="boringIdInput" data-info-field="id" placeholder="e.g. B-1">
+              <label>Boring Log Name</label>
+              <input id="boringIdInput" data-info-field="id" placeholder="e.g. B1">
             </div>
             <div class="field required">
               <label>Date</label>
@@ -3091,10 +3112,22 @@
       <button class="nav-item" type="button" data-tool="daily"><span class="nav-icon">DL</span><span>Daily</span></button>
       <button class="nav-item" type="button" data-tool="inspect"><span class="nav-icon">IN</span><span>Inspect</span></button>
     </nav>
-  </main>
+    </main>
+    <dialog class="schedule-dialog" id="editProjectDialog"><div class="schedule-dialog-head"><div><h2>Edit project</h2><p class="tiny">Correct missing or outdated project information.</p></div><button class="schedule-close" id="closeEditProject" type="button" aria-label="Close">&times;</button></div><form class="schedule-form" id="editProjectForm"><div class="schedule-grid"><label class="schedule-full">Paste Project Text<textarea id="editProjectPasteBox" placeholder="Paste project info here, then click Auto Fill. Example labels: Project No, Project Name, Address, Client, Contact."></textarea></label><button class="secondary schedule-full" type="button" id="autoFillEditProjectButton">Auto Fill</button><label>Project number<input id="editProjectNo" placeholder="Project number"></label><label>Client name<input id="editProjectClient" placeholder="Client name"></label><label class="schedule-full">Project name<input id="editProjectName" placeholder="Project name"></label><label class="schedule-full">Project address<input id="editProjectAddress" placeholder="Project address"></label></div><div class="schedule-actions"><button class="secondary" id="cancelEditProject" type="button">Cancel</button><button class="primary" type="submit">Save project</button></div></form></dialog>
+
+    <dialog class="schedule-dialog" id="projectScheduleDialog"><div class="schedule-dialog-head"><div><h2>Schedule Job</h2><p class="tiny" id="scheduleProjectLabel"></p></div><button class="schedule-close" id="closeProjectScheduler" type="button" aria-label="Close">&times;</button></div><form class="schedule-form" id="projectScheduleForm"><div class="schedule-grid"><label>Assigned to<select id="projectAssignee" required><option value="">Choose a person</option></select></label><div class="contact-email-row"><label>Assigned person's email<input id="assigneeEmail" type="email" placeholder="name@company.com"></label><button class="email-btn" data-email-role="assignee" type="button">Create Email</button></div><label>Date<input id="projectScheduleDate" type="date" required></label><label>Start time<input id="projectScheduleTime" type="time"></label><label>Type of job<select id="scheduleJobType"><option>Boring / Drilling</option><option>Compaction Testing</option><option>Inspection</option><option>Sampling</option><option>Lab Pickup</option><option>Other</option></select></label><label>Equipment used<select id="scheduleEquipment"><option>Drill Rig</option><option>Hand Auger</option><option>DCP</option><option>Nuclear Gauge</option><option>Excavator</option><option>Sampling Equipment</option><option>None</option><option>Other</option></select></label><label class="schedule-full">Proposed work<textarea id="scheduleProposed" placeholder="Describe the proposed scope of work"></textarea></label><label class="schedule-full">Notes<textarea id="scheduleNotes" placeholder="Access, crew, timing, or other scheduling notes"></textarea></label><div class="contact-group"><strong>Contractor</strong><label>Name<input id="contractorName" list="contractorContacts" placeholder="Contractor name"></label><div class="contact-email-row"><label>Email<input id="contractorEmail" type="email" placeholder="contractor@company.com"></label><button class="email-btn" data-email-role="contractor" type="button">Create Email</button></div></div><div class="contact-group"><strong>Subcontractor</strong><label>Name<input id="subcontractorName" list="subcontractorContacts" placeholder="Subcontractor name"></label><div class="contact-email-row"><label>Email<input id="subcontractorEmail" type="email" placeholder="subcontractor@company.com"></label><button class="email-btn" data-email-role="subcontractor" type="button">Create Email</button></div></div><div class="contact-group"><strong>Client</strong><label>Name<input id="scheduleClientName" list="clientContacts" placeholder="Client name"></label><div class="contact-email-row"><label>Email<input id="scheduleClientEmail" type="email" placeholder="client@company.com"></label><button class="email-btn" data-email-role="client" type="button">Create Email</button></div></div></div><datalist id="contractorContacts"></datalist><datalist id="subcontractorContacts"></datalist><datalist id="clientContacts"></datalist><section class="mock-email" id="mockEmail"><div class="mock-email-head"><h3 id="mockEmailTitle">Create Email</h3><button class="secondary compact" id="closeMockEmail" type="button">Close</button></div><div class="gmail-placeholder">Gmail Draft connection placeholder — this can be connected later. For now, prepare and copy the email here.</div><label>To<input id="mockEmailTo" type="email"></label><label>Subject<input id="mockEmailSubject"></label><label>Message<textarea id="mockEmailBody"></textarea></label><button class="secondary" id="copyMockEmail" type="button">Copy Email</button></section><div class="schedule-actions"><button class="secondary" id="cancelProjectScheduler" type="button">Cancel</button><button class="primary" type="submit">Save to Calendar</button></div></form></dialog>
+
+  <datalist id="percentFinesOptions">
+    <option value="0"><option value="5"><option value="10"><option value="15">
+    <option value="20"><option value="25"><option value="30"><option value="35">
+    <option value="40"><option value="45"><option value="50"><option value="60">
+    <option value="70"><option value="80"><option value="90"><option value="100">
+  </datalist>
 
   <script>
     const layerOptions = {
+      layerType: ["Fill", "Native", "Formation", "Rock"],
+      percentFines: ["0", "5", "10", "15", "20", "25", "30", "35", "40", "45", "50", "60", "70", "80", "90", "100"],
       uscs: [
         "GW", "GP", "GM", "GC", "GW-GM", "GW-GC", "GP-GM", "GP-GC",
         "SW", "SP", "SM", "SC", "SW-SM", "SW-SC", "SP-SM", "SP-SC",
@@ -3114,6 +3147,10 @@
 
     const projects = [];
     let activeProjectId = null;
+    const jobCalendarKey = "moment-job-calendar-v1";
+    const schedulingContactsKey = "moment-scheduling-contacts-v1";
+    const originalAssigneeSelect=document.querySelector("#projectAssignee"),originalAssigneeEmailRow=originalAssigneeSelect.closest("label").nextElementSibling,assigneePicker=document.createElement("div");assigneePicker.className="assignee-picker";assigneePicker.innerHTML='<strong>Assigned team members</strong><div class="assignee-options" id="projectAssignees"></div>';originalAssigneeSelect.closest("label").replaceWith(assigneePicker);originalAssigneeEmailRow.remove();
+    const contractorGroup=document.querySelector("#contractorName").closest(".contact-group"),clientGroup=document.querySelector("#scheduleClientName").closest(".contact-group");contractorGroup.remove();clientGroup.querySelector("strong").textContent="Client / Contractor";document.querySelector("#scheduleClientName").placeholder="Client or contractor name";
 
     function starterLayer() {
       return {
@@ -3124,6 +3161,8 @@
         moisture: "Moist",
         density: "Medium Dense",
         grain: "Fine to medium Grain",
+        layerType: "Native",
+        percentFines: "",
         additional: ""
       };
     }
@@ -3365,6 +3404,17 @@ on conflict (id) do nothing;`;
       if (!projects.some(project => project.id === activeProjectId)) activeProjectId = projects[0]?.id || null;
       borings.forEach(boring => {
         if (!boring.projectId && activeProjectId) boring.projectId = activeProjectId;
+        const oldId = boring.id;
+        const numberedId = String(oldId || "").match(/^(?:lab\s*|b-?)(\d+)$/i);
+        if (numberedId) {
+          const normalizedId = `B${Number(numberedId[1])}`;
+          const duplicate = borings.some(item => item !== boring && item.projectId === boring.projectId && item.id === normalizedId);
+          if (!duplicate) {
+            boring.id = normalizedId;
+            if (boring.info) boring.info.id = normalizedId;
+            if (activeBoringId === oldId && activeProjectId === boring.projectId) activeBoringId = normalizedId;
+          }
+        }
         (boring.samples || []).forEach(sample => {
           if (!sample.id) sample.id = newId();
         });
@@ -3597,8 +3647,8 @@ on conflict (id) do nothing;`;
     function nextBoringId() {
       const projectBorings = boringsForActiveProject();
       let next = projectBorings.length + 1;
-      while (projectBorings.some(boring => boring.id === `B-${next}`)) next += 1;
-      return `B-${next}`;
+      while (projectBorings.some(boring => boring.id === `B${next}`)) next += 1;
+      return `B${next}`;
     }
 
     function blankInfo(id) {
@@ -3624,10 +3674,21 @@ on conflict (id) do nothing;`;
 
     function createBoring() {
       const id = nextBoringId();
+      const previousBoring = boringsForActiveProject().at(-1);
+      const copiedInfo = previousBoring?.info ? {
+        ...previousBoring.info,
+        id,
+        totalDepth: "",
+        plannedDepthReached: "yes",
+        terminationNotes: "",
+        groundwaterDepth: "",
+        groundwaterTime: "",
+        groundwaterMethod: ""
+      } : blankInfo(id);
       const boring = {
         id,
         projectId: activeProjectId,
-        info: blankInfo(id),
+        info: copiedInfo,
         layers: [],
         samples: []
       };
@@ -3734,8 +3795,10 @@ on conflict (id) do nothing;`;
       document.querySelector("#activeProjectTitle").textContent = projectDisplay(project);
       document.querySelector("#activeProjectNo").textContent = project?.number || "No project number";
       document.querySelector("#activeProjectClient").textContent = project?.client || "No client";
+      document.querySelector("#editProjectButton").disabled = !project;
       document.querySelector("#activeProjectChip").textContent = project ? `Active project: ${project.number || project.name}` : "No active project";
       document.querySelector(".mobile-title strong").textContent = projectDisplay(project);
+      renderSchedulingTeam();
       renderOutput();
       renderCompaction();
       renderProjectFiles();
@@ -4122,8 +4185,12 @@ on conflict (id) do nothing;`;
       return "Soil";
     }
 
+    function percentFinesText(value) {
+      return value === "" || value === null || value === undefined ? "" : `${value}% fines`;
+    }
+
     function layerNote(layer) {
-      return `${layer.color} ${materialFromUscs(layer.uscs)}, ${layer.moisture}, ${layer.density}, ${layer.grain}`;
+      return [layer.layerType || "Native", `${layer.color} ${materialFromUscs(layer.uscs)}`, layer.moisture, layer.density, layer.grain, percentFinesText(layer.percentFines)].filter(Boolean).join(", ");
     }
 
     function graphicClass(uscs = "") {
@@ -4144,13 +4211,16 @@ on conflict (id) do nothing;`;
         color: sample.color || layer.color || "Light brown",
         moisture: sample.moisture || layer.moisture || "Moist",
         density: sample.descriptionDensity || layer.density || densityFromN(sampleN(sample)),
-        grain: sample.grain || layer.grain || "Fine to medium Grain"
+        grain: sample.grain || layer.grain || "Fine to medium Grain",
+        percentFines: sample.percentFines !== "" && sample.percentFines !== undefined
+          ? sample.percentFines
+          : (layer.percentFines || "")
       };
     }
 
     function sampleNote(sample) {
       const values = sampleDescriptionValues(sample);
-      return `${values.color} ${materialFromUscs(sampleUscs(sample))}, ${values.moisture}, ${values.density}, ${values.grain}`;
+      return [`${values.color} ${materialFromUscs(sampleUscs(sample))}`, values.moisture, values.density, values.grain, percentFinesText(values.percentFines)].filter(Boolean).join(", ");
     }
 
     function fullSampleNote(sample) {
@@ -4294,10 +4364,12 @@ on conflict (id) do nothing;`;
             <div class="mini-grid">
               <div class="field"><label>From (ft)</label><input data-field="from" value="${esc(layer.from)}"></div>
               <div class="field"><label>To (ft)</label><input data-field="to" value="${esc(layer.to)}"></div>
+              <div class="field"><label>Layer Information</label><select data-field="layerType">${selectOptions(layerOptions.layerType, layer.layerType || "Native")}</select></div>
               <div class="field"><label>USCS</label><select data-field="uscs">${selectOptions(layerOptions.uscs, layer.uscs)}</select></div>
               <div class="field"><label>Color</label><select data-field="color">${selectOptions(layerOptions.color, layer.color)}</select></div>
               <div class="field"><label>Moisture</label><select data-field="moisture">${selectOptions(layerOptions.moisture, layer.moisture)}</select></div>
               <div class="field"><label>Density</label><select data-field="density">${selectOptions(layerOptions.density, layer.density)}</select></div>
+              <div class="field"><label>% Fines</label><input data-field="percentFines" type="number" min="0" max="100" step="1" list="percentFinesOptions" placeholder="Select or enter 0-100" value="${esc(layer.percentFines || "")}"></div>
               <div class="field wide"><label>Grain / Plasticity</label><select data-field="grain">${selectOptions(layerOptions.grain.concat(layer.grain).filter((v, i, a) => a.indexOf(v) === i), layer.grain)}</select></div>
             </div>
             <div class="field">
@@ -4340,6 +4412,7 @@ on conflict (id) do nothing;`;
               <div class="field"><label>Description Color</label><select data-field="color">${selectOptions(layerOptions.color, sampleDescriptionValues(sample).color)}</select></div>
               <div class="field"><label>Description Moisture</label><select data-field="moisture">${selectOptions(layerOptions.moisture, sampleDescriptionValues(sample).moisture)}</select></div>
               <div class="field"><label>Description Density</label><select data-field="descriptionDensity">${selectOptions(layerOptions.density, sampleDescriptionValues(sample).density)}</select></div>
+              <div class="field"><label>% Fines</label><input data-field="percentFines" type="number" min="0" max="100" step="1" list="percentFinesOptions" placeholder="Select or enter 0-100" value="${esc(sampleDescriptionValues(sample).percentFines)}"></div>
               <div class="field"><label>Grain / Plasticity</label><select data-field="grain">${selectOptions(layerOptions.grain.concat(sampleDescriptionValues(sample).grain).filter((v, i, a) => a.indexOf(v) === i), sampleDescriptionValues(sample).grain)}</select></div>
             </div>
             <div class="field">
@@ -4454,6 +4527,7 @@ on conflict (id) do nothing;`;
       const project = activeProject();
       const boring = activeBoring();
       const base = [
+        "Boring-Log",
         project?.number || project?.name || "boring-log",
         boring?.id || "log",
         mode === "full" ? "full" : ""
@@ -4725,7 +4799,7 @@ on conflict (id) do nothing;`;
         pdf.line(left + brandW + titleW, top, left + brandW + titleW, top + headH);
         drawText("MOMENT ENGINEERING", left + 8, top + 16, { size: 10.5, style: "bold" });
         drawText("Geotechnical Laboratory", left + 8, top + 28, { size: 8.5 });
-        drawCentered(boring?.id || "-", left + brandW, top, titleW, headH, 22, "bold");
+        drawCentered(`BORING LOG${boring?.id ? ` · ${boring.id}` : ""}`, left + brandW, top, titleW, headH, 14, "bold");
         drawText("Project No.", left + brandW + titleW + 8, top + 14, { size: 9 });
         drawText(project?.number || "-", left + brandW + titleW + 8, top + 28, { size: 10, style: "bold" });
 
@@ -4903,6 +4977,9 @@ on conflict (id) do nothing;`;
 
       const index = Number(editor.dataset.index);
       const field = target.dataset.field;
+      if (field === "percentFines" && target.value !== "") {
+        target.value = String(Math.min(100, Math.max(0, Number(target.value) || 0)));
+      }
       if (editor.dataset.kind === "layer") {
         layers[index][field] = target.value;
       } else {
@@ -4939,7 +5016,7 @@ on conflict (id) do nothing;`;
       document.querySelectorAll(".nav-item").forEach(nav => nav.classList.toggle("active", nav.dataset.tool === (inCompaction ? "compact" : "boring")));
       if (inCompaction) renderCompaction();
       if (inSettings) updateSettingsView();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: "auto" });
     }
 
     function setTab(tabName) {
@@ -5168,6 +5245,14 @@ on conflict (id) do nothing;`;
       fillParsedValue("#newProjectClient", parsed.client);
     });
 
+    document.querySelector("#autoFillEditProjectButton").addEventListener("click", () => {
+      const parsed = parseProjectText(document.querySelector("#editProjectPasteBox").value);
+      fillParsedValue("#editProjectNo", parsed.projectNumber);
+      fillParsedValue("#editProjectName", parsed.name);
+      fillParsedValue("#editProjectAddress", parsed.address);
+      fillParsedValue("#editProjectClient", parsed.client);
+    });
+
     document.querySelector("#manualProjectForm").addEventListener("submit", event => {
       event.preventDefault();
       const project = {
@@ -5189,6 +5274,111 @@ on conflict (id) do nothing;`;
       saveState();
       renderRows();
       renderProjects();
+    });
+
+    function updateLinkedLabProject(project, previousNumber) {
+      try {
+        const key = "moment-lab-custody-v1";
+        const labState = JSON.parse(localStorage.getItem(key) || "{}");
+        let changed = false;
+        [labState.homes, labState.upcomingProjects].filter(Array.isArray).forEach(collection => collection.forEach(item => {
+          if (item.sourceProjectId !== project.id && !(previousNumber && item.projectNumber === previousNumber)) return;
+          item.sourceProjectId = project.id;
+          item.projectNumber = project.number;
+          item.projectName = project.name;
+          item.clientName = project.client;
+          item.address = project.address;
+          item.updatedAt = project.updatedAt;
+          changed = true;
+        }));
+        if (changed) localStorage.setItem(key, JSON.stringify(labState));
+        const calendarKey = "moment-job-calendar-v1";
+        const jobs = JSON.parse(localStorage.getItem(calendarKey) || "[]");
+        if (Array.isArray(jobs)) {
+          let jobsChanged = false;
+          jobs.forEach(job => {
+            if (job.sourceProjectId !== project.id && !(previousNumber && job.jobNumber === previousNumber)) return;
+            job.sourceProjectId = project.id;
+            job.jobNumber = project.number;
+            job.title = projectDisplay(project);
+            job.location = project.address;
+            if (job.parties?.client && project.client) job.parties.client.name = project.client;
+            jobsChanged = true;
+          });
+          if (jobsChanged) localStorage.setItem(calendarKey, JSON.stringify(jobs));
+        }
+      } catch (error) {
+        console.warn("Linked lab project could not be updated.", error);
+      }
+    }
+
+    document.querySelector("#editProjectButton").addEventListener("click", () => {
+      const project = activeProject();
+      if (!project) return;
+      document.querySelector("#editProjectNo").value = project.number || "";
+      document.querySelector("#editProjectClient").value = project.client || "";
+      document.querySelector("#editProjectName").value = project.name || "";
+      document.querySelector("#editProjectAddress").value = project.address || "";
+      document.querySelector("#editProjectPasteBox").value = "";
+      document.querySelector("#editProjectDialog").showModal();
+    });
+
+    ["#closeEditProject", "#cancelEditProject"].forEach(selector => document.querySelector(selector).addEventListener("click", () => document.querySelector("#editProjectDialog").close()));
+
+    document.querySelector("#editProjectForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const project = activeProject();
+      if (!project) return;
+      const previousNumber = project.number;
+      project.number = document.querySelector("#editProjectNo").value.trim();
+      project.client = document.querySelector("#editProjectClient").value.trim();
+      project.name = document.querySelector("#editProjectName").value.trim();
+      project.address = document.querySelector("#editProjectAddress").value.trim();
+      project.updatedAt = new Date().toISOString();
+      updateLinkedLabProject(project, previousNumber);
+      saveState();
+      renderProjects();
+      document.querySelector("#editProjectDialog").close();
+    });
+
+    function schedulingTeam() {
+      try { const saved = JSON.parse(localStorage.getItem("momentAccessControlV1") || "{}"); return Array.isArray(saved.workers) ? saved.workers.filter(person => person.active !== false) : []; } catch (error) { return []; }
+    }
+
+    function renderSchedulingTeam() {
+      const selected=new Set([...document.querySelectorAll("[data-assignee-check]:checked")].map(input=>input.value));
+      document.querySelector("#projectAssignees").innerHTML=schedulingTeam().length?schedulingTeam().map(person=>{const saved=schedulingContacts().find(item=>item.role==="assignee"&&item.name===person.name);return `<div class="assignee-option"><input type="checkbox" data-assignee-check value="${esc(person.id)}" ${selected.has(person.id)?"checked":""}><span class="assignee-color" style="background:${person.color||"#2f6f58"}"></span><span>${esc(person.name)}</span><input type="email" data-assignee-email="${esc(person.id)}" value="${esc(person.email||saved?.email||"")}" placeholder="Email"><button class="email-btn" data-email-assignee="${esc(person.id)}" type="button">Create Email</button></div>`}).join(""):`<span class="tiny">Add team members in Admin before scheduling.</span>`;
+      document.querySelector("#openProjectScheduler").disabled = !activeProject();
+    }
+
+    function schedulingContacts() { try { const saved=JSON.parse(localStorage.getItem(schedulingContactsKey)||"[]"); if(!Array.isArray(saved))return[];saved.forEach(item=>{if(item.role==="contractor")item.role="client"});return saved; } catch(error) { return []; } }
+    function saveSchedulingContact(role, name, email, source={}) { name=name.trim(); email=email.trim(); if(!name&&!email)return; const contacts=schedulingContacts(); let existing=contacts.find(item=>item.role===role&&item.name.toLowerCase()===name.toLowerCase()); if(existing) existing.email=email; else {existing={id:crypto.randomUUID?.()||String(Date.now()+Math.random()),role,name,email,sources:[]};contacts.push(existing);} if(!Array.isArray(existing.sources))existing.sources=[];const sourceKey=`${source.projectId||""}|${source.jobType||""}|${source.address||""}`;if(sourceKey!=="||"&&!existing.sources.some(item=>`${item.projectId||""}|${item.jobType||""}|${item.address||""}`===sourceKey))existing.sources.push(source); localStorage.setItem(schedulingContactsKey,JSON.stringify(contacts)); }
+    function renderContactLists() { ["contractor","subcontractor","client"].forEach(role => { document.querySelector(`#${role}Contacts`).innerHTML=schedulingContacts().filter(item=>item.role===role).map(item=>`<option value="${esc(item.name)}">${esc(item.email)}</option>`).join(""); }); }
+    function fillContactEmail(role) { const nameId=role==="client"?"scheduleClientName":`${role}Name`; const emailId=role==="client"?"scheduleClientEmail":`${role}Email`; const contact=schedulingContacts().find(item=>item.role===role&&item.name.toLowerCase()===document.querySelector(`#${nameId}`).value.trim().toLowerCase()); if(contact) document.querySelector(`#${emailId}`).value=contact.email||""; }
+
+    document.querySelector("#openProjectScheduler").addEventListener("click", () => { const project=activeProject(); if(!project)return; renderSchedulingTeam(); renderContactLists(); document.querySelector("#scheduleProjectLabel").textContent=projectDisplay(project); document.querySelector("#projectScheduleDate").value ||= new Date().toISOString().slice(0,10); document.querySelector("#scheduleClientName").value=project.client||""; fillContactEmail("client"); document.querySelector("#projectScheduleDialog").showModal(); });
+    ["closeProjectScheduler","cancelProjectScheduler"].forEach(id=>document.querySelector(`#${id}`).addEventListener("click",()=>document.querySelector("#projectScheduleDialog").close()));
+    ["subcontractor","client"].forEach(role => { const id=role==="client"?"scheduleClientName":`${role}Name`; document.querySelector(`#${id}`).addEventListener("change",()=>fillContactEmail(role)); });
+    function currentScheduleParty(role) { const nameId=role==="client"?"scheduleClientName":`${role}Name`,emailId=role==="client"?"scheduleClientEmail":`${role}Email`;return {name:document.querySelector(`#${nameId}`).value.trim(),email:document.querySelector(`#${emailId}`).value.trim()}; }
+    document.querySelectorAll("[data-email-role]").forEach(button=>button.addEventListener("click",()=>{const role=button.dataset.emailRole,party=currentScheduleParty(role),project=activeProject(),date=document.querySelector("#projectScheduleDate").value,type=document.querySelector("#scheduleJobType").value,proposed=document.querySelector("#scheduleProposed").value.trim();document.querySelector("#mockEmailTitle").textContent=`Email for ${party.name||role}`;document.querySelector("#mockEmailTo").value=party.email;document.querySelector("#mockEmailSubject").value=`${project?.number?project.number+" - ":""}${projectDisplay(project)} | ${type}`;document.querySelector("#mockEmailBody").value=`Hello ${party.name||""},\n\nThis email is regarding the scheduled ${type.toLowerCase()} work for ${projectDisplay(project)}${date?` on ${date}`:""}.\n\n${proposed?`Proposed work:\n${proposed}\n\n`:""}Please let us know if you have any questions or scheduling conflicts.\n\nThank you,\nMoment Engineering`;document.querySelector("#mockEmail").classList.add("active");document.querySelector("#mockEmail").scrollIntoView({behavior:"smooth",block:"nearest"});}));
+    document.querySelector("#projectAssignees").addEventListener("click",event=>{const id=event.target.dataset.emailAssignee;if(!id)return;const person=schedulingTeam().find(item=>item.id===id),email=document.querySelector(`[data-assignee-email="${id}"]`)?.value||"",project=activeProject(),type=document.querySelector("#scheduleJobType").value;document.querySelector("#mockEmailTitle").textContent=`Email for ${person?.name||"team member"}`;document.querySelector("#mockEmailTo").value=email;document.querySelector("#mockEmailSubject").value=`${project?.number?project.number+" - ":""}${projectDisplay(project)} | ${type}`;document.querySelector("#mockEmailBody").value=`Hello ${person?.name||""},\n\nYou are assigned to ${type.toLowerCase()} work for ${projectDisplay(project)} on ${document.querySelector("#projectScheduleDate").value}.\n\n${document.querySelector("#scheduleProposed").value.trim()}\n\nThank you,\nMoment Engineering`;document.querySelector("#mockEmail").classList.add("active");});
+    document.querySelector("#closeMockEmail").addEventListener("click",()=>document.querySelector("#mockEmail").classList.remove("active"));
+    document.querySelector("#copyMockEmail").addEventListener("click",async()=>{const text=`To: ${document.querySelector("#mockEmailTo").value}\nSubject: ${document.querySelector("#mockEmailSubject").value}\n\n${document.querySelector("#mockEmailBody").value}`;try{await navigator.clipboard.writeText(text);document.querySelector("#copyMockEmail").textContent="Copied";setTimeout(()=>document.querySelector("#copyMockEmail").textContent="Copy Email",1200);}catch(error){alert("Copy is unavailable in this browser. Select the email text manually.");}});
+
+    document.querySelector("#projectScheduleForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const project = activeProject();
+      const assignees=[...document.querySelectorAll("[data-assignee-check]:checked")].map(input=>{const person=schedulingTeam().find(item=>item.id===input.value);return {id:input.value,name:person?.name||"",color:person?.color||"#2f6f58",email:document.querySelector(`[data-assignee-email="${input.value}"]`)?.value.trim()||"",phone:person?.phone||""};});
+      const date = document.querySelector("#projectScheduleDate").value;
+      if (!project || !assignees.length || !date) { alert("Select at least one team member and a date."); return; }
+      const parties={ assignees, subcontractor:{name:document.querySelector("#subcontractorName").value.trim(),email:document.querySelector("#subcontractorEmail").value.trim()}, client:{name:document.querySelector("#scheduleClientName").value.trim(),email:document.querySelector("#scheduleClientEmail").value.trim()} };
+      const source={projectId:project.id,jobType:document.querySelector("#scheduleJobType").value,address:project.address||"",projectName:projectDisplay(project),date};assignees.forEach(contact=>saveSchedulingContact("assignee",contact.name,contact.email,source));["subcontractor","client"].forEach(role=>saveSchedulingContact(role,parties[role].name,parties[role].email,source));
+      let jobs = [];
+      try { const saved = JSON.parse(localStorage.getItem(jobCalendarKey) || "[]"); jobs = Array.isArray(saved) ? saved : []; } catch (error) {}
+      jobs.push({ id: crypto.randomUUID?.() || String(Date.now()), title: projectDisplay(project), date, time: document.querySelector("#projectScheduleTime").value, assigneeIds:assignees.map(item=>item.id), assigneeId:assignees[0].id, assignees, parties, jobNumber: project.number || "", type: "field", jobType: document.querySelector("#scheduleJobType").value, equipment: document.querySelector("#scheduleEquipment").value, proposed: document.querySelector("#scheduleProposed").value.trim(), location: project.address || "", notes: document.querySelector("#scheduleNotes").value.trim(), sourceProjectId: project.id });
+      localStorage.setItem(jobCalendarKey, JSON.stringify(jobs));
+      document.querySelector("#projectScheduleDialog").close(); document.querySelector("#mockEmail").classList.remove("active"); event.target.reset(); renderSchedulingTeam();
+      alert("This job was added to Calendar.");
     });
 
     document.querySelector("#projectList").addEventListener("click", event => {
@@ -5257,11 +5447,13 @@ on conflict (id) do nothing;`;
     });
 
     document.querySelector("#boringIdInput").addEventListener("change", event => {
-      const cleanId = event.target.value.trim() || activeBoringId;
+      const enteredId = event.target.value.trim() || activeBoringId;
+      const numberedId = String(enteredId || "").match(/^(?:lab\s*|b-?)(\d+)$/i);
+      const cleanId = numberedId ? `B${Number(numberedId[1])}` : enteredId;
       const duplicate = borings.some(boring => boring.projectId === activeProjectId && boring.id === cleanId && boring.id !== activeBoringId);
       if (duplicate) {
         event.target.value = activeBoringId;
-        alert("That boring ID already exists.");
+        alert("That boring log name already exists in this project.");
         return;
       }
       const boring = activeBoring();
@@ -5596,6 +5788,8 @@ on conflict (id) do nothing;`;
         moisture: "Moist",
         density: "Medium Dense",
         grain: "Fine to medium Grain",
+        layerType: "Native",
+        percentFines: "",
         additional: ""
       });
       saveState();
@@ -5618,6 +5812,7 @@ on conflict (id) do nothing;`;
         moisture: "",
         descriptionDensity: "",
         grain: "",
+        percentFines: "",
         notes: ""
       });
       saveState();
@@ -5645,10 +5840,23 @@ on conflict (id) do nothing;`;
     });
 
     loadState();
+    const documentParams = new URLSearchParams(location.search);
+    const requestedProjectId = documentParams.get("project");
+    const requestedBoringId = documentParams.get("boring");
+    if (requestedProjectId && projects.some(project => project.id === requestedProjectId)) {
+      activeProjectId = requestedProjectId;
+      const requestedBoring = borings.find(boring => boring.id === requestedBoringId && boring.projectId === requestedProjectId);
+      activeBoringId = requestedBoring?.id || boringsForActiveProject()[0]?.id || null;
+      layers = activeBoring()?.layers || [];
+      samples = activeBoring()?.samples || [];
+    }
     renderRows();
     renderProjects();
     setupSignaturePad();
     setAuthenticated(currentUser);
+    if (documentParams.get("download") === "boring-simple" && activeBoring()) {
+      setTimeout(() => downloadBoringPdf("simple"), 120);
+    }
     if (currentUser) {
       Promise.resolve()
         .then(() => (!currentAccessToken && currentRefreshToken ? refreshSupabaseSession() : null))

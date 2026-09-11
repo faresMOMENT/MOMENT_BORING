@@ -23,9 +23,14 @@
 
     * { box-sizing: border-box; }
     body { margin: 0; font-family: var(--sans); color: var(--ink); background: var(--bg); font-size: 15px; }
+    .app-tabs { position: relative; z-index: 100; display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 12px 16px; background: #fff; border-bottom: 1px solid #e6e6e2; font-family: var(--sans); font-size: 15px; line-height: 1.2; }
+    .app-logo { width: 170px; height: 42px; flex: 0 0 auto; object-fit: contain; object-position: left center; margin-right: 6px; }
+    .app-tabs a { flex: 0 0 auto; padding: 10px 13px; border: 1px solid transparent; border-radius: 8px; color: #2f6f58; text-decoration: none; font-weight: 500; white-space: nowrap; }
+    .app-tabs a:hover { background: #f0f7f3; color: #205b46; }
+    .app-tabs a.active { border-color: #b9d2c6; background: #f4faf7; color: #195a42; }
     button, input, select, textarea { font: inherit; }
     button { cursor: pointer; }
-    .app-shell { min-height: 100vh; display: grid; grid-template-columns: 250px minmax(0, 1fr); }
+    .app-shell { min-height: 100vh; display: block; }
 
     .sidebar {
       position: sticky; top: 0; height: 100vh; overflow: auto; padding: 22px 16px;
@@ -45,7 +50,13 @@
     .tab-count { min-width: 28px; padding: 3px 8px; border-radius: 999px; background: #f0f0ed; color: #6f777d; font-size: 12px; text-align: center; }
     .tab.active .tab-count { background: #fff; color: inherit; }
 
-    .page { min-width: 0; padding: 0 28px 72px; display: grid; gap: 20px; align-content: start; }
+    .page { min-width: 0; padding: 24px 28px 72px; display: grid; gap: 20px; align-content: start; }
+    .custody-tabs-bar { display: flex; align-items: center; gap: 14px; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: #fff; box-shadow: 0 7px 24px rgba(38,43,36,.045); }
+    .custody-tabs-bar .tabs { display: flex; flex: 1 1 auto; flex-wrap: wrap; gap: 5px; min-width: 0; overflow: hidden; padding: 1px; }
+    .custody-tabs-bar .tab { width: auto; min-width: max-content; min-height: 38px; gap: 8px; padding: 7px 10px; border-radius: 9px; font-size: 11.5px; white-space: nowrap; }
+    .custody-tabs-bar .tab-count { min-width: 23px; padding: 2px 6px; font-size: 10px; }
+    .custody-tabs-bar .top-actions { flex: 0 0 auto; }
+    .custody-tabs-bar .btn { min-height: 38px; padding: 8px 12px; font-size: 11px; }
     .topbar {
       position: sticky; top: 0; z-index: 20; margin: 0 -28px; padding: 12px 28px;
       display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
@@ -151,9 +162,20 @@
       .sidebar { position: static; height: auto; }
       .tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .custody-tabs-bar { align-items: stretch; flex-direction: column; }
+      .custody-tabs-bar .tabs { width: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+      .custody-tabs-bar .top-actions { width: 100%; }
     }
     @media (max-width: 680px) {
-      .page { padding: 0 14px 60px; }
+      .app-tabs { padding: 8px; gap: 2px; font-size: 13px; }
+      .app-tabs a { padding: 9px 10px; }
+      .sidebar { padding: 14px 12px; }
+      .sidebar .brand p, .sidebar-title { display: none; }
+      .tabs { grid-template-columns: repeat(4, minmax(120px, 1fr)); overflow-x: auto; padding-bottom: 4px; }
+      .page { padding: 16px 14px 60px; }
+      .custody-tabs-bar .tabs { display: flex; padding-bottom: 4px; }
+      .custody-tabs-bar .top-actions { display: grid; grid-template-columns: 1fr 1fr; }
+      .custody-tabs-bar .top-actions .btn { width: 100%; }
       .topbar { margin: 0 -14px; padding: 12px 14px; }
       input, select, textarea, .search, .days-filter, .field input, .field select, .import-sample input, .import-sample select { font-size: 16px; }
       .summary { gap: 9px; }
@@ -176,30 +198,22 @@
   </style>
 </head>
 <body>
+  <link rel="stylesheet" href="app-shell.css"><script src="app-shell.js"></script>
+  <nav class="app-tabs" aria-label="Main pages">
+    <img class="app-logo" src="moment-engineering-logo.png" alt="Moment Engineering">
+    <a href="index.html">Boring Logs</a><a href="job-calendar.html">Calendar</a><a class="active" href="lab-inventory.html">Inventory</a><a href="lab-work.html">Lab Work</a><a href="lab-manual.html">Lab Manual</a><a href="contacts.html">Contacts</a><a href="me.html">Me</a>
+  </nav>
   <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <h1>Sample Inventory</h1>
-        <p>Projects and samples synced from boring logs, organized by county and sample type.</p>
-      </div>
-      <div class="sidebar-title">Inventory Views</div>
-      <nav class="tabs" id="countyTabs" aria-label="Sample inventory views"></nav>
-    </aside>
-
     <main class="page">
-      <header class="topbar">
-        <div>
-          <h1>Lab Sample Inventory</h1>
-          <p>Automatically reads projects, boring logs, and samples saved from the Boring Log app.</p>
-        </div>
+      <div class="custody-tabs-bar">
+        <nav class="tabs" id="countyTabs" aria-label="Custody categories"></nav>
         <div class="top-actions">
           <input id="pdfInput" type="file" accept="application/pdf,.pdf" hidden>
           <button class="btn secondary" type="button" id="manualImportBtn">Add Samples</button>
           <button class="btn" type="button" id="uploadBtn">Upload Custody PDF</button>
           <button class="btn secondary" type="button" id="refreshBtn">Refresh</button>
-          <a class="btn" href="index.html">Open Boring Logs</a>
         </div>
-      </header>
+      </div>
 
       <section class="summary" aria-label="Sample inventory totals">
         <article class="metric"><span>Projects</span><strong id="projectMetric">0</strong></article>
@@ -288,6 +302,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     const storageKey = "boringLogAppState";
+    const labWorkStorageKey = "moment-lab-custody-v1";
     const storageBackupKey = "boringLogAppState-before-last-save";
     const sessionKey = "boringLogCurrentUser";
     const accessTokenKey = "boringLogSupabaseAccessToken";
@@ -385,6 +400,53 @@
       } catch (error) {
         return { homes: [] };
       }
+    }
+
+    function syncArrivedProjectToLabWork(projectId, boringState) {
+      const project = (boringState.projects || []).find(item => item.id === projectId);
+      if (!project) return;
+      const inventoryHome = dataFromStored(boringState).homes.find(item => item.id === projectId);
+      if (!inventoryHome) return;
+      let labState = { homes: [], upcomingProjects: [] };
+      try { labState = JSON.parse(localStorage.getItem(labWorkStorageKey) || "{\"homes\":[],\"upcomingProjects\":[]}"); } catch (error) {}
+      if (!Array.isArray(labState.homes)) labState.homes = [];
+      if (!Array.isArray(labState.upcomingProjects)) labState.upcomingProjects = [];
+      const jobNumber = String(inventoryHome.projectNumber || "").trim().toLowerCase();
+      const upcomingMatch = item => item.sourceProjectId === projectId || (jobNumber && String(item.projectNumber || "").trim().toLowerCase() === jobNumber);
+      if (!project.labCheckInDate) {
+        const upcomingFields = { sourceProjectId: projectId, clientName: inventoryHome.clientName, projectNumber: inventoryHome.projectNumber, address: inventoryHome.address || inventoryHome.projectName, county: inventoryHome.county, boringMap: false, boringLogs: true, locationMap: false, notes: "Waiting for inventory arrival date", updatedAt: new Date().toISOString() };
+        const upcoming = labState.upcomingProjects.find(upcomingMatch);
+        if (upcoming) Object.assign(upcoming, upcomingFields); else labState.upcomingProjects.push({ id: `upcoming-${projectId}`, ...upcomingFields });
+        localStorage.setItem(labWorkStorageKey, JSON.stringify(labState));
+        return;
+      }
+      labState.upcomingProjects = labState.upcomingProjects.filter(item => !upcomingMatch(item));
+      let home = labState.homes.find(item => item.sourceProjectId === projectId || item.id === projectId);
+      if (!home && jobNumber) home = labState.homes.find(item => String(item.projectNumber || "").trim().toLowerCase() === jobNumber);
+      const existing = home || {};
+      const synced = {
+        ...existing,
+        id: existing.id || projectId,
+        sourceProjectId: projectId,
+        projectName: inventoryHome.projectName,
+        projectNumber: inventoryHome.projectNumber,
+        clientName: inventoryHome.clientName,
+        address: inventoryHome.address,
+        county: inventoryHome.county,
+        dateSampling: inventoryHome.dateSampling,
+        labCheckInDate: inventoryHome.labCheckInDate,
+        technician: existing.technician || "Fares Krichati",
+        labManager: existing.labManager || "Corey Mims",
+        engineer: existing.engineer || "Fahad Masud",
+        projectStatus: existing.projectStatus || "Testing",
+        completedAt: existing.completedAt || "",
+        tests: existing.tests || {},
+        notes: existing.notes || inventoryHome.notes || "Synced from inventory",
+        samples: inventoryHome.samples.map(sample => ({ ...sample })),
+        updatedAt: new Date().toISOString()
+      };
+      if (home) Object.assign(home, synced); else labState.homes.push(synced);
+      localStorage.setItem(labWorkStorageKey, JSON.stringify(labState));
     }
 
     function escapeHtml(value) {
@@ -1008,6 +1070,17 @@
       storedProject.inventoryCompletedAt = isCompleted ? "" : new Date().toISOString();
       storedProject.updatedAt = new Date().toISOString();
       try {
+        const labState = JSON.parse(localStorage.getItem(labWorkStorageKey) || "{}");
+        const matchingHome = (labState.homes || []).find(item => item.sourceProjectId === storedProject.id || item.id === storedProject.id || (storedProject.number && item.projectNumber === storedProject.number));
+        if (matchingHome) {
+          matchingHome.completedAt = storedProject.inventoryCompletedAt;
+          matchingHome.updatedAt = storedProject.updatedAt;
+          localStorage.setItem(labWorkStorageKey, JSON.stringify(labState));
+        }
+      } catch (error) {
+        console.warn("Lab Pipeline completion could not be synchronized.", error);
+      }
+      try {
         await saveInventoryState(stored);
       } catch (error) {
         alert(`The inventory update could not be saved: ${error.message || error}`);
@@ -1089,6 +1162,7 @@
       storedProject.labCheckInDate = values.labCheckInDate;
       storedProject.updatedAt = new Date().toISOString();
       const saveResult = await saveInventoryState(stored);
+      syncArrivedProjectToLabWork(storedProject.id, stored);
       state.data = dataFromStored(stored);
       state.view = storedProject.county || "All Samples";
       state.search = "";
@@ -1258,6 +1332,7 @@
       stored.activeProjectId = projectId;
       stored.activeBoringId = boringId;
       const saveResult = await saveInventoryState(stored);
+      syncArrivedProjectToLabWork(projectId, stored);
       state.data = dataFromStored(stored);
       state.view = values.labCheckInDate ? (values.county || "All Samples") : "Arrival Pending";
       state.search = "";

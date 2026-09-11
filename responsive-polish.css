@@ -1,0 +1,84 @@
+body { min-width: 0; overflow-x: hidden; }
+body :is(button, input, select) { max-width: 100%; }
+.dashboard-page,.admin-page { width:min(1440px,100%);min-width:0;padding:clamp(22px,3.5vw,54px) clamp(16px,3.5vw,54px);container-type:inline-size; }
+.dashboard-head,.admin-head { align-items:center; }
+.dashboard-head>div,.admin-head>div { min-width:0; }
+.dashboard-head p,.admin-head p { max-width:680px; }
+.dashboard-metrics { grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr)); }
+.project-overview { grid-template-columns:minmax(210px,1.2fr) minmax(360px,2fr) minmax(160px,auto); }
+.project-details { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.admin-grid { grid-template-columns:minmax(260px,.78fr) minmax(440px,1.22fr); }
+.admin-panel { min-width:0; }
+.permission-grid { grid-template-columns:repeat(auto-fit,minmax(125px,1fr)); }
+.worker-card .permission-grid { grid-template-columns:repeat(auto-fit,minmax(135px,1fr)); }
+@container (max-width:940px) { .project-overview{grid-template-columns:1fr;gap:15px}.project-actions{display:flex;align-items:center;justify-content:space-between;justify-items:initial}.pipeline-link{justify-self:auto}.admin-grid{grid-template-columns:1fr} }
+@container (max-width:680px) { .dashboard-head,.admin-head{align-items:stretch;flex-direction:column}.dashboard-search{width:100%}.dashboard-toolbar{align-items:stretch;flex-direction:column}.dashboard-toolbar select{width:100%}.project-details{grid-template-columns:repeat(2,minmax(0,1fr))}.form-row{grid-template-columns:1fr}.owner-badge{align-self:flex-start;white-space:normal} }
+@container (max-width:430px) { .dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.dashboard-metrics article{padding:14px}.project-details{grid-template-columns:1fr}.project-actions{align-items:stretch;flex-direction:column}.pipeline-link{width:100%}.permission-grid,.worker-card .permission-grid{grid-template-columns:1fr 1fr}.admin-panel,.worker-card{padding:16px} }
+@media (max-height:760px) and (min-width:901px) { .dashboard-page,.admin-page{padding-top:24px;padding-bottom:30px}.dashboard-head,.admin-head{margin-bottom:18px}.dashboard-head h1,.admin-head h1{font-size:clamp(32px,4vw,46px)}.dashboard-metrics{margin-bottom:15px}.dashboard-metrics article{padding-block:14px} }
+@media (min-width:1700px) { .dashboard-page,.admin-page{width:min(1540px,100%)}.project-dashboard-list{grid-template-columns:repeat(2,minmax(0,1fr))}.project-overview{grid-template-columns:1fr;align-content:start}.project-actions{display:flex;align-items:center;justify-content:space-between}.project-details{grid-template-columns:repeat(4,minmax(0,1fr))} }
+.visible-code-label { display:grid;gap:6px;margin-bottom:13px;color:#6e7972;font-size:11px; }
+.visible-code-row { display:flex;gap:7px; }
+.visible-code-row input { width:min(280px,100%);min-height:38px;border:1px solid #dce2dc;border-radius:9px;padding:8px 10px;background:#fff;color:#252c27;font-size:13px;letter-spacing:.08em; }
+.visible-code-row button { min-height:38px;background:#eef2ef;color:#45534a;font-size:10px; }
+@container (max-width:430px) { .visible-code-row{flex-direction:column}.visible-code-row input,.visible-code-row button{width:100%} }
+
+/* Boring Logs: keep the two-column home screen balanced at wide, short ratios. */
+.home-grid,.home-panel { min-width:0; }
+.project-row { grid-template-columns:minmax(0,1fr) auto auto auto; }
+.project-row>span:first-child { min-width:0; }
+.home-grid .tools-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.home-grid .tool-card { grid-template-columns:38px minmax(0,1fr);min-width:0;min-height:72px; }
+.home-grid .tool-card>span:last-child { display:none; }
+.home-grid .tool-card h3,.home-grid .tool-card small { overflow-wrap:anywhere; }
+
+@media (min-width:1500px) {
+  .home-shell { padding:20px clamp(18px,2vw,34px) 30px; }
+  .home-grid { grid-template-columns:minmax(560px,1.2fr) minmax(460px,.8fr);gap:18px; }
+  .home-panel { padding:16px; }
+  .project-row { min-height:58px;padding:9px 11px; }
+  .project-row button { white-space:nowrap; }
+}
+
+@media (min-width:901px) and (max-width:1320px) {
+  .home-grid { grid-template-columns:1fr; }
+  .home-grid .tools-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+
+@media (max-width:760px) {
+  body.has-moment-menu > main { width:100%;min-width:0; }
+  body.has-moment-menu :is(input,select,textarea) { font-size:16px; }
+  body.has-moment-menu :is(button,a) { -webkit-tap-highlight-color:transparent; }
+  body.has-moment-menu dialog { width:calc(100% - 24px);max-width:calc(100% - 24px);max-height:calc(100dvh - 24px);margin:auto;padding:18px;overflow:auto;border-radius:16px; }
+  body.has-moment-menu :is(.panel,.card,.home-panel,.admin-panel,.project-card,.project-picker,.schedule-panel,.recent-section) { max-width:100%; }
+  body.has-moment-menu :is(h1,h2,h3,p) { overflow-wrap:anywhere; }
+  .project-row { grid-template-columns:minmax(0,1fr) auto; }
+  .project-row .badge { justify-self:start; }
+  .project-row button { width:100%; }
+  .project-row button:first-of-type { grid-column:1/2; }
+  .project-row button:last-of-type { grid-column:2/3; }
+  .home-grid .tools-grid { grid-template-columns:1fr; }
+}
+
+/* Personnel typography: restrained hierarchy with minimal bold text. */
+.roles-page { color:#252c27; }
+.roles-page :is(p,span,label,button,input,select,legend) { font-weight:400; }
+.roles-page .roles-eyebrow { font-weight:600;letter-spacing:.13em; }
+.roles-page .roles-head h1 { font-weight:600;letter-spacing:-.035em; }
+.roles-page .roles-head p { color:#737d76;line-height:1.55; }
+.roles-page .owner-chip { font-weight:500; }
+.roles-page .info-banner { padding:12px 15px;background:#eef4fd;color:#315f9f; }
+.roles-page .info-banner strong { font-weight:600; }
+.roles-page .roles-table-head { color:#67716a;font-weight:500;letter-spacing:.06em; }
+.roles-page .person-identity strong { font-weight:550; }
+.roles-page .person-identity span { color:#7b857e; }
+.roles-page .permission-option,
+.roles-page .access-pill { font-weight:450; }
+.roles-page .access-pill:has(input:checked) { font-weight:500; }
+.roles-page .owner-code-form button,
+.roles-page .add-user-toggle,
+.roles-page .form-actions button,
+.roles-page .code-cell button { font-weight:500; }
+.roles-page .person-row { min-height:102px; }
+.roles-page .role-select { font-weight:400; }
+.roles-page .roles-table-wrap,
+.roles-page .add-worker-panel { box-shadow:0 6px 20px rgba(35,48,40,.035); }

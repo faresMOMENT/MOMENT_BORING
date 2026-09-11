@@ -1,0 +1,1497 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moment Engineering Lab Manual</title>
+  <style>
+    :root {
+      --bg: #f6f7f4;
+      --ink: #1b1f24;
+      --muted: #616b74;
+      --line: #d9ded7;
+      --panel: #ffffff;
+      --accent: #276a5b;
+      --accent-2: #b35c31;
+      --soft: #eaf1ec;
+      --warn: #fff3df;
+      --shadow: 0 12px 30px rgba(24, 31, 36, 0.07);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.45;
+    }
+    .app-tabs { position: relative; z-index: 100; display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 12px 16px; background: #fff; border-bottom: 1px solid #e6e6e2; font-size: 15px; line-height: 1.2; }
+    .app-logo { width: 170px; height: 42px; flex: 0 0 auto; object-fit: contain; object-position: left center; margin-right: 6px; }
+    .app-tabs a { flex: 0 0 auto; padding: 10px 13px; border: 1px solid transparent; border-radius: 8px; color: #2f6f58; text-decoration: none; font-weight: 500; white-space: nowrap; }
+    .app-tabs a:hover { background: #f0f7f3; color: #205b46; }
+    .app-tabs a.active { border-color: #b9d2c6; background: #f4faf7; color: #195a42; }
+    .laptop-only-message { display: none; }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    .page {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .topbar p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .nav-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: 0;
+      border-radius: 6px;
+      padding: 10px 13px;
+      text-decoration: none;
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .btn.secondary {
+      background: #e5ebe6;
+      color: #17201d;
+      border: 1px solid #ccd6cf;
+    }
+
+    .manual-shell {
+      display: grid;
+      grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .sidebar,
+    .manual-card,
+    .reference-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 18px;
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .search {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px 11px;
+      min-height: 39px;
+      font-size: 14px;
+    }
+
+    .manual-nav {
+      display: grid;
+      gap: 6px;
+    }
+
+    .manual-nav a {
+      color: var(--ink);
+      text-decoration: none;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 9px 10px;
+      display: grid;
+      gap: 3px;
+    }
+
+    .manual-nav a:hover,
+    .manual-nav a.active {
+      border-color: #ccd6cf;
+      background: var(--soft);
+    }
+
+    .manual-nav strong {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .manual-nav span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .manual-stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .manual-card header,
+    .reference-card header {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      background: #fbfcfa;
+    }
+
+    .manual-card h2,
+    .reference-card h2 {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 700;
+    }
+
+    .manual-card header p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .badge {
+      border: 1px solid #ccd6cf;
+      border-radius: 999px;
+      color: var(--accent);
+      background: var(--soft);
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge.filled {
+      color: #7c3f20;
+      background: var(--warn);
+      border-color: #e3c7a2;
+    }
+
+    .manual-body {
+      padding: 16px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .quick-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .quick-box span,
+    .block h3 {
+      color: var(--muted);
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin: 0 0 7px;
+      font-weight: 700;
+    }
+
+    .quick-box p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .block {
+      display: grid;
+      gap: 8px;
+    }
+
+    .standard-panel {
+      border: 1px solid #cfd8d1;
+      border-radius: 8px;
+      background: #fbfcfa;
+      display: grid;
+      gap: 12px;
+      padding: 13px;
+    }
+
+    .standard-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: baseline;
+      flex-wrap: wrap;
+    }
+
+    .standard-head h3 {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .standard-head span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .value-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
+    }
+
+    .value-card {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      padding: 10px;
+      display: grid;
+      gap: 3px;
+    }
+
+    .value-card span {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 700;
+    }
+
+    .value-card strong {
+      font-size: 17px;
+    }
+
+    .value-card small {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .chart {
+      display: grid;
+      gap: 7px;
+    }
+
+    .chart-row {
+      display: grid;
+      grid-template-columns: minmax(90px, 140px) minmax(0, 1fr) minmax(60px, 90px);
+      gap: 9px;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .chart-label {
+      color: var(--ink);
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .chart-track {
+      height: 10px;
+      border-radius: 999px;
+      background: #e8ece8;
+      border: 1px solid #d4dbd5;
+      overflow: hidden;
+    }
+
+    .chart-fill {
+      height: 100%;
+      width: var(--bar);
+      background: linear-gradient(90deg, #276a5b, #b35c31);
+      border-radius: 999px;
+    }
+
+    .chart-value {
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .mini-table {
+      min-width: 0;
+      font-size: 12px;
+    }
+
+    ol,
+    ul {
+      margin: 0;
+      padding-left: 22px;
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    li + li {
+      margin-top: 4px;
+    }
+
+    .note {
+      border-left: 4px solid var(--accent-2);
+      background: #fff8ef;
+      padding: 10px 12px;
+      color: #4b3a28;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 680px;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 8px 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef3ef;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .comparison-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .comparison-card header {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcfa;
+    }
+
+    .comparison-card h2 {
+      margin: 0;
+      font-size: 19px;
+    }
+
+    .comparison-card header p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .tool-grid {
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .tool-panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      background: #fff;
+    }
+
+    .tool-panel h3 {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .tool-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .tool-form label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tool-form .span-2 {
+      grid-column: 1 / -1;
+    }
+
+    .tool-form input,
+    .tool-form select,
+    .tool-form textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px 10px;
+      min-height: 38px;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    .tool-form textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .tool-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .result-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfa;
+      padding: 12px;
+      color: var(--ink);
+      min-height: 72px;
+      font-size: 13px;
+    }
+
+    .result-box ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+
+    .result-box strong {
+      color: var(--accent);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 860px) {
+      .page { padding: 16px; }
+      .manual-shell { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .quick-grid { grid-template-columns: 1fr; }
+      .tool-grid, .tool-form { grid-template-columns: 1fr; }
+      .tool-form .span-2 { grid-column: span 1; }
+      .nav-actions { justify-content: flex-start; }
+      .chart-row { grid-template-columns: 1fr; gap: 4px; }
+      .chart-value { text-align: left; }
+    }
+    @media (max-width: 700px) {
+      body > :not(.laptop-only-message):not(.app-tabs):not(.moment-menu-toggle) { display: none !important; }
+      .app-tabs { position: relative; padding: 8px; gap: 2px; font-size: 13px; }
+      .app-tabs a { padding: 9px 10px; }
+      .laptop-only-message { min-height: calc(100vh - 57px); display: grid; place-items: center; padding: 28px; background: #fff; color: #202722; text-align: center; font-size: 18px; font-weight: 400; }
+    }
+  </style>
+</head>
+<body>
+  <link rel="stylesheet" href="app-shell.css"><script src="app-shell.js"></script>
+  <nav class="app-tabs" aria-label="Main pages">
+    <img class="app-logo" src="moment-engineering-logo.png" alt="Moment Engineering">
+    <a href="index.html">Boring Logs</a><a href="job-calendar.html">Calendar</a><a href="lab-inventory.html">Inventory</a><a href="lab-work.html">Lab Work</a><a class="active" href="lab-manual.html">Lab Manual</a><a href="contacts.html">Contacts</a><a href="me.html">Me</a>
+  </nav>
+  <div class="laptop-only-message">Lab Manual is only available in laptop view.</div>
+  <main class="page">
+    <div class="topbar">
+      <div>
+        <h1>Lab Manual</h1>
+        <p>Procedures for the tests used in the combined lab workspace. The first three are based on your Word manual; the remaining sections are starter procedures to verify against Moment Engineering equipment.</p>
+      </div>
+      <div class="nav-actions">
+        <button class="btn secondary" type="button" id="backBtn">Back</button>
+        <a class="btn secondary" href="index.html">Page Menu</a>
+        <a class="btn secondary" href="lab-work.html">Lab Work</a>
+        <a class="btn secondary" href="lab-inventory.html">Sample Inventory</a>
+        <a class="btn secondary" href="boring-logs.html">Boring Logs</a>
+      </div>
+    </div>
+
+    <article class="comparison-card" id="data-tools">
+      <header>
+        <div>
+          <h2>Data Comparison Tools</h2>
+          <p>Compare saved MD&DD values to the soil reference, or upload direct shear data to estimate strength behavior.</p>
+        </div>
+      </header>
+      <div class="tool-grid">
+        <section class="tool-panel">
+          <h3>MD&DD Soil Check</h3>
+          <div class="tool-form">
+            <label class="span-2">Saved MD&DD project
+              <select id="mdSampleSelect"></select>
+            </label>
+            <label>Moisture (%)
+              <input id="mdMoistureInput" inputmode="decimal" placeholder="Example: 12.4">
+            </label>
+            <label>Dry density (pcf)
+              <input id="mdDensityInput" inputmode="decimal" placeholder="Example: 108.5">
+            </label>
+            <label class="span-2">Known classification
+              <select id="mdClassInput"></select>
+            </label>
+          </div>
+          <div class="tool-actions">
+            <button class="btn" type="button" id="compareMdBtn">Compare MD&DD</button>
+            <button class="btn secondary" type="button" id="clearMdBtn">Clear Selection</button>
+          </div>
+          <div class="result-box" id="mdCompareResult">Choose a saved project or enter values manually.</div>
+        </section>
+
+        <section class="tool-panel">
+          <h3>Direct Shear Upload</h3>
+          <div class="tool-form">
+            <label class="span-2">Upload CSV or TXT
+              <input id="shearFileInput" type="file" accept=".csv,.txt">
+            </label>
+            <label class="span-2">Or paste data
+              <textarea id="shearPasteInput" placeholder="Normal stress, shear stress&#10;500, 380&#10;1000, 690&#10;2000, 1240"></textarea>
+            </label>
+          </div>
+          <div class="tool-actions">
+            <button class="btn" type="button" id="analyzeShearBtn">Analyze Shear</button>
+          </div>
+          <div class="result-box" id="shearResult">Upload or paste normal stress and shear stress data.</div>
+        </section>
+      </div>
+    </article>
+
+    <div class="manual-shell">
+      <aside class="sidebar">
+        <input class="search" id="manualSearch" placeholder="Search manual...">
+        <nav class="manual-nav" id="manualNav"></nav>
+      </aside>
+
+      <div class="manual-stack" id="manualStack"></div>
+    </div>
+  </main>
+
+  <script>
+    const manuals = [
+      {
+        id: "moisture",
+        title: "Moisture Content & Dry Density",
+        astm: "ASTM D2216",
+        source: "From your Word manual",
+        location: "Computer station",
+        supplies: "Laptop, scale, core samples, empty rings, mini cans",
+        steps: [
+          "Retrieve the samples.",
+          "Open the Moisture Content & Dry Density file.",
+          "Classify each soil.",
+          "Measure the empty ring.",
+          "Measure a full ring from the sample.",
+          "Weigh an empty small can.",
+          "Add sample to the can until it is around 50 grams.",
+          "Repeat for the rest of the samples.",
+          "Enter values into the Excel file.",
+          "Move cans to the oven to dry.",
+          "When dry, add the final dry weights to the file."
+        ],
+        shutdown: [
+          "Stow away the scale.",
+          "Clean up the work area.",
+          "Close the oven.",
+          "Put unused rings back.",
+          "Stow away the samples."
+        ],
+        mistakes: [
+          "The file may not have every equation entered.",
+          "Moisture rate or weight can be too low.",
+          "Make sure to tare the scale.",
+          "Confirm the scale reads 0 before placing items on it."
+        ],
+        standards: {
+          subtitle: "Typical starting ranges by USCS soil type. Use the actual test result for reports.",
+          values: [
+            ["Sample size", "Around 50 g", "Common mini-can target from your manual"],
+            ["Granular soils", "2-12% w", "GW, GP, SW, SP often test lower"],
+            ["Clayey soils", "10-25% w", "CL, SC, GC usually trend higher"],
+            ["Organic soils", "20%+ w", "OL, OH, PT can be much higher"]
+          ],
+          chartTitle: "Typical Moisture Content",
+          chart: [
+            ["Gravel", "2-15%", 18],
+            ["Sand", "3-20%", 24],
+            ["Silt", "10-45%", 46],
+            ["Clay", "12-60%", 58],
+            ["Organic", "20-100%+", 82]
+          ]
+        }
+      },
+      {
+        id: "sieve",
+        title: "Sieve Analysis",
+        astm: "ASTM D422 / C136",
+        source: "From your Word manual",
+        location: "Computer station and gold sieve set",
+        supplies: "Laptop, scale, bag samples, bowl, sieve stack",
+        steps: [
+          "Retrieve the bag samples.",
+          "Open the sieve file.",
+          "Fill in the yellow boxes.",
+          "Weigh the silver bowl.",
+          "Tare the bowl and weigh out 500 grams of soil.",
+          "Let the soil sit and dry if needed.",
+          "Weigh each sieve.",
+          "Add soil to the sieve stack.",
+          "Shake until fully sieved, about 3 minutes.",
+          "Weigh each sieve with the retained soil.",
+          "Finish the sheet."
+        ],
+        shutdown: [
+          "Stow away the scale.",
+          "Clean up the work area.",
+          "Put the sieve set away.",
+          "Stow away the bag sample."
+        ],
+        mistakes: [
+          "Weight is incorrect.",
+          "Retained material does not total 100 percent.",
+          "Make sure to tare the scale.",
+          "Not enough soil was used."
+        ],
+        standards: {
+          subtitle: "Quick checks for gradation work before finishing the sheet.",
+          values: [
+            ["Dry sample", "500 g", "Target from your current manual"],
+            ["Mass check", "About 100%", "Total retained should closely match start mass"],
+            ["Shake time", "Around 3 min", "Longer if material is still moving"],
+            ["Fines indicator", "#200 passing", "Low for clean sand/gravel, high for silty/clayey soils"]
+          ],
+          chartTitle: "Typical Fines Passing #200",
+          chart: [
+            ["Clean gravel", "<5%", 5],
+            ["Clean sand", "<5%", 5],
+            ["Silty sand", "12-35%", 35],
+            ["Clayey sand", "12-35%", 35],
+            ["Silt/clay", ">50%", 70]
+          ]
+        }
+      },
+      {
+        id: "directShear",
+        title: "Direct Shear",
+        astm: "ASTM D3080",
+        source: "From your Word manual",
+        location: "Computer station and direct shear table",
+        supplies: "Laptop, core samples, flattener, shear box",
+        steps: [
+          "Retrieve the samples.",
+          "Open a new lab test on the computer.",
+          "Remove pressure if needed.",
+          "Remove the shear box and rinse if needed.",
+          "Put the shear box pieces back together and add the red screws.",
+          "Make sure the grooved circle is perpendicular to the stem of the box and the coarse circle is on top.",
+          "Add the sample in the circle and keep it intact.",
+          "Put back the shear box and set the force ball about 1/8 inch away from the top.",
+          "Set the top sensor on top and screw in the back screws.",
+          "Check that all screws are tightened.",
+          "On the laptop, run consolidation first before the shear phase.",
+          "Enter the test description, including height and diameter.",
+          "Use height 2 and diameter 1 unless the sample requires different measured values.",
+          "In Test Setup, set the shear test sequence to 2000 psi."
+        ],
+        shutdown: [
+          "Release pressure from the machine screen.",
+          "Remove the shear box and loosen screws.",
+          "Move the tray if needed.",
+          "Clean and dry the shear box parts."
+        ],
+        mistakes: [
+          "Top sensor is not seated on top.",
+          "Back shear box screws are not tight.",
+          "Force sensor is unscrewed.",
+          "Ball joint is too close.",
+          "Red screws are still screwed in at the wrong time."
+        ],
+        standards: {
+          subtitle: "Typical strength behavior for quick review only. Use project-specific results for design.",
+          values: [
+            ["Specimen height", "2 in", "From your current setup note"],
+            ["Specimen diameter", "1 in", "From your current setup note"],
+            ["Sequence value", "2000 psi", "From your current manual"],
+            ["Best suited for", "Sand / clay / intact cores", "Keep sample intact during setup"]
+          ],
+          chartTitle: "Typical Friction Angle Trend",
+          chart: [
+            ["Loose sand", "28-32 deg", 45],
+            ["Dense sand", "34-42 deg", 68],
+            ["Silty sand", "26-34 deg", 52],
+            ["Lean clay", "18-28 deg", 35],
+            ["Fat clay", "12-24 deg", 28]
+          ]
+        }
+      },
+      {
+        id: "proctor",
+        title: "Modified Proctor",
+        astm: "ASTM D1557",
+        source: "Starter procedure",
+        location: "Compaction bench, oven area, and computer station",
+        supplies: "Prepared soil, mold and collar, rammer, scale, moisture cans, straightedge, oven, laptop",
+        steps: [
+          "Review the required method and mold size before preparing the specimen.",
+          "Break up soil clumps without crushing individual particles and remove oversize material as required by the method.",
+          "Prepare trial moisture points across the expected optimum moisture range.",
+          "Weigh the mold and record mold volume.",
+          "Compact soil in the required number of layers with the required blows per layer.",
+          "Remove the collar, trim the compacted surface flush, and clean loose soil from the mold.",
+          "Weigh the mold with compacted wet soil.",
+          "Take a representative moisture specimen and record wet can weight.",
+          "Repeat for each moisture point.",
+          "Dry moisture specimens, record dry weights, and enter all values in the Proctor sheet.",
+          "Confirm the curve, maximum dry density, and optimum moisture content before saving the report."
+        ],
+        shutdown: [
+          "Clean mold, collar, rammer, mixing tools, and bench.",
+          "Return unused soil and dispose of waste soil according to lab practice.",
+          "Stow scale and supplies.",
+          "Close oven after loading or unloading cans."
+        ],
+        mistakes: [
+          "Wrong mold volume or method selected in the sheet.",
+          "Layer count or blow count does not match the selected procedure.",
+          "Moisture points are too close together to define the curve.",
+          "Sample is not trimmed flush before weighing.",
+          "Can numbers or wet/dry weights are entered on the wrong row."
+        ],
+        note: "Confirm the exact layer count, blow count, mold size, and oversize correction requirements with the current ASTM method and your lab's equipment.",
+        standards: {
+          subtitle: "Expected OMC and maximum dry density ranges from the soil reference in your manual.",
+          values: [
+            ["Clean gravel/sand", "100-140 pcf", "Usually low OMC and higher density"],
+            ["Silty/clayey sand", "105-125 pcf", "Moderate OMC"],
+            ["Lean clay / silt", "85-115 pcf", "Higher OMC, lower density"],
+            ["Organic soils", "50-90 pcf", "Very high moisture, low density"]
+          ],
+          chartTitle: "Expected Maximum Dry Density",
+          chart: [
+            ["Gravel", "110-140 pcf", 90],
+            ["Sand", "100-130 pcf", 78],
+            ["Silty sand", "105-125 pcf", 72],
+            ["Lean clay", "90-115 pcf", 58],
+            ["Organic", "50-90 pcf", 35]
+          ],
+          table: [
+            ["Soil", "Typical OMC", "Max Dry Density"],
+            ["GW / GP", "4-8%", "120-140 pcf"],
+            ["SM / SC", "8-20%", "105-125 pcf"],
+            ["ML / CL", "12-25%", "85-115 pcf"],
+            ["OH / PT", "30%+", "40-80 pcf"]
+          ]
+        }
+      },
+      {
+        id: "atterberg",
+        title: "Atterberg Limits",
+        astm: "ASTM D4318",
+        source: "Starter procedure",
+        location: "Atterberg bench and oven area",
+        supplies: "Prepared fine soil, glass plate, spatula, liquid limit device or fall cone if used, grooving tool, plastic limit plate, moisture cans, scale, oven",
+        steps: [
+          "Prepare the soil fraction required by the method and mix with water until uniform.",
+          "For liquid limit, place soil in the cup and smooth it to the required depth.",
+          "Cut a clean groove with the correct grooving tool.",
+          "Run the device and record the blow count when the groove closes over the required distance.",
+          "Take a moisture specimen from the closed groove area.",
+          "Repeat at multiple moisture contents to bracket the liquid limit.",
+          "For plastic limit, roll soil threads until they crumble at about 1/8 inch diameter.",
+          "Place crumbled threads in moisture cans and record wet weights.",
+          "Dry all moisture specimens and record dry weights.",
+          "Enter values in the sheet and review the liquid limit, plastic limit, and plasticity index."
+        ],
+        shutdown: [
+          "Clean the cup, grooving tool, glass plate, spatulas, and bench.",
+          "Return soil containers and stow supplies.",
+          "Place cans in the oven or remove dry cans and close the oven."
+        ],
+        mistakes: [
+          "Soil is not mixed uniformly before testing.",
+          "Groove closes because of sliding instead of soil flow.",
+          "Blow counts are outside the useful range.",
+          "Plastic limit thread is rolled too wet or too dry.",
+          "Moisture can IDs are mixed up."
+        ],
+        note: "Use the lab's selected liquid-limit device and calibration checks. This section is a general starting point.",
+        standards: {
+          subtitle: "Typical Atterberg ranges. Plasticity rises as clay content and activity increase.",
+          values: [
+            ["Non-plastic", "NP", "Clean sands and gravels often do not roll"],
+            ["Low plasticity", "LL < 50", "Common for lean clay and low-plastic silt"],
+            ["High plasticity", "LL > 50", "Common for fat clay and elastic silt"],
+            ["Plastic limit thread", "1/8 in", "Thread crumbles at test point"]
+          ],
+          chartTitle: "Typical Liquid Limit",
+          chart: [
+            ["Silty sand", "NP-30", 25],
+            ["Lean clay", "25-50", 48],
+            ["Silt", "25-60", 55],
+            ["Fat clay", "50-100+", 88],
+            ["Organic clay", "50-100+", 92]
+          ]
+        }
+      },
+      {
+        id: "consolidation",
+        title: "Consolidation",
+        astm: "ASTM D2435",
+        source: "Starter procedure",
+        location: "Consolidation frame and computer station",
+        supplies: "Undisturbed specimen, consolidation ring, porous stones, filter paper, loading frame, dial or displacement sensor, water, laptop",
+        steps: [
+          "Trim the specimen into the consolidation ring with minimal disturbance.",
+          "Record ring dimensions and specimen initial height.",
+          "Assemble porous stones, filter papers, specimen, and loading cap.",
+          "Seat the assembly in the consolidation frame.",
+          "Apply seating pressure and zero the dial or displacement sensor.",
+          "Start the test file and enter specimen details.",
+          "Apply load increments according to the project requirements and ASTM method.",
+          "Record deformation readings at the required time intervals for each load.",
+          "Allow each load increment to complete before applying the next increment.",
+          "Run unload or rebound increments if required.",
+          "Remove the specimen, collect final moisture content if required, and complete the sheet."
+        ],
+        shutdown: [
+          "Release load slowly.",
+          "Remove and clean the ring, stones, caps, and water reservoir.",
+          "Save the test data file.",
+          "Stow equipment and clean the work area."
+        ],
+        mistakes: [
+          "Specimen is disturbed during trimming.",
+          "Porous stones or filter papers are missing or not seated flat.",
+          "Dial or sensor is not zeroed before loading.",
+          "Load increments are applied out of order.",
+          "Readings are missed during early-time intervals."
+        ],
+        note: "Consolidation setup varies by frame and software. Verify seating load, load schedule, and reading intervals before testing.",
+        standards: {
+          subtitle: "Expected behavior by soil group. Final values depend heavily on sample disturbance and stress history.",
+          values: [
+            ["Clean sand/gravel", "Usually not run", "Low compressibility, drains quickly"],
+            ["Silt", "Moderate settlement", "Watch drainage and reading timing"],
+            ["Lean clay", "Moderate compression", "Good candidate for consolidation"],
+            ["Fat / organic clay", "High compression", "Often larger settlement and longer timing"]
+          ],
+          chartTitle: "Typical Compressibility Trend",
+          chart: [
+            ["Sand/gravel", "Low", 14],
+            ["Silty sand", "Low-mod", 28],
+            ["Silt", "Moderate", 46],
+            ["Lean clay", "Moderate", 58],
+            ["Fat/organic clay", "High", 86]
+          ]
+        }
+      }
+    ];
+
+    const soilReference = [
+      ["GW", "Well-graded gravel", "3-8%", "5-8%", "125-140", "<5"],
+      ["GP", "Poorly graded gravel", "2-6%", "4-7%", "120-135", "<5"],
+      ["GM", "Silty gravel", "6-12%", "7-12%", "115-130", "12-35"],
+      ["GC", "Clayey gravel", "8-15%", "8-15%", "110-130", "12-35"],
+      ["SW", "Well-graded sand", "4-12%", "6-12%", "110-130", "<5"],
+      ["SP", "Poorly graded sand", "3-10%", "6-12%", "100-125", "<5"],
+      ["SM", "Silty sand", "7-18%", "8-18%", "105-125", "12-35"],
+      ["SC", "Clayey sand", "10-20%", "10-20%", "105-120", "12-35"],
+      ["ML", "Silt", "10-25%", "12-22%", "85-105", ">50"],
+      ["CL", "Lean clay", "12-25%", "12-25%", "90-115", ">50"],
+      ["OL", "Organic silt/clay", "20-60%", "20-40%", "60-90", ">50 plus organics"],
+      ["MH", "Elastic silt", "20-45%", "20-35%", "70-95", ">50"],
+      ["CH", "Fat clay", "25-60%", "25-40%", "65-90", ">50"],
+      ["OH", "Organic clay", "40-100%", "30-50%", "50-80", ">50 plus organics"],
+      ["PT", "Peat", "100-200%", "N/A", "40-70", "Very high organics"]
+    ];
+
+    const storageKey = "moment-lab-custody-v1";
+    const soilClassifications = [
+      ["GW", "Well-graded gravel"],
+      ["GP", "Poorly graded gravel"],
+      ["GM", "Silty gravel"],
+      ["GC", "Clayey gravel"],
+      ["SW", "Well-graded sand"],
+      ["SP", "Poorly graded sand"],
+      ["SM", "Silty sand"],
+      ["SC", "Clayey sand"],
+      ["CL", "Lean clay"],
+      ["ML", "Silt"],
+      ["OL", "Organic clay / organic silt"],
+      ["CH", "Fat clay"],
+      ["MH", "Elastic silt"],
+      ["OH", "Organic clay / organic silt"],
+      ["PT", "Peat"]
+    ];
+
+    const nav = document.getElementById("manualNav");
+    const stack = document.getElementById("manualStack");
+    const search = document.getElementById("manualSearch");
+    const mdSampleSelect = document.getElementById("mdSampleSelect");
+    const mdMoistureInput = document.getElementById("mdMoistureInput");
+    const mdDensityInput = document.getElementById("mdDensityInput");
+    const mdClassInput = document.getElementById("mdClassInput");
+    const mdCompareResult = document.getElementById("mdCompareResult");
+    const shearFileInput = document.getElementById("shearFileInput");
+    const shearPasteInput = document.getElementById("shearPasteInput");
+    const shearResult = document.getElementById("shearResult");
+    let savedMdProjects = [];
+    let uploadedShearText = "";
+
+    function escapeHtml(value) {
+      return String(value || "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    function numberValue(value) {
+      const cleaned = String(value ?? "").replace(/[%,$]/g, "").trim();
+      if (!cleaned) return null;
+      const number = Number(cleaned);
+      return Number.isFinite(number) ? number : null;
+    }
+
+    function rangeFromText(value) {
+      const numbers = String(value || "").match(/-?\d+(?:\.\d+)?/g)?.map(Number) || [];
+      if (!numbers.length) return null;
+      if (numbers.length === 1) return [numbers[0], numbers[0]];
+      return [Math.min(numbers[0], numbers[1]), Math.max(numbers[0], numbers[1])];
+    }
+
+    function classificationLabel(symbol) {
+      const found = soilClassifications.find(([value]) => value === symbol);
+      return found ? `${found[0]} - ${found[1]}` : symbol;
+    }
+
+    function mdKey(row, columnId) {
+      return `${row}__${columnId}`;
+    }
+
+    function mdColumns(home) {
+      const samples = Array.isArray(home.samples) ? home.samples.slice(0, 12) : [];
+      if (samples.length) {
+        return samples.map((sample, index) => ({
+          id: sample.id || `sample-${index}`,
+          index,
+          sample,
+          label: `${sample.sampleNumber || `Sample ${index + 1}`} - ${sample.depth || ""} FT`.replace(" -  FT", "")
+        }));
+      }
+      return Array.from({ length: 6 }, (_, index) => ({ id: `sample-${index}`, index, sample: null, label: `Sample ${index + 1}` }));
+    }
+
+    function mdSavedValue(home, row, column) {
+      const cells = home.moistureDensity?.cells || {};
+      const sample = column.sample || {};
+      const candidates = [
+        mdKey(row, column.id),
+        mdKey(row, `sample-${column.index}`),
+        mdKey(row, column.label),
+        mdKey(row, `${sample.sampleNumber || ""} - ${sample.depth || ""} FT`),
+        mdKey(row, sample.sampleNumber || ""),
+        `${row}_${column.index}`,
+        `${row}-${column.index}`
+      ];
+      for (const key of candidates) {
+        if (cells[key] !== undefined && cells[key] !== "") return cells[key];
+      }
+      if (row === "soilClass" && sample.classification) return classificationLabel(sample.classification);
+      if (row === "ringNo") return "1";
+      if (row === "ringVolume") return "0.00266";
+      return "";
+    }
+
+    function mdNumber(home, row, column) {
+      return numberValue(mdSavedValue(home, row, column));
+    }
+
+    function mdCalculated(home, column) {
+      const soilRing = mdNumber(home, "soilRing", column);
+      const ringWeight = mdNumber(home, "ringWeight", column);
+      const ringNo = mdNumber(home, "ringNo", column) || 1;
+      const ringVolume = mdNumber(home, "ringVolume", column);
+      const wetSoil = soilRing !== null && ringWeight !== null && ringNo ? (soilRing - ringWeight) / ringNo : null;
+      const wetDensity = wetSoil !== null && ringVolume ? wetSoil / ringVolume / 453 : null;
+      const wa = mdNumber(home, "wa", column);
+      const wb = mdNumber(home, "wb", column);
+      const wc = mdNumber(home, "wc", column);
+      const water = wa !== null && wc !== null ? wa - wc : null;
+      const drySoil = wc !== null && wb !== null ? wc - wb : null;
+      const moisture = water !== null && drySoil ? (water / drySoil) * 100 : null;
+      const dryDensity = wetDensity !== null && moisture !== null ? wetDensity / (1 + moisture / 100) : null;
+      return { moisture, dryDensity, soilClass: mdSavedValue(home, "soilClass", column) };
+    }
+
+    function mostCommon(values) {
+      const counts = new Map();
+      values.filter(Boolean).forEach(value => counts.set(value, (counts.get(value) || 0) + 1));
+      return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+    }
+
+    function average(values) {
+      const numbers = values.filter(Number.isFinite);
+      return numbers.length ? numbers.reduce((total, value) => total + value, 0) / numbers.length : null;
+    }
+
+    function rangeLabel(values, suffix = "") {
+      const numbers = values.filter(Number.isFinite);
+      if (!numbers.length) return "not enough data";
+      const min = Math.min(...numbers);
+      const max = Math.max(...numbers);
+      return min === max ? `${min.toFixed(1)}${suffix}` : `${min.toFixed(1)}-${max.toFixed(1)}${suffix}`;
+    }
+
+    function loadSavedMdProjects() {
+      let data = { homes: [] };
+      try { data = JSON.parse(localStorage.getItem(storageKey) || "{\"homes\":[]}"); } catch (error) {}
+      savedMdProjects = (Array.isArray(data.homes) ? data.homes : []).map(home => {
+        const columns = mdColumns(home).map(column => {
+          const calc = mdCalculated(home, column);
+          return {
+            moisture: calc.moisture,
+            dryDensity: calc.dryDensity,
+            soilClass: calc.soilClass,
+            label: column.label
+          };
+        }).filter(item => item.moisture !== null || item.dryDensity !== null || item.soilClass);
+        const moistures = columns.map(item => item.moisture).filter(Number.isFinite);
+        const dryDensities = columns.map(item => item.dryDensity).filter(Number.isFinite);
+        const soilClasses = columns.map(item => String(item.soilClass || "").split(" ")[0]).filter(Boolean);
+        return {
+          home,
+          columns,
+          label: `${home.address || "Untitled project"}${home.projectNumber ? ` | ${home.projectNumber}` : ""}`,
+          moisture: average(moistures),
+          dryDensity: average(dryDensities),
+          moistureRange: rangeLabel(moistures, "%"),
+          dryDensityRange: rangeLabel(dryDensities, " pcf"),
+          soilClass: mostCommon(soilClasses),
+          validCount: columns.filter(item => item.moisture !== null && item.dryDensity !== null).length,
+          totalCount: columns.length
+        };
+      }).filter(project => project.columns.length);
+    }
+
+    function renderDataTools() {
+      loadSavedMdProjects();
+      mdSampleSelect.innerHTML = `<option value="">Manual entry</option>` + savedMdProjects.map((item, index) => {
+        const suffix = [
+          item.moisture !== null ? `avg ${item.moisture.toFixed(1)}%` : "",
+          item.dryDensity !== null ? `avg ${item.dryDensity.toFixed(1)} pcf` : "",
+          `${item.validCount} valid`
+        ].filter(Boolean).join(", ");
+        return `<option value="${index}">${escapeHtml(item.label)}${suffix ? ` (${escapeHtml(suffix)})` : ""}</option>`;
+      }).join("");
+      mdClassInput.innerHTML = `<option value="">Unknown / use values only</option>` + soilClassifications.map(([symbol, name]) => {
+        return `<option value="${symbol}">${symbol} - ${name}</option>`;
+      }).join("");
+    }
+
+    function bestSoilMatches(moisture, dryDensity, soilClass = "") {
+      return soilReference.map(row => {
+        const moistureRange = rangeFromText(row[2]);
+        const densityRange = rangeFromText(row[4]);
+        let score = 0;
+        const reasons = [];
+        if (soilClass && row[0] === soilClass) {
+          score += 5;
+          reasons.push("matches selected USCS");
+        }
+        if (moisture !== null && moistureRange) {
+          if (moisture >= moistureRange[0] && moisture <= moistureRange[1]) {
+            score += 3;
+            reasons.push("moisture in typical range");
+          } else {
+            const gap = Math.min(Math.abs(moisture - moistureRange[0]), Math.abs(moisture - moistureRange[1]));
+            score += Math.max(0, 2 - gap / 8);
+          }
+        }
+        if (dryDensity !== null && densityRange) {
+          if (dryDensity >= densityRange[0] && dryDensity <= densityRange[1]) {
+            score += 3;
+            reasons.push("dry density in typical range");
+          } else {
+            const gap = Math.min(Math.abs(dryDensity - densityRange[0]), Math.abs(dryDensity - densityRange[1]));
+            score += Math.max(0, 2 - gap / 15);
+          }
+        }
+        return { row, score, reasons };
+      }).sort((a, b) => b.score - a.score).slice(0, 3);
+    }
+
+    function classifiedComparison(moisture, dryDensity, soilClass) {
+      if (!soilClass) return "";
+      const row = soilReference.find(item => item[0] === soilClass);
+      if (!row) return `<div><strong>Classified as:</strong> ${escapeHtml(classificationLabel(soilClass))}. No reference range was found for that class.</div>`;
+      const moistureRange = rangeFromText(row[2]);
+      const densityRange = rangeFromText(row[4]);
+      const checks = [];
+      if (moisture !== null && moistureRange) {
+        checks.push(`moisture ${moisture >= moistureRange[0] && moisture <= moistureRange[1] ? "fits" : "is outside"} ${row[2]}`);
+      }
+      if (dryDensity !== null && densityRange) {
+        checks.push(`dry density ${dryDensity >= densityRange[0] && dryDensity <= densityRange[1] ? "fits" : "is outside"} ${row[4]} pcf`);
+      }
+      const verdict = checks.length && checks.every(check => check.includes("fits"))
+        ? "This agrees with the saved classification range."
+        : checks.length
+          ? "This does not fully match the saved classification range, so double-check the classification and MD&DD entries."
+          : "Enter moisture or dry density to compare against this classification.";
+      return `
+        <div><strong>Compared to your classification:</strong> ${escapeHtml(row[0])} - ${escapeHtml(row[1])}</div>
+        <ul>
+          ${checks.map(check => `<li>${escapeHtml(check)}</li>`).join("")}
+          <li>${escapeHtml(verdict)}</li>
+        </ul>
+      `;
+    }
+
+    function renderMdComparison() {
+      const moisture = numberValue(mdMoistureInput.value);
+      const dryDensity = numberValue(mdDensityInput.value);
+      const soilClass = mdClassInput.value;
+      const selectedProject = savedMdProjects[Number(mdSampleSelect.value)];
+      if (moisture === null && dryDensity === null && !soilClass) {
+        mdCompareResult.innerHTML = "Choose a saved project or enter moisture, dry density, or classification.";
+        return;
+      }
+      const matches = bestSoilMatches(moisture, dryDensity, soilClass);
+      const flags = [];
+      if (moisture !== null && moisture > 30) flags.push("High moisture: fine-grained or organic behavior is more likely.");
+      if (dryDensity !== null && dryDensity < 85) flags.push("Low dry density: check for organics, high voids, or calculation/input issues.");
+      if (dryDensity !== null && dryDensity > 120) flags.push("High dry density: granular soil or dense compacted material is more likely.");
+      const projectRows = selectedProject ? selectedProject.columns.map(item => {
+        const parts = [
+          escapeHtml(item.label),
+          item.moisture !== null ? `${item.moisture.toFixed(1)}%` : "moisture missing",
+          item.dryDensity !== null ? `${item.dryDensity.toFixed(1)} pcf` : "density missing",
+          item.soilClass ? escapeHtml(item.soilClass) : "class missing"
+        ];
+        return `<li>${parts.join(" | ")}</li>`;
+      }).join("") : "";
+      mdCompareResult.innerHTML = `
+        <div><strong>${selectedProject ? "Project average" : "Input"}:</strong> ${moisture !== null ? `${moisture}% moisture` : "moisture not set"}, ${dryDensity !== null ? `${dryDensity} pcf dry density` : "dry density not set"}${soilClass ? `, ${escapeHtml(classificationLabel(soilClass))}` : ""}</div>
+        ${selectedProject ? `<div><strong>Project range:</strong> moisture ${escapeHtml(selectedProject.moistureRange)}, dry density ${escapeHtml(selectedProject.dryDensityRange)}. Valid MD&DD columns: ${selectedProject.validCount} of ${selectedProject.totalCount}.</div>` : ""}
+        ${classifiedComparison(moisture, dryDensity, soilClass)}
+        <div><strong>Closest reference matches:</strong></div>
+        <ul>
+          ${matches.map(match => `<li><strong>${escapeHtml(match.row[0])}</strong> ${escapeHtml(match.row[1])}: moisture ${escapeHtml(match.row[2])}, dry density ${escapeHtml(match.row[4])}${match.reasons.length ? ` (${escapeHtml(match.reasons.join(", "))})` : ""}</li>`).join("")}
+          ${flags.map(flag => `<li>${escapeHtml(flag)}</li>`).join("")}
+        </ul>
+        ${projectRows ? `<div><strong>Project samples checked:</strong><ul>${projectRows}</ul></div>` : ""}
+        <div class="note">Use this as a comparison aid only. Final soil classification should still use USCS observations and the required lab tests.</div>
+      `;
+    }
+
+    function splitDataLine(line) {
+      return line.includes(",") ? line.split(",") : line.trim().split(/\s+/);
+    }
+
+    function parseShearRows(text) {
+      const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      if (!lines.length) return [];
+      const first = splitDataLine(lines[0]).map(item => item.trim().toLowerCase());
+      const hasHeader = first.some(item => /[a-z]/.test(item));
+      let normalIndex = 0;
+      let shearIndex = 1;
+      if (hasHeader) {
+        normalIndex = first.findIndex(item => item.includes("normal") || item.includes("sigma") || item.includes("vertical"));
+        shearIndex = first.findIndex(item => item.includes("shear") || item.includes("tau") || item.includes("peak"));
+        if (normalIndex < 0) normalIndex = 0;
+        if (shearIndex < 0) shearIndex = normalIndex === 0 ? 1 : 0;
+      }
+      return lines.slice(hasHeader ? 1 : 0).map(line => {
+        const parts = splitDataLine(line);
+        return {
+          normal: numberValue(parts[normalIndex]),
+          shear: numberValue(parts[shearIndex])
+        };
+      }).filter(row => row.normal !== null && row.shear !== null);
+    }
+
+    function regression(rows) {
+      const n = rows.length;
+      const sx = rows.reduce((total, row) => total + row.normal, 0);
+      const sy = rows.reduce((total, row) => total + row.shear, 0);
+      const sxx = rows.reduce((total, row) => total + row.normal * row.normal, 0);
+      const sxy = rows.reduce((total, row) => total + row.normal * row.shear, 0);
+      const denominator = n * sxx - sx * sx;
+      if (!denominator) return null;
+      const slope = (n * sxy - sx * sy) / denominator;
+      const intercept = (sy - slope * sx) / n;
+      return { slope, intercept, phi: Math.atan(slope) * 180 / Math.PI };
+    }
+
+    function shearInterpretation(rows, fit) {
+      const peak = rows.reduce((max, row) => Math.max(max, row.shear), -Infinity);
+      const c = fit?.intercept ?? null;
+      const phi = fit?.phi ?? null;
+      if (phi === null) return "Need at least two stress points to estimate strength behavior.";
+      if (phi >= 32 && c < peak * 0.15) return "Behavior looks more granular: sand or gravelly sand is possible.";
+      if (phi >= 26 && c < peak * 0.25) return "Behavior looks mixed granular/fine: silty or clayey sand is possible.";
+      if (phi < 25 && c > peak * 0.15) return "Behavior looks more cohesive: lean clay, fat clay, or clayey soil is possible.";
+      if (phi < 18) return "Low friction angle: soft fine-grained or disturbed material is possible.";
+      return "Behavior is mixed. Compare with moisture, dry density, visual classification, and Atterberg/sieve results.";
+    }
+
+    function analyzeShearText(text) {
+      const rows = parseShearRows(text);
+      if (rows.length < 2) {
+        shearResult.innerHTML = "Upload or paste at least two rows with normal stress and shear stress.";
+        return;
+      }
+      const fit = regression(rows);
+      const peak = Math.max(...rows.map(row => row.shear));
+      const normalRange = `${Math.min(...rows.map(row => row.normal)).toFixed(1)} to ${Math.max(...rows.map(row => row.normal)).toFixed(1)}`;
+      shearResult.innerHTML = `
+        <div><strong>Rows read:</strong> ${rows.length}</div>
+        <ul>
+          <li><strong>Peak shear stress:</strong> ${peak.toFixed(2)}</li>
+          <li><strong>Normal stress range:</strong> ${normalRange}</li>
+          ${fit ? `<li><strong>Estimated friction angle:</strong> ${fit.phi.toFixed(1)} degrees</li><li><strong>Estimated cohesion/intercept:</strong> ${Math.max(0, fit.intercept).toFixed(2)}</li>` : ""}
+          <li>${escapeHtml(shearInterpretation(rows, fit))}</li>
+        </ul>
+        <div class="note">Units follow your uploaded file. This is a quick Mohr-Coulomb trend check, not a signed report value.</div>
+      `;
+    }
+
+    function list(items) {
+      return items.map(item => `<li>${escapeHtml(item)}</li>`).join("");
+    }
+
+    function renderStandards(standards) {
+      if (!standards) return "";
+      const table = standards.table ? `
+        <div class="table-wrap">
+          <table class="mini-table">
+            <thead>
+              <tr>${standards.table[0].map(cell => `<th>${escapeHtml(cell)}</th>`).join("")}</tr>
+            </thead>
+            <tbody>
+              ${standards.table.slice(1).map(row => `<tr>${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+      ` : "";
+
+      const chart = standards.chart ? `
+        <div class="chart" aria-label="${escapeHtml(standards.chartTitle || "Typical range chart")}">
+          ${standards.chart.map(row => `
+            <div class="chart-row">
+              <div class="chart-label">${escapeHtml(row[0])}</div>
+              <div class="chart-track"><div class="chart-fill" style="--bar: ${Number(row[2]) || 0}%;"></div></div>
+              <div class="chart-value">${escapeHtml(row[1])}</div>
+            </div>
+          `).join("")}
+        </div>
+      ` : "";
+
+      return `
+        <section class="standard-panel">
+          <div class="standard-head">
+            <div>
+              <h3>Standard Values</h3>
+              <span>${escapeHtml(standards.subtitle)}</span>
+            </div>
+            ${standards.chartTitle ? `<span>${escapeHtml(standards.chartTitle)}</span>` : ""}
+          </div>
+          <div class="value-grid">
+            ${standards.values.map(value => `
+              <div class="value-card">
+                <span>${escapeHtml(value[0])}</span>
+                <strong>${escapeHtml(value[1])}</strong>
+                <small>${escapeHtml(value[2])}</small>
+              </div>
+            `).join("")}
+          </div>
+          ${chart}
+          ${table}
+        </section>
+      `;
+    }
+
+    function manualText(manual) {
+      return [
+        manual.title,
+        manual.astm,
+        manual.location,
+        manual.supplies,
+        manual.standards ? JSON.stringify(manual.standards) : "",
+        manual.steps.join(" "),
+        manual.shutdown.join(" "),
+        manual.mistakes.join(" ")
+      ].join(" ").toLowerCase();
+    }
+
+    function renderManuals() {
+      const query = search.value.trim().toLowerCase();
+      const visible = manuals.filter(manual => !query || manualText(manual).includes(query));
+
+      nav.innerHTML = manuals.map(manual => `
+        <a href="#${manual.id}" data-manual-link="${manual.id}">
+          <strong>${escapeHtml(manual.title)}</strong>
+          <span>${escapeHtml(manual.astm)}</span>
+        </a>
+      `).join("");
+
+      stack.innerHTML = visible.map(manual => `
+        <article class="manual-card" id="${manual.id}">
+          <header>
+            <div>
+              <h2>${escapeHtml(manual.title)}</h2>
+              <p>${escapeHtml(manual.astm)}</p>
+            </div>
+            <span class="badge ${manual.source === "Starter procedure" ? "filled" : ""}">${escapeHtml(manual.source)}</span>
+          </header>
+          <div class="manual-body">
+            <div class="quick-grid">
+              <div class="quick-box"><span>Location</span><p>${escapeHtml(manual.location)}</p></div>
+              <div class="quick-box"><span>Supplies</span><p>${escapeHtml(manual.supplies)}</p></div>
+            </div>
+            ${renderStandards(manual.standards)}
+            ${manual.note ? `<div class="note">${escapeHtml(manual.note)}</div>` : ""}
+            <div class="block">
+              <h3>Steps</h3>
+              <ol>${list(manual.steps)}</ol>
+            </div>
+            <div class="block">
+              <h3>Shutdown and Cleaning</h3>
+              <ul>${list(manual.shutdown)}</ul>
+            </div>
+            <div class="block">
+              <h3>Common Mistakes / Fixes</h3>
+              <ul>${list(manual.mistakes)}</ul>
+            </div>
+          </div>
+        </article>
+      `).join("") || `<article class="manual-card"><div class="manual-body">No manual sections match that search.</div></article>`;
+
+      stack.insertAdjacentHTML("beforeend", `
+        <article class="reference-card" id="soil-reference">
+          <header>
+            <div>
+              <h2>Soil Reference</h2>
+            </div>
+            <span class="badge">From your Word manual</span>
+          </header>
+          <div class="manual-body">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>USCS</th>
+                    <th>Soil Type</th>
+                    <th>Moisture Content</th>
+                    <th>OMC</th>
+                    <th>Max Dry Density (pcf)</th>
+                    <th>Modifier / Fines</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${soilReference.map(row => `<tr>${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </article>
+      `);
+    }
+
+    search.addEventListener("input", renderManuals);
+
+    mdSampleSelect.addEventListener("change", () => {
+      const item = savedMdProjects[Number(mdSampleSelect.value)];
+      if (!item) return;
+      mdMoistureInput.value = item.moisture !== null ? item.moisture.toFixed(1) : "";
+      mdDensityInput.value = item.dryDensity !== null ? item.dryDensity.toFixed(1) : "";
+      mdClassInput.value = soilClassifications.some(([value]) => value === item.soilClass) ? item.soilClass : "";
+      renderMdComparison();
+    });
+
+    document.getElementById("compareMdBtn").addEventListener("click", renderMdComparison);
+
+    document.getElementById("clearMdBtn").addEventListener("click", () => {
+      mdSampleSelect.value = "";
+      mdMoistureInput.value = "";
+      mdDensityInput.value = "";
+      mdClassInput.value = "";
+      mdCompareResult.innerHTML = "Choose a saved project or enter values manually.";
+    });
+
+    shearFileInput.addEventListener("change", () => {
+      const file = shearFileInput.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        uploadedShearText = String(reader.result || "");
+        shearPasteInput.value = uploadedShearText;
+        analyzeShearText(uploadedShearText);
+      };
+      reader.readAsText(file);
+    });
+
+    document.getElementById("analyzeShearBtn").addEventListener("click", () => {
+      analyzeShearText(shearPasteInput.value || uploadedShearText);
+    });
+
+    document.getElementById("backBtn").addEventListener("click", () => {
+      if (history.length > 1) {
+        history.back();
+      } else {
+        location.href = "index.html";
+      }
+    });
+
+    renderDataTools();
+    renderManuals();
+  </script>
+</body>
+</html>

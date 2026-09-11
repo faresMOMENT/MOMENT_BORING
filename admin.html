@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin · Moment Engineering</title>
+  <link rel="stylesheet" href="admin-v2.css">
+  <link rel="stylesheet" href="app-shell.css">
+  <script defer src="app-shell.js"></script>
+  <script defer src="admin.js"></script>
+</head>
+<body>
+  <nav class="app-tabs" aria-label="Main pages"></nav>
+  <main class="roles-page">
+    <header class="roles-head">
+      <div><div class="roles-eyebrow">Administration</div><h1>Admin</h1><p>View the connected program account and manage every worker, code, role, and page permission.</p></div>
+      <span class="owner-chip">Super Admin</span>
+    </header>
+    <section class="admin-account-card">
+      <div><span>Connected program account</span><strong id="adminAccountEmail">Not connected</strong><small>Supabase administrator email</small></div>
+      <a href="worker-login.html">Switch profile</a>
+    </section>
+    <div class="info-banner"><strong>Super Admin has full access.</strong> Worker permissions can be changed at any time, including their visible login codes.</div>
+    <section class="setup-bar"><form id="ownerCodeForm" class="owner-code-form"><label>Admin code<input id="ownerCode" type="text" minlength="4" placeholder="Set admin code" required></label><button type="submit">Save admin code</button><span id="ownerStatus"></span></form><button class="add-user-toggle" id="showWorkerForm" type="button">+ Add person</button></section>
+    <section class="add-worker-panel" id="addWorkerPanel" hidden><div class="panel-heading"><div><h2>Add person to the team</h2><p>Add their contact details, schedule color, login code, divisions, and starting tab access.</p></div><button id="closeWorkerForm" type="button" aria-label="Close">×</button></div><form id="workerForm"><div class="worker-form-grid"><label>Name<input id="workerName" required placeholder="Full name"></label><label>Job title<input id="workerTitle" placeholder="Field Technician"></label><label>Email<input id="workerEmail" type="email" placeholder="name@company.com"></label><label>Phone number<input id="workerPhone" type="tel" placeholder="(555) 555-0123"></label><label>Schedule color<input id="workerColor" type="color" value="#2f6f58"></label><label>Login code<input id="workerCode" type="text" minlength="4" required placeholder="Visible code"></label><label>Role<select id="workerRole"><option value="employee">Employee</option><option value="manager">Manager</option><option value="admin">Admin</option></select></label></div><fieldset><legend>Division access</legend><div class="division-options"><label><input type="checkbox" name="newDivision" value="Civil Engineering" checked> Civil Engineering</label><label><input type="checkbox" name="newDivision" value="Geotechnical" checked> Geotechnical</label></div></fieldset><fieldset><legend>Starting tab access</legend><div class="permission-grid" id="newWorkerPermissions"></div></fieldset><div class="form-actions"><span id="workerStatus"></span><button type="submit">Create person profile</button></div></form></section>
+    <section class="roles-table-wrap"><div class="roles-table-head"><span>Personnel</span><span>Role</span><span>Division access</span><span>Tab access</span><span>Login code</span><span></span></div><div id="workerList" class="roles-list"></div><div class="table-footer"><span id="workerCount">0 workers</span></div></section>
+  </main>
+</body>
+</html>

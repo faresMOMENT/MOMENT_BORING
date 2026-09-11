@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Scheduler · Moment Engineering</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <link rel="stylesheet" href="scheduler.css">
+  <script defer src="app-shell.js"></script>
+  <script defer src="scheduler.js"></script>
+</head>
+<body data-page="Scheduler" data-group="My Day">
+  <nav class="app-tabs" aria-label="Main pages"></nav>
+  <main class="scheduler-page">
+    <header class="scheduler-head"><div><span>Project planning</span><h1>Scheduler</h1><p>Select a project, assign the team, and send the job to Calendar.</p></div><a href="job-calendar.html">Open Calendar</a></header>
+    <div class="scheduler-layout">
+      <section class="project-picker">
+        <div class="section-head"><div><h2>Projects</h2><p id="projectCount">0 available</p></div><input id="projectSearch" type="search" placeholder="Search projects"></div>
+        <div id="schedulerProjects" class="scheduler-projects"></div>
+      </section>
+      <section class="schedule-panel">
+        <div class="selected-project"><span>Selected project</span><h2 id="selectedProjectName">Choose a project</h2><p id="selectedProjectMeta">Select a project from the list to start.</p></div>
+        <form id="schedulerForm">
+          <div class="form-grid">
+            <label>Date<input id="scheduleDate" type="date" required></label>
+            <label>Start time<input id="scheduleTime" type="time"></label>
+            <label>Job type<select id="jobType"><option>Boring / Drilling</option><option>Compaction Testing</option><option>Inspection</option><option>Sampling</option><option>Lab Pickup</option><option>Other</option></select></label>
+            <label>Equipment<select id="equipment"><option>Drill Rig</option><option>Hand Auger</option><option>DCP</option><option>Nuclear Gauge</option><option>Excavator</option><option>Sampling Equipment</option><option>None</option><option>Other</option></select></label>
+            <fieldset class="wide"><legend>Assigned team</legend><div id="schedulerTeam" class="team-options"></div></fieldset>
+            <label class="wide">Proposed work<textarea id="proposedWork" placeholder="Describe the work to be completed"></textarea></label>
+            <label>Client / contractor<input id="schedulerClient" placeholder="Client or contractor name"></label>
+            <label>Contact email<input id="schedulerEmail" type="email" placeholder="name@company.com"></label>
+            <label class="wide">Notes<textarea id="scheduleNotes" placeholder="Access, crew, timing, or other notes"></textarea></label>
+          </div>
+          <div class="form-footer"><span id="scheduleStatus"></span><button id="saveSchedule" type="submit" disabled>Save to Calendar</button></div>
+        </form>
+      </section>
+    </div>
+    <section class="recent-section"><div class="section-head"><div><h2>Recently scheduled</h2><p>Upcoming project work</p></div></div><div id="recentSchedules" class="recent-schedules"></div></section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moment Engineering - Me</title>
+  <style>
+    :root { --ink:#202722; --muted:#73796d; --line:#deded9; --accent:#147c6a; --bg:#f6f7f3; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--bg); font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+    .app-tabs { position:relative; z-index:100; display:flex; align-items:center; gap:8px; overflow-x:auto; padding:12px 16px; background:#fff; border-bottom:1px solid #e6e6e2; font-size:15px; line-height:1.2; }
+    .app-logo { width:170px; height:42px; flex:0 0 auto; object-fit:contain; object-position:left center; margin-right:6px; }
+    .app-tabs a { flex:0 0 auto; padding:10px 13px; border:1px solid transparent; border-radius:8px; color:#2f6f58; text-decoration:none; font-weight:500; white-space:nowrap; }
+    .app-tabs a:hover { background:#f0f7f3; color:#205b46; }
+    .app-tabs a.active { border-color:#b9d2c6; background:#f4faf7; color:#195a42; }
+    main { width:min(760px,calc(100% - 28px)); margin:42px auto; display:grid; gap:18px; }
+    h1,h2,p { margin:0; } h1 { font-size:28px; } .intro { color:var(--muted); margin-top:7px; }
+    .card { padding:22px; border:1px solid var(--line); border-radius:12px; background:#fff; box-shadow:0 5px 18px rgba(25,35,29,.05); }
+    .identity { display:flex; align-items:center; gap:16px; }
+    .avatar { width:54px; height:54px; display:grid; place-items:center; border-radius:50%; background:#e7f6f2; color:var(--accent); font-size:20px; font-weight:700; }
+    .label { margin-top:18px; color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.06em; }
+    .value { margin-top:5px; font-weight:600; overflow-wrap:anywhere; }
+    .links { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:16px; }
+    .links a { padding:13px; border:1px solid var(--line); border-radius:8px; color:var(--ink); text-decoration:none; background:#fbfbf9; }
+    .team-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,1fr) 72px auto;gap:9px;margin-top:16px}.team-form input{min-width:0;min-height:42px;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:inherit}.team-form input[type=color]{padding:4px;width:72px}.btn{min-height:42px;border:1px solid var(--accent);border-radius:8px;padding:9px 14px;background:var(--accent);color:#fff;font:inherit;font-weight:500;cursor:pointer}.team-list{display:grid;gap:8px;margin-top:16px}.person{display:grid;grid-template-columns:16px minmax(110px,.7fr) minmax(180px,1fr) auto;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:#fbfbf9}.person-dot{width:14px;height:14px;border-radius:50%}.person input{min-width:0;min-height:38px;border:1px solid var(--line);border-radius:7px;padding:8px 9px;font:inherit}.person button{border:0;background:transparent;color:#9b453d;cursor:pointer}
+    @media(max-width:600px){ .app-tabs{padding:8px;gap:2px;font-size:13px}.app-logo{width:126px;height:36px;margin-right:3px}.app-tabs a{padding:9px 10px}main{margin:24px auto}.links{grid-template-columns:1fr}.team-form{grid-template-columns:minmax(0,1fr) 62px}.team-form #teamEmail{grid-column:1/-1}.team-form .btn{grid-column:1/-1}.team-form input[type=color]{width:62px}.person{grid-template-columns:16px 1fr auto}.person input{grid-column:1/-1;font-size:16px} }
+  </style>
+</head>
+<body>
+  <link rel="stylesheet" href="app-shell.css"><script src="app-shell.js"></script>
+  <nav class="app-tabs" aria-label="Main pages">
+    <img class="app-logo" src="moment-engineering-logo.png" alt="Moment Engineering">
+    <a href="index.html">Boring Logs</a><a href="job-calendar.html">Calendar</a><a href="lab-inventory.html">Inventory</a><a href="lab-work.html">Lab Work</a><a href="lab-manual.html">Lab Manual</a><a href="contacts.html">Contacts</a><a class="active" href="me.html">Me</a>
+  </nav>
+  <main>
+    <header><h1>Me</h1><p class="intro">Your Moment Engineering field and lab workspace.</p></header>
+    <section class="card">
+      <div class="identity"><div class="avatar" id="avatar">ME</div><div><h2 id="displayName">Moment Engineering User</h2><p class="intro">Signed-in workspace profile</p></div></div>
+      <div class="label">Account</div><div class="value" id="accountName">Local workspace</div>
+      <div class="label">Quick access</div>
+      <div class="links"><a href="index.html">Boring Logs</a><a href="job-calendar.html">Job Calendar</a><a href="contacts.html">Scheduling Contacts</a><a href="lab-inventory.html">Sample Inventory</a><a href="lab-work.html">Lab Work</a><a href="lab-manual.html">Lab Manual</a><a href="lab-work-archive.html">Previous Lab Work Archive</a></div>
+    </section>
+  </main>
+  <script>
+    const account = localStorage.getItem("boringLogCurrentUser") || "Local workspace";
+    document.getElementById("accountName").textContent = account;
+    if (account !== "Local workspace") document.getElementById("displayName").textContent = account.split("@")[0].replace(/[._-]+/g," ").replace(/\b\w/g, letter => letter.toUpperCase());
+    document.getElementById("avatar").textContent = document.getElementById("displayName").textContent.split(/\s+/).slice(0,2).map(word => word[0]).join("").toUpperCase();
+  </script>
+</body>
+</html>

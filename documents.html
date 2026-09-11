@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Documents · Moment Engineering</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <link rel="stylesheet" href="documents.css">
+  <script defer src="app-shell.js"></script>
+  <script defer src="documents.js"></script>
+</head>
+<body data-page="Documents" data-group="Projects">
+  <nav class="app-tabs" aria-label="Main pages"></nav>
+  <main class="documents-page">
+    <header class="documents-header">
+      <div>
+        <span class="eyebrow">Project files</span>
+        <h1>Documents</h1>
+        <p>Find and download boring logs, lab reports, custody records, and uploaded files for every project.</p>
+      </div>
+      <div class="document-summary" aria-label="Document totals">
+        <div><span id="projectTotal">0</span><small>Projects</small></div>
+        <div><span id="documentTotal">0</span><small>Documents</small></div>
+      </div>
+    </header>
+
+    <section class="documents-toolbar" aria-label="Document filters">
+      <label class="search-field"><span>Search</span><input id="documentSearch" type="search" placeholder="Project, address, client, or document"></label>
+      <label><span>Project</span><select id="projectFilter"><option value="all">All projects</option></select></label>
+      <label><span>File type</span><select id="typeFilter"><option value="all">All documents</option><option value="boring">Boring logs</option><option value="lab">Lab reports</option><option value="uploaded">Uploaded files</option></select></label>
+    </section>
+
+    <section id="projectDocuments" class="project-documents" aria-live="polite"></section>
+    <iframe class="download-frame" name="documentDownloadFrame" title="Document download"></iframe>
+  </main>
+</body>
+</html>
