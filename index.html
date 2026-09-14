@@ -2611,7 +2611,7 @@
         <form class="login-card" id="loginForm">
           <div class="section-kicker">Shared Field Workspace</div>
           <h1 id="authTitle">Sign in</h1>
-          <p id="authHelp">Every login opens the same shared project list and boring-log work saved in Supabase.</p>
+          <p id="authHelp">Sign in to your private program workspace. Coded workers under the same account share its assigned work.</p>
           <div class="auth-switch" aria-label="Authentication mode">
             <button class="active" type="button" data-auth-mode="login">Login</button>
             <button type="button" data-auth-mode="signup">Sign Up</button>
@@ -2648,7 +2648,7 @@
               <label>Shared Data Sync</label>
               <div class="meta-line">
                 <span id="syncStatus">Not synced yet</span>
-                <span>Projects, borings, layers, and samples use shared browser storage.</span>
+                <span>Your program workspace syncs across devices and stays separate from other program accounts.</span>
               </div>
               <div class="setup-panel" id="supabaseSetupPanel">
                 <strong>Supabase table setup is needed.</strong>
@@ -3183,7 +3183,7 @@
     const supabaseUrl = "https://fuivzblvhjuuzhygdeln.supabase.co";
     const supabaseKey = "sb_publishable_Kcy_SCyyVSeYWRJLLcV1IA_I1dHFSYe";
     const supabaseTable = "field_app_state";
-    const supabaseStateId = "moment-shared-state";
+    const supabaseStateId = () => window.MomentWorkspaceCloud?.stateIdFor(currentAccessToken) || "";
     const supabaseSetupSql = `create table if not exists public.field_app_state (
   id text primary key,
   state jsonb not null default '{}'::jsonb,
@@ -3193,32 +3193,35 @@
 
 alter table public.field_app_state enable row level security;
 
+revoke all on table public.field_app_state from anon;
+revoke all on table public.field_app_state from authenticated;
+grant select, insert, update on table public.field_app_state to authenticated;
+
 drop policy if exists "field app shared read" on public.field_app_state;
 drop policy if exists "field app shared insert" on public.field_app_state;
 drop policy if exists "field app shared update" on public.field_app_state;
+drop policy if exists "field app account read" on public.field_app_state;
+drop policy if exists "field app account insert" on public.field_app_state;
+drop policy if exists "field app account update" on public.field_app_state;
 
-create policy "field app shared read"
+create policy "field app account read"
 on public.field_app_state
 for select
 to authenticated
-using (true);
+using (id = 'account-' || auth.uid()::text);
 
-create policy "field app shared insert"
+create policy "field app account insert"
 on public.field_app_state
 for insert
 to authenticated
-with check (true);
+with check (id = 'account-' || auth.uid()::text);
 
-create policy "field app shared update"
+create policy "field app account update"
 on public.field_app_state
 for update
 to authenticated
-using (true)
-with check (true);
-
-insert into public.field_app_state (id, state, updated_by)
-values ('moment-shared-state', '{}'::jsonb, 'setup')
-on conflict (id) do nothing;`;
+using (id = 'account-' || auth.uid()::text)
+with check (id = 'account-' || auth.uid()::text);`;
 
     const loginPage = document.querySelector("#loginPage");
     const appShell = document.querySelector(".app");
@@ -3281,7 +3284,7 @@ on conflict (id) do nothing;`;
       }
       if (error?.supabaseStatus === 401 || error?.supabaseStatus === 403 || /row-level security|permission denied|JWT|not authorized|401|403/i.test(message)) {
         showSupabaseSetup(true);
-        return "Supabase blocked the shared data request. Run or check the table policies in the setup SQL shown in Settings.";
+        return "Supabase blocked this account's workspace request. Run or check the table policies in the setup SQL shown in Settings.";
       }
       try {
         const parsed = JSON.parse(message);
@@ -3328,8 +3331,8 @@ on conflict (id) do nothing;`;
       });
       document.querySelector("#authTitle").textContent = mode === "signup" ? "Create account" : "Sign in";
       document.querySelector("#authHelp").textContent = mode === "signup"
-        ? "Create a Supabase account. After signing up, everyone can open the shared project workspace."
-        : "Every login opens the same shared project list and boring-log work saved in Supabase.";
+        ? "Create a private program workspace. Workers using codes under this account will share its assigned work."
+        : "Sign in to your program workspace. The same account stays synced across your devices.";
       document.querySelector("#authSubmitButton").textContent = mode === "signup" ? "Sign Up" : "Login";
       setLoginStatus("");
     }
@@ -3471,12 +3474,14 @@ on conflict (id) do nothing;`;
     async function loadCloudState() {
       applyingCloudState = true;
       try {
-        const rows = await supabaseRequest(`${supabaseTable}?id=eq.${encodeURIComponent(supabaseStateId)}&select=state,updated_at&limit=1`);
+        const rows = await supabaseRequest(`${supabaseTable}?id=eq.${encodeURIComponent(supabaseStateId())}&select=state,updated_at&limit=1`);
         const record = rows?.[0];
         if (!record?.state) return false;
-        applyState(record.state);
+        const fieldState = window.MomentWorkspaceCloud?.normalizeCloudState(record.state)?.storage?.[storageKey];
+        const cloudState = fieldState ? JSON.parse(fieldState) : record.state;
+        applyState(cloudState);
         saveState({ sync: false });
-        localStorage.setItem(syncKey, `Cloud loaded: ${stateSummary(record.state)} at ${new Date(record.updated_at || Date.now()).toLocaleString()}`);
+        localStorage.setItem(syncKey, `Cloud loaded: ${stateSummary(cloudState)} at ${new Date(record.updated_at || Date.now()).toLocaleString()}`);
         renderRows();
         renderProjects();
         updateSettingsView();
@@ -3503,8 +3508,8 @@ on conflict (id) do nothing;`;
           method: "POST",
           headers: { Prefer: "resolution=merge-duplicates,return=representation" },
           body: JSON.stringify({
-            id: supabaseStateId,
-            state: exportState(),
+            id: supabaseStateId(),
+            state: window.MomentWorkspaceCloud?.snapshot() || exportState(),
             updated_at: new Date().toISOString(),
             updated_by: currentUser || "unknown"
           })
@@ -5075,11 +5080,12 @@ on conflict (id) do nothing;`;
         setLoginStatus(readableSupabaseError(error), true);
         return;
       }
-      setSyncStatus("Loading shared Supabase data...");
+      setSyncStatus("Loading your program workspace...");
       try {
+        if (window.MomentWorkspaceCloud) await window.MomentWorkspaceCloud.activate(currentAccessToken);
         const loaded = await loadCloudState();
         if (!loaded) {
-          setSyncStatus("No cloud data yet. On the computer, click Save This Device to Cloud after adding projects.");
+          setSyncStatus("This account has no cloud data yet. New work will save automatically.");
           renderRows();
           renderProjects();
         }

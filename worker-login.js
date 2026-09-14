@@ -55,6 +55,7 @@
           accountAction="signin";accountButton.textContent="Sign in as administrator";actionToggle.textContent="Create a new program account";return;
         }
         localStorage.setItem(keys.user,email);localStorage.setItem(keys.password,password);localStorage.setItem(keys.token,result.access_token);localStorage.setItem(keys.refresh,result.refresh_token||"");
+        if(window.MomentWorkspaceCloud)await window.MomentWorkspaceCloud.activate(result.access_token);
         const identity=result.user?.id||email.toLowerCase(),onboarded=readJson(keys.onboarded,{}),firstVisit=accountAction==="signup"||!onboarded[identity]||!readAccess().ownerHash;
         if(firstVisit){onboarded[identity]=true;localStorage.setItem(keys.onboarded,JSON.stringify(onboarded));setProfile("owner",email);location.href="admin.html";return}
         status.textContent="Account verified. Enter your profile code to continue.";

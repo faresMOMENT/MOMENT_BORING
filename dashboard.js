@@ -10,17 +10,17 @@
     model=projects.map(project=>{
       const projectBorings=borings.filter(item=>item.projectId===project.id),samples=projectBorings.reduce((total,item)=>total+(Array.isArray(item.samples)?item.samples.length:0),0),home=homes.find(item=>sameProject(item,project)),queued=upcoming.find(item=>sameProject(item,project));
       const labStatus=String(home?.projectStatus||"").toLowerCase();
-      const stage=home?(labStatus==="report"?"report":"testing"):queued||samples?"waiting":"field";
+      const stage=home?(labStatus==="report"?"report":labStatus==="received"?"received":"testing"):queued||samples?"waiting":"field";
       return{project,projectBorings,samples,home,queued,stage};
     }).filter(item=>!item.home?.completedAt);
   }
-  const stageLabel=item=>item.stage==="report"?"Report":item.stage==="testing"?"Testing In Progress":item.stage==="waiting"?"Awaiting lab arrival":"Field work";
+  const stageLabel=item=>item.stage==="report"?"Report":item.stage==="testing"?"Testing In Progress":item.stage==="received"?"Received":item.stage==="waiting"?"Awaiting lab arrival":"Field work";
   function render(){
     loadModel();
     const query=document.querySelector("#projectSearch").value.trim().toLowerCase(),filter=document.querySelector("#statusFilter").value;
-    const visible=model.filter(item=>{const p=item.project,text=[p.number,p.name,p.address,p.client,p.county,item.home?.projectStatus].filter(Boolean).join(" ").toLowerCase(),matchesStage=filter==="all"||(filter==="lab"&&(item.stage==="testing"||item.stage==="report"))||item.stage===filter;return(!query||text.includes(query))&&matchesStage});
+    const visible=model.filter(item=>{const p=item.project,text=[p.number,p.name,p.address,p.client,p.county,item.home?.projectStatus].filter(Boolean).join(" ").toLowerCase(),matchesStage=filter==="all"||(filter==="lab"&&(item.stage==="received"||item.stage==="testing"||item.stage==="report"))||item.stage===filter;return(!query||text.includes(query))&&matchesStage});
     document.querySelector("#activeProjectCount").textContent=model.length;
-    document.querySelector("#labProjectCount").textContent=model.filter(item=>item.stage==="testing"||item.stage==="report").length;
+    document.querySelector("#labProjectCount").textContent=model.filter(item=>item.stage==="received"||item.stage==="testing"||item.stage==="report").length;
     document.querySelector("#waitingProjectCount").textContent=model.filter(item=>item.stage==="waiting").length;
     document.querySelector("#sampleCount").textContent=model.reduce((sum,item)=>sum+item.samples,0);
     document.querySelector("#dashboardUpdated").textContent=`${visible.length} of ${model.length} active projects shown`;

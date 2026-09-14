@@ -311,7 +311,7 @@
     const supabaseUrl = "https://fuivzblvhjuuzhygdeln.supabase.co";
     const supabaseKey = "sb_publishable_Kcy_SCyyVSeYWRJLLcV1IA_I1dHFSYe";
     const supabaseTable = "field_app_state";
-    const supabaseStateId = "moment-shared-state";
+    const supabaseStateId = () => window.MomentWorkspaceCloud?.stateIdFor(localStorage.getItem(accessTokenKey) || "") || "";
     const countyNames = ["San Diego County", "LA County", "Orange County", "Other County"];
     const views = ["All Samples", ...countyNames, "Bag Samples", "Arrival Pending", "Completed / Disposed"];
     const state = { data: loadData(), view: "All Samples", search: "", daysFilter: "all", daysSort: "least", importSamples: [], importMetadata: {}, rawPdfText: "" };
@@ -438,7 +438,7 @@
         technician: existing.technician || "Fares Krichati",
         labManager: existing.labManager || "Corey Mims",
         engineer: existing.engineer || "Fahad Masud",
-        projectStatus: existing.projectStatus || "Testing",
+        projectStatus: existing.projectStatus || "Received",
         completedAt: existing.completedAt || "",
         tests: existing.tests || {},
         notes: existing.notes || inventoryHome.notes || "Synced from inventory",
@@ -558,8 +558,8 @@
         method: "POST",
         headers: { Prefer: "resolution=merge-duplicates,return=representation" },
         body: JSON.stringify({
-          id: supabaseStateId,
-          state: stored,
+          id: supabaseStateId(),
+          state: window.MomentWorkspaceCloud?.snapshot() || stored,
           updated_at: new Date().toISOString(),
           updated_by: currentUser
         })
@@ -574,13 +574,15 @@
 
     async function loadInventoryCloudState() {
       if (!localStorage.getItem(sessionKey) && !localStorage.getItem(accessTokenKey) && !localStorage.getItem(refreshTokenKey)) return false;
-      const rows = await supabaseRequest(`${supabaseTable}?id=eq.${encodeURIComponent(supabaseStateId)}&select=state,updated_at&limit=1`);
+      const rows = await supabaseRequest(`${supabaseTable}?id=eq.${encodeURIComponent(supabaseStateId())}&select=state,updated_at&limit=1`);
       const record = rows?.[0];
       if (!record?.state) return false;
-      state.data = dataFromStored(record.state);
+      const fieldState = window.MomentWorkspaceCloud?.normalizeCloudState(record.state)?.storage?.[storageKey];
+      const cloudState = fieldState ? JSON.parse(fieldState) : record.state;
+      state.data = dataFromStored(cloudState);
       try {
-        localStorage.setItem(storageKey, JSON.stringify(record.state));
-        localStorage.setItem(syncKey, `Cloud loaded: ${stateSummary(record.state)} at ${new Date(record.updated_at || Date.now()).toLocaleString()}`);
+        localStorage.setItem(storageKey, JSON.stringify(cloudState));
+        localStorage.setItem(syncKey, `Cloud loaded: ${stateSummary(cloudState)} at ${new Date(record.updated_at || Date.now()).toLocaleString()}`);
       } catch (error) {
         console.warn("Could not cache Supabase inventory state locally.", error);
       }

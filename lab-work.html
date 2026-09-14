@@ -1585,8 +1585,7 @@
         homes: Array.isArray(data?.homes)
           ? data.homes.map(home => {
             const normalized = { ...home, projectStatus: projectStatusValue(home.projectStatus), completedAt: typeof home.completedAt === "string" ? home.completedAt : "" };
-            const required = testOptions.filter(([key]) => normalized.tests?.[key]);
-            if (required.length && required.every(([key]) => normalized.labTests?.[key]?.status === "Done")) normalized.projectStatus = "Report";
+            updateProjectStatusFromTests(normalized);
             return normalized;
           })
           : [],
@@ -1922,10 +1921,13 @@
     }
 
     function updateProjectStatusFromTests(home) {
-      const completion = completionForHome(home);
-      if (completion.total > 0 && completion.done === completion.total) {
+      const tests = requiredTests(home);
+      const labTests = ensureLabTests(home);
+      if (!tests.length || tests.every(([key]) => (labTests[key]?.status || "Not Started") === "Not Started")) {
+        home.projectStatus = "Received";
+      } else if (tests.every(([key]) => labTests[key]?.status === "Done")) {
         home.projectStatus = "Report";
-      } else if (completion.done > 0 || completion.inProgress > 0 || projectStatusValue(home.projectStatus) === "Report") {
+      } else {
         home.projectStatus = "Testing";
       }
     }
@@ -2272,9 +2274,9 @@
     function statusPill(home, dueStatus, completion) {
       if (home.completedAt) return `<span class="status-pill status-completed">Completed</span>`;
       const status = projectStatusValue(home.projectStatus);
-      if (status === "Report") return `<button class="status-pill status-report" type="button" data-toggle-project-status="${home.id}">Report</button>`;
-      if (status === "Received") return `<button class="status-pill status-received" type="button" data-toggle-project-status="${home.id}">Received</button>`;
-      return `<button class="status-pill status-testing" type="button" data-toggle-project-status="${home.id}">Testing In Progress</button>`;
+      if (status === "Report") return `<span class="status-pill status-report">Report</span>`;
+      if (status === "Received") return `<span class="status-pill status-received">Received</span>`;
+      return `<span class="status-pill status-testing">Testing In Progress</span>`;
     }
 
     function statusClass(value) {
