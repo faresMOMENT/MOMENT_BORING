@@ -7,6 +7,7 @@
   const USER_KEY = "boringLogCurrentUser";
   const DEVICE_ACCOUNT_KEY = "momentWorkspaceAccountV2";
   const RELOAD_KEY = "momentWorkspaceReloadV2";
+  const BOOT_KEY = "momentWorkspaceBootV2";
   const DATA_KEYS = [
     "boringLogAppState",
     "moment-lab-custody-v1",
@@ -61,10 +62,16 @@
     } finally { applying = false; }
   };
   const request = async (path, options = {}, token = localStorage.getItem(TOKEN_KEY) || "") => {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-      ...options,
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(options.headers || {}) }
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    let response;
+    try {
+      response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+        ...options,
+        signal: controller.signal,
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(options.headers || {}) }
+      });
+    } finally { clearTimeout(timeout); }
     if (!response.ok) throw new Error((await response.text()) || `Workspace sync failed (${response.status})`);
     return response.status === 204 ? null : response.json();
   };
@@ -121,8 +128,17 @@
   async function boot() {
     const token = localStorage.getItem(TOKEN_KEY) || "";
     if (!token) return;
+    const accountId = accountIdFor(token);
+    try {
+      const recent = JSON.parse(sessionStorage.getItem(BOOT_KEY) || "null");
+      if (recent?.accountId === accountId && Date.now() - recent.loadedAt < 300000) {
+        activeAccountId = accountId;
+        return;
+      }
+    } catch {}
     try {
       const result = await activate(token);
+      sessionStorage.setItem(BOOT_KEY, JSON.stringify({ accountId, loadedAt: Date.now() }));
       const page = (location.pathname.split("/").pop() || "index.html").toLowerCase();
       if (result.changed && page !== "worker-login.html" && sessionStorage.getItem(RELOAD_KEY) !== activeAccountId) {
         sessionStorage.setItem(RELOAD_KEY, activeAccountId);
