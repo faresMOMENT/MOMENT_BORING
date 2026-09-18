@@ -1459,10 +1459,9 @@
     const archiveStorageKey = "moment-lab-custody-archive-v1";
     const cleanWorkspaceFlag = "moment-lab-clean-workspace-v1";
     const storageBackupKey = "moment-lab-custody-v1-before-last-save";
+    // Never clear an existing lab workspace during startup. Older versions used
+    // this flag to reset the tracker once, which could erase restored/cloud data.
     if (!localStorage.getItem(cleanWorkspaceFlag)) {
-      const previousLabData = localStorage.getItem(storageKey);
-      if (previousLabData) localStorage.setItem(archiveStorageKey, previousLabData);
-      localStorage.setItem(storageKey, JSON.stringify({ homes: [], upcomingProjects: [] }));
       localStorage.setItem(cleanWorkspaceFlag, new Date().toISOString());
     }
     const testOptions = [
@@ -1572,8 +1571,24 @@
           method: sample.type || "Sample",
           remarks: sample.notes || ""
         })));
-        const fields = { sourceProjectId: project.id, projectName: project.name || project.address || project.number || "", projectNumber: project.number || "", clientName: project.client || "", address: project.address || "", county: project.county || "Other County", dateSampling: projectBorings[0]?.info?.date || "", labCheckInDate: project.labCheckInDate, samples, updatedAt: project.updatedAt || new Date().toISOString() };
-        if (home) Object.assign(home, fields); else labData.homes.push({ id: project.id, ...fields, technician: "Fares Krichati", labManager: "Corey Mims", engineer: "Fahad Masud", projectStatus: "Received", completedAt: "", tests: {}, notes: "Synced from inventory" });
+        const fields = { sourceProjectId: project.id, projectName: project.name || project.address || project.number || "", projectNumber: project.number || "", clientName: project.client || "", address: project.address || "", county: project.county || "Other County", labCheckInDate: project.labCheckInDate };
+        if (home) {
+          // Custody remains the source for project identity, but the lab tracker
+          // owns sampling dates, worksheet rows, statuses, tests, and notes.
+          Object.assign(home, fields);
+          if (!home.dateSampling) home.dateSampling = projectBorings[0]?.info?.date || "";
+          if (!Array.isArray(home.samples)) home.samples = [];
+          const existingSampleKeys = new Set(home.samples.map(sample => String(sample.id || sample.sampleNumber || "")));
+          samples.forEach(sample => {
+            const key = String(sample.id || sample.sampleNumber || "");
+            if (key && !existingSampleKeys.has(key)) {
+              home.samples.push(sample);
+              existingSampleKeys.add(key);
+            }
+          });
+        } else {
+          labData.homes.push({ id: project.id, ...fields, dateSampling: projectBorings[0]?.info?.date || "", samples, updatedAt: project.updatedAt || new Date().toISOString(), technician: "Fares Krichati", labManager: "Corey Mims", engineer: "Fahad Masud", projectStatus: "Received", completedAt: "", tests: {}, notes: "Synced from inventory" });
+        }
       });
       localStorage.setItem(storageKey, JSON.stringify(labData));
       return labData;
@@ -1585,7 +1600,6 @@
         homes: Array.isArray(data?.homes)
           ? data.homes.map(home => {
             const normalized = { ...home, projectStatus: projectStatusValue(home.projectStatus), completedAt: typeof home.completedAt === "string" ? home.completedAt : "" };
-            updateProjectStatusFromTests(normalized);
             return normalized;
           })
           : [],
