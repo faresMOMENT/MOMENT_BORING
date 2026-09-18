@@ -1,5 +1,5 @@
 (()=>{
-  const boringKey="boringLogAppState",labKey="moment-lab-custody-v1";
+  const boringKey="boringLogAppState",labKey="moment-lab-custody-v1",mapKey="moment-project-maps-v1";
   const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||"")||fallback}catch{return fallback}};
   const safe=value=>String(value??"").replace(/[&<>'"]/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[char]);
   const boring=read(boringKey,{projects:[],borings:[],projectFiles:[]});
@@ -8,6 +8,7 @@
   const borings=Array.isArray(boring.borings)?boring.borings:[];
   const files=Array.isArray(boring.projectFiles)?boring.projectFiles:[];
   const homes=Array.isArray(lab.homes)?lab.homes:[];
+  const maps=read(mapKey,[]);const savedMaps=Array.isArray(maps)?maps:[];
   homes.forEach(home=>{
     const linked=projects.some(project=>home.sourceProjectId===project.id||home.id===project.id||(project.number&&home.projectNumber===project.number));
     if(!linked)projects.push({id:home.sourceProjectId||home.id,number:home.projectNumber,name:home.projectName,address:home.address,client:home.clientName,labHomeId:home.id});
@@ -17,7 +18,8 @@
   const title=project=>project.name||project.address||`Project ${project.number||""}`.trim();
   function documentsFor(project){
     const docs=[];
-    borings.filter(item=>item.projectId===project.id).forEach((item,index)=>docs.push({type:"boring",icon:"BL",name:`Boring Log · ${item.id||index+1}`,detail:item.info?.location||project.address||"Field boring record",generated:true,href:`index.html?project=${encodeURIComponent(project.id)}&boring=${encodeURIComponent(item.id)}&download=boring-simple`,openHref:`index.html?project=${encodeURIComponent(project.id)}&boring=${encodeURIComponent(item.id)}`}));
+    savedMaps.filter(map=>map.projectId===project.id).forEach((map,index)=>docs.push({type:"map",icon:"MP",name:map.name||`Project Map ${index+1}`,detail:[map.projectNumber,map.updatedAt?`Updated ${new Date(map.updatedAt).toLocaleDateString()}`:""].filter(Boolean).join(" · ")||"Saved project map",href:map.preview||`Custom Plan Builder 3 - Copy.html?map=${encodeURIComponent(map.id)}`,openHref:`Custom Plan Builder 3 - Copy.html?map=${encodeURIComponent(map.id)}`,download:`${map.projectNumber||"project"}-${map.name||"map"}.jpg`}));
+    borings.filter(item=>item.projectId===project.id).forEach((item,index)=>docs.push({type:"boring",icon:"BL",name:`Boring Log · B-${index+1}`,detail:item.info?.location||project.address||"Field boring record",generated:true,href:`index.html?project=${encodeURIComponent(project.id)}&boring=${encodeURIComponent(item.id)}&download=boring-simple`,openHref:`index.html?project=${encodeURIComponent(project.id)}&boring=${encodeURIComponent(item.id)}`}));
     const home=labHome(project);
     if(home){
       docs.push({type:"lab",icon:"CC",name:"Chain of Custody",detail:"Lab sample custody record",generated:true,href:`lab-work.html?project=${encodeURIComponent(home.id)}&download=custody`,openHref:`lab-work.html?project=${encodeURIComponent(home.id)}`});

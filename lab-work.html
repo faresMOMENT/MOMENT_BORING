@@ -2164,11 +2164,19 @@
                 `).join("")}
               </div>
             </div>
-            <button class="small-btn" type="button" data-toggle-upcoming="${project.id}" aria-expanded="${isExpanded ? "true" : "false"}">${isExpanded ? "Close" : "Open"}</button>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
+              ${!project.boringMap ? `<a class="small-btn" style="display:inline-flex;align-items:center;text-decoration:none" href="Custom Plan Builder 3 - Copy.html?project=${encodeURIComponent(project.sourceProjectId || project.id)}&template=boring">Boring Map</a>` : ""}
+              ${!project.locationMap ? `<a class="small-btn" style="display:inline-flex;align-items:center;text-decoration:none" href="Custom Plan Builder 3 - Copy.html?project=${encodeURIComponent(project.sourceProjectId || project.id)}&template=location">Location Map</a>` : ""}
+              <button class="small-btn" type="button" data-toggle-upcoming="${project.id}" aria-expanded="${isExpanded ? "true" : "false"}">${isExpanded ? "Close" : "Open"}</button>
+            </div>
           </div>
           ${isExpanded ? `
             <div class="upcoming-body">
               <div class="form-grid">
+                <label class="span-3">Paste project from HubSpot
+                  <textarea data-upcoming-paste="${project.id}" placeholder="Paste Project No, Project Name, Address, Client, and Contact information here."></textarea>
+                </label>
+                <button class="small-btn span-3" type="button" data-upcoming-autofill="${project.id}">Auto Fill Project</button>
                 <label>Project Address
                   <input data-upcoming-field="address" data-upcoming-id="${project.id}" value="${escapeHtml(project.address)}" placeholder="Project address">
                 </label>
@@ -2188,6 +2196,8 @@
                 </label>
               </div>
               <div class="upcoming-actions">
+                ${!project.boringMap ? `<a class="small-btn" style="display:inline-flex;align-items:center;text-decoration:none" href="Custom Plan Builder 3 - Copy.html?project=${encodeURIComponent(project.sourceProjectId || project.id)}&template=boring">Create Boring Map</a>` : ""}
+                ${!project.locationMap ? `<a class="small-btn" style="display:inline-flex;align-items:center;text-decoration:none" href="Custom Plan Builder 3 - Copy.html?project=${encodeURIComponent(project.sourceProjectId || project.id)}&template=location">Create Location Map</a>` : ""}
                 <button class="small-btn" type="button" data-promote-upcoming="${project.id}">Add to Tracker</button>
                 <button class="danger-btn" type="button" data-delete-upcoming="${project.id}">Delete</button>
               </div>
@@ -2384,7 +2394,7 @@
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Item</th><th>Done</th></tr>
+                <tr><th>Item</th><th>Done</th><th>Action</th></tr>
               </thead>
               <tbody>
                 ${documentOptions.map(([key, label]) => `
@@ -2396,6 +2406,7 @@
                         <span>${documents[key] ? "Complete" : "Not complete"}</span>
                       </label>
                     </td>
+                    <td>${!documents[key] && (key === "boringMap" || key === "locationMap") ? `<a class="small-btn" style="display:inline-flex;align-items:center;text-decoration:none" href="Custom Plan Builder 3 - Copy.html?project=${encodeURIComponent(home.sourceProjectId || home.id)}&template=${key === "boringMap" ? "boring" : "location"}">Create ${escapeHtml(label)}</a>` : documents[key] ? `<span class="status-pill status-completed">Complete</span>` : "—"}</td>
                   </tr>
                 `).join("")}
               </tbody>
@@ -3602,6 +3613,7 @@
     function renderHome(home) {
       const completion = completionForHome(home);
       const documentCompletion = documentCompletionForHome(home);
+      const projectDocuments = ensureDocumentChecklist(home);
       const dueStatus = reportDueStatus(home, completion);
       const title = home.address || "Untitled home";
       const isExpanded = state.expandedHomes.has(home.id);
@@ -3615,6 +3627,7 @@
         ? `<button class="small-btn" type="button" data-restore-home="${home.id}">Restore</button>`
         : `<button class="small-btn" type="button" data-complete-home="${home.id}">Complete</button>`;
       const deleteAction = `<button class="small-btn danger-soft" type="button" data-delete-home="${home.id}">Delete</button>`;
+      const mapActions = `${!projectDocuments.boringMap ? `<a class="small-btn" style="display:inline-flex;align-items:center;text-decoration:none" href="Custom Plan Builder 3 - Copy.html?project=${encodeURIComponent(home.sourceProjectId || home.id)}&template=boring">Boring Map</a>` : ""}${!projectDocuments.locationMap ? `<a class="small-btn" style="display:inline-flex;align-items:center;text-decoration:none" href="Custom Plan Builder 3 - Copy.html?project=${encodeURIComponent(home.sourceProjectId || home.id)}&template=location">Location Map</a>` : ""}`;
       return `
         <article class="home-card ${isExpanded ? "expanded" : ""}">
           <div class="home-header" data-home-row="${home.id}">
@@ -3632,7 +3645,8 @@
             <div class="row-cell"><span class="${daysClass}">${escapeHtml(daysDisplay)}</span></div>
             <div class="row-cell"><strong>${samples.length}</strong></div>
             <div class="row-cell"><strong>${bagCount}</strong></div>
-            <div class="row-cell">
+            <div class="row-cell" style="display:flex;gap:5px;flex-wrap:wrap">
+              ${mapActions}
               ${projectAction}
             </div>
           </div>
@@ -3652,6 +3666,7 @@
                   </div>
                   <div class="detail-actions">
                     <button class="btn" type="button" data-custody-pdf-home="${home.id}">Save Custody PDF</button>
+                    ${mapActions}
                   </div>
                 </div>
                 <div class="detail-stats">
@@ -3955,6 +3970,22 @@
         state.category = "Upcoming Projects";
         state.search = "";
         state.expandedUpcoming.add(project.id);
+        saveData();
+        render();
+        return;
+      }
+
+      const autoFillUpcoming = event.target.closest("[data-upcoming-autofill]");
+      if (autoFillUpcoming) {
+        const project = state.data.upcomingProjects.find(item => item.id === autoFillUpcoming.dataset.upcomingAutofill);
+        const text = document.querySelector(`[data-upcoming-paste="${autoFillUpcoming.dataset.upcomingAutofill}"]`)?.value || "";
+        if (!project || !text.trim()) return;
+        const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+        const valueFor = labels => { for (const line of lines) { const match = line.match(new RegExp(`^(?:${labels.join("|")})\\s*(?:[:#-]\\s*)?(.*)$`, "i")); if (match?.[1]) return match[1].trim(); } return ""; };
+        project.projectNumber = valueFor(["Project No\\.?", "Project Number", "Project #", "Job No\\.?", "Job Number"]) || project.projectNumber;
+        project.clientName = valueFor(["Client Name", "Client", "Contact Name", "Contact"]) || project.clientName;
+        project.address = valueFor(["Project Address", "Site Address", "Job Location", "Project Location", "Address"]) || project.address;
+        project.updatedAt = new Date().toISOString();
         saveData();
         render();
         return;

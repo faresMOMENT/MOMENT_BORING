@@ -42,7 +42,7 @@
     .app-tabs .project-chip { flex: 0 0 auto; white-space: nowrap; }
     .app-tabs .user-chip { flex: 0 0 auto; white-space: nowrap; }
     #topbar { display: none !important; }
-    .project-scheduler { display:none !important; }
+    .project-scheduler { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:16px 0; padding:16px; border:1px solid var(--line); border-radius:12px; background:#f7fbf9; }
     .project-scheduler h3 { margin: 0 0 4px; font-size: 16px; }.project-scheduler p { margin: 0; color: var(--muted); font-size: 12px; }
     .schedule-dialog { width: min(720px, calc(100% - 24px)); max-height: calc(100vh - 24px); padding: 0; overflow: auto; border: 0; border-radius: 14px; box-shadow: 0 25px 70px rgba(20,30,24,.25); }
     .schedule-dialog::backdrop { background: rgba(20,30,24,.48); }.schedule-dialog-head { padding: 18px 20px; display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }.schedule-dialog-head h2 { margin: 0; }.schedule-close { border: 0; background: transparent; font-size: 24px; color: var(--muted); }
@@ -3789,6 +3789,7 @@ with check (id = 'account-' || auth.uid()::text);`;
           </span>
           <span class="badge">${project.id === activeProjectId ? "Active" : esc(project.source || "Open")}</span>
           <button class="secondary compact" type="button" data-open-project="${project.id}">Open</button>
+          <button class="secondary compact" type="button" data-schedule-project="${project.id}">Schedule</button>
           <button class="danger compact" type="button" data-delete-project="${project.id}">Delete</button>
         </div>
       `).join("") : projects.length
@@ -5388,6 +5389,12 @@ with check (id = 'account-' || auth.uid()::text);`;
     });
 
     document.querySelector("#projectList").addEventListener("click", event => {
+      const scheduleButton = event.target.closest("[data-schedule-project]");
+      if (scheduleButton) {
+        selectProject(scheduleButton.dataset.scheduleProject);
+        document.querySelector("#openProjectScheduler").click();
+        return;
+      }
       const deleteButton = event.target.closest("[data-delete-project]");
       if (deleteButton) {
         const project = projects.find(item => item.id === deleteButton.dataset.deleteProject);

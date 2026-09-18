@@ -258,6 +258,8 @@
       </header>
       <div class="import-body">
         <div class="import-status" id="importStatus">Reading PDF...</div>
+        <label class="field full">Paste project from HubSpot<textarea id="custodyProjectPaste" placeholder="Paste Project No, Project Name, Address, Client, and Contact information here."></textarea></label>
+        <button class="btn secondary" id="custodyAutoFill" type="button">Auto Fill Project</button>
         <section class="import-grid">
           <label class="field">Project name<input name="projectName" placeholder="Project name"></label>
           <label class="field">Project number<input name="projectNumber" placeholder="Project number"></label>
@@ -795,6 +797,13 @@
       state.importMetadata = parsed;
       renderImportSamples();
     }
+
+    document.getElementById("custodyAutoFill").addEventListener("click", () => {
+      const parsed = parseCustodyText(document.getElementById("custodyProjectPaste").value);
+      parsed.samples = state.importSamples.length ? state.importSamples : [blankImportSample()];
+      fillImportForm(parsed);
+      setImportStatus("Project details filled from the pasted HubSpot text. Review them before saving.");
+    });
 
     function samplesFor(project) { return Array.isArray(project.samples) ? project.samples : []; }
     function isBag(sample) { return String(sample?.method || "").trim().toLowerCase() === "bag"; }

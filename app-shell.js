@@ -10,7 +10,9 @@
   const item=(href,label,icon)=>`<a class="menu-item" href="${href}"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">${icons[icon]}</svg><span>${label}</span></a>`;
   const nav=document.querySelector('nav.app-tabs'); if(!nav){clearTimeout(loadingTimer);document.body.classList.remove('moment-loading-visible');document.body.classList.add('moment-page-ready');return;}
   nav.innerHTML=`<a class="menu-brand" href="dashboard.html"><span class="menu-brand-mark">M</span><span class="menu-brand-copy"><strong>Moment Engineering</strong><small>Field workspace</small></span></a><section class="menu-section"><h2 class="menu-heading">My Day</h2>${item('clock-in-out.html','Clock In/Out','clock')}${item('schedule.html','Schedule','calendar')}${item('my-hours.html','My Hours','hours')}${item('job-calendar.html','Calendar','calendar')}</section><section class="menu-section"><h2 class="menu-heading">Projects</h2>${item('dashboard.html','Dashboard','dashboard')}${item('lab-work.html','Lab Pipeline','pipeline')}${item('lab-manual.html','Lab Manual','manual')}${item('correspondence.html','Correspondence','mail')}${item('documents.html','Documents','documents')}${item('index.html','Boring Logs','log')}${item('lab-inventory.html','Custody','custody')}${item('contacts.html','Contacts','contacts')}</section><section class="menu-section menu-account">${item('admin.html','Admin','contacts')}${item('me.html','Me','me')}</section><section class="menu-section menu-reports">${item('reports.html','Reports','reports')}</section><div class="menu-footer"><strong id="accessProfileName">Fares</strong><span id="accessProfileRole">Administrator</span><a class="switch-profile" href="worker-login.html">Switch profile</a></div><div class="menu-context"><div class="project-chip" id="activeProjectChip">No active project</div><div class="user-chip" id="userChip"><button id="signedInUser" type="button" title="Open settings"></button><button class="text-button" type="button" id="logoutButton">Logout</button></div></div>`;
-  const page=(location.pathname.split('/').pop()||'index.html').toLowerCase();
+  const boringLogsLink=nav.querySelector('a[href="index.html"]');
+  if(boringLogsLink)boringLogsLink.insertAdjacentHTML('afterend',item('Custom Plan Builder 3 - Copy.html','Maps','log'));
+  const page=decodeURIComponent(location.pathname.split('/').pop()||'index.html').toLowerCase();
   const schedulerLabel=nav.querySelector('a[href="schedule.html"] span');
   if(schedulerLabel)schedulerLabel.textContent='Scheduler';
   ['clock-in-out.html','my-hours.html','correspondence.html'].forEach(href=>nav.querySelector(`a[href="${href}"]`)?.remove());
@@ -21,7 +23,7 @@
   let profile={id:'owner',name:'Fares',role:'admin',permissions:['*'],active:true};
   if(savedSession?.id&&savedSession.id!=='owner')profile=(accessStore.workers||[]).find(worker=>worker.id===savedSession.id)||null;
   if(!profile||profile.active===false){if(page!=='worker-login.html')location.replace('worker-login.html');return;}
-  const permitted=href=>profile.role==='admin'||profile.permissions?.includes('*')||profile.permissions?.includes(href);
+  const permitted=href=>profile.role==='admin'||profile.permissions?.includes('*')||profile.permissions?.some(permission=>String(permission).toLowerCase()===String(href).toLowerCase());
   nav.querySelectorAll('.menu-item').forEach(link=>{const href=link.getAttribute('href').toLowerCase();link.classList.toggle('active',href===page);link.setAttribute('data-page-link','');if(!permitted(href))link.remove();});
   if(profile.role!=='admin')nav.querySelector('a[href="admin.html"]')?.remove();
   document.querySelector('#accessProfileName').textContent=profile.name||'Worker';document.querySelector('#accessProfileRole').textContent=profile.role==='admin'?'Administrator':'Worker profile';

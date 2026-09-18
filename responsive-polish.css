@@ -24,7 +24,7 @@ body :is(button, input, select) { max-width: 100%; }
 
 /* Boring Logs: keep the two-column home screen balanced at wide, short ratios. */
 .home-grid,.home-panel { min-width:0; }
-.project-row { grid-template-columns:minmax(0,1fr) auto auto auto; }
+.project-row { grid-template-columns:minmax(0,1fr) auto auto auto auto; }
 .project-row>span:first-child { min-width:0; }
 .home-grid .tools-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
 .home-grid .tool-card { grid-template-columns:38px minmax(0,1fr);min-width:0;min-height:72px; }
