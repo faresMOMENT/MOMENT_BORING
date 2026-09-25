@@ -1067,6 +1067,14 @@
       gap: 8px;
     }
 
+    .custody-dropdown { border: 1px solid var(--line); border-radius: 11px; background: #fbfcfb; overflow: hidden; }
+    .custody-dropdown > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 15px; cursor: pointer; color: #34413c; font-size: 13px; font-weight: 800; list-style: none; }
+    .custody-dropdown > summary::-webkit-details-marker { display: none; }
+    .custody-dropdown > summary::after { content: "Open"; color: var(--green); font-size: 11px; font-weight: 700; }
+    .custody-dropdown[open] > summary { border-bottom: 1px solid var(--line); background: #f5f8f6; }
+    .custody-dropdown[open] > summary::after { content: "Close"; }
+    .custody-dropdown-body { padding: 15px; }
+
     .sample-entry {
       display: grid;
       grid-template-columns: repeat(6, minmax(130px, 1fr));
@@ -1528,6 +1536,7 @@
       category: "Home",
       projectStatusFilter: "all",
       expandedHomes: new Set(),
+      expandedCustody: new Set(),
       expandedMoistureTables: new Set(),
       expandedSieveTables: new Set(),
       expandedUpcoming: new Set(),
@@ -1537,9 +1546,43 @@
     function loadData() {
       const saved = localStorage.getItem(storageKey);
       if (saved) {
-        try { return normalizeData(syncArrivedInventoryProjects(JSON.parse(saved))); } catch (error) {}
+        try {
+          const current = JSON.parse(saved);
+          const backup = JSON.parse(localStorage.getItem(storageBackupKey) || "null");
+          return normalizeData(syncArrivedInventoryProjects(mergeRecoveredLabData(backup, current)));
+        } catch (error) {}
       }
       return normalizeData(syncArrivedInventoryProjects({ homes: [] }));
+    }
+
+    // Recovery copies may contain worksheet/material fields omitted by a stale
+    // cloud snapshot. Merge them underneath current data so nothing entered by
+    // the user disappears, while current values still win on conflicts.
+    function mergeRecoveredLabData(older, newer) {
+      if (!older || typeof older !== "object") return newer;
+      if (!newer || typeof newer !== "object") return older;
+      if (Array.isArray(older) || Array.isArray(newer)) {
+        if (!Array.isArray(older) || !Array.isArray(newer)) return newer;
+        const merged = older.map(item => item && typeof item === "object" ? { ...item } : item);
+        newer.forEach((item, index) => {
+          if (!item || typeof item !== "object") { if (!merged.includes(item)) merged.push(item); return; }
+          const identity = item.id || item.sourceProjectId || item.projectNumber || item.sampleNumber;
+          const match = identity
+            ? merged.findIndex(candidate => candidate && typeof candidate === "object" && (candidate.id || candidate.sourceProjectId || candidate.projectNumber || candidate.sampleNumber) === identity)
+            : index < merged.length ? index : -1;
+          if (match >= 0) merged[match] = mergeRecoveredLabData(merged[match], item);
+          else merged.push(item);
+        });
+        return merged;
+      }
+      const merged = { ...older };
+      Object.keys(newer).forEach(key => {
+        const value = newer[key];
+        merged[key] = value && typeof value === "object" && merged[key] && typeof merged[key] === "object"
+          ? mergeRecoveredLabData(merged[key], value)
+          : value;
+      });
+      return merged;
     }
 
     function syncArrivedInventoryProjects(labData) {
@@ -1827,13 +1870,13 @@
 
     function renderCustodyDetails(home) {
       return `
-        <section>
-          <div class="worksheet-header">
-            <h4 class="section-label">Custody Fill Out</h4>
-            <div class="worksheet-actions">
-              <button class="small-btn" type="button" data-custody-pdf-home="${home.id}">Save Custody PDF</button>
+        <details class="custody-dropdown" data-custody-dropdown="${home.id}" ${state.expandedCustody.has(home.id) ? "open" : ""}>
+          <summary>Custody Fill Out</summary>
+          <div class="custody-dropdown-body">
+            <div class="worksheet-header">
+              <span></span>
+              <div class="worksheet-actions"><button class="small-btn" type="button" data-custody-pdf-home="${home.id}">Save Custody PDF</button></div>
             </div>
-          </div>
           <div class="form-grid">
             ${custodyField(home, "clientName", "Client Name")}
             ${custodyField(home, "projectNumber", "Project Number")}
@@ -1849,7 +1892,13 @@
             ${custodyField(home, "engineer", "Engineer")}
             ${custodyField(home, "notes", "Comment / Notes", "textarea", "span-3")}
           </div>
-        </section>
+          </div>
+        </details>
+      `;
+    }
+
+    function renderCustodySetup(home) {
+      return `
         <section>
           <h4 class="section-label">Requested Tests</h4>
           <div class="custody-tests">
@@ -3641,7 +3690,7 @@
         ? `<button class="small-btn" type="button" data-restore-home="${home.id}">Restore</button>`
         : `<button class="small-btn" type="button" data-complete-home="${home.id}">Complete</button>`;
       const deleteAction = `<button class="small-btn danger-soft" type="button" data-delete-home="${home.id}">Delete</button>`;
-      const mapActions = `${!projectDocuments.boringMap ? `<a class="small-btn" style="display:inline-flex;align-items:center;text-decoration:none" href="Custom Plan Builder 3 - Copy.html?project=${encodeURIComponent(home.sourceProjectId || home.id)}&template=boring">Boring Map</a>` : ""}${!projectDocuments.locationMap ? `<a class="small-btn" style="display:inline-flex;align-items:center;text-decoration:none" href="Custom Plan Builder 3 - Copy.html?project=${encodeURIComponent(home.sourceProjectId || home.id)}&template=location">Location Map</a>` : ""}`;
+      const mapActions = "";
       return `
         <article class="home-card ${isExpanded ? "expanded" : ""}">
           <div class="home-header" data-home-row="${home.id}">
@@ -3696,6 +3745,7 @@
                 </div>
               </div>
               ${renderCustodyDetails(home)}
+              ${renderCustodySetup(home)}
               ${renderSamples(home)}
               ${renderDocumentChecklist(home)}
               ${renderRequiredTests(home)}
@@ -3947,6 +3997,13 @@
       saveData();
       render();
     });
+
+    document.addEventListener("toggle", event => {
+      const details = event.target.closest?.("[data-custody-dropdown]");
+      if (!details) return;
+      if (details.open) state.expandedCustody.add(details.dataset.custodyDropdown);
+      else state.expandedCustody.delete(details.dataset.custodyDropdown);
+    }, true);
 
     document.addEventListener("click", event => {
       const upcomingProjectLink = event.target.closest("[data-open-upcoming-project]");
@@ -4255,6 +4312,7 @@
       if (!toggleHomeId) return;
       if (state.expandedHomes.has(toggleHomeId)) {
         state.expandedHomes.delete(toggleHomeId);
+        state.expandedCustody.delete(toggleHomeId);
       } else {
         state.expandedHomes.add(toggleHomeId);
       }

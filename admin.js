@@ -1,5 +1,5 @@
 (() => {
-  const storeKey="momentAccessControlV1",pages=[["dashboard.html","Dashboard"],["clock-in-out.html","Clock In/Out"],["schedule.html","Schedule"],["my-hours.html","My Hours"],["job-calendar.html","Calendar"],["lab-work.html","Lab Pipeline"],["lab-manual.html","Lab Manual"],["correspondence.html","Correspondence"],["documents.html","Documents"],["index.html","Boring Logs"],["Custom Plan Builder 3 - Copy.html","Maps"],["lab-inventory.html","Custody"],["payroll.html","Payroll"],["contacts.html","Contacts"],["me.html","Me"],["reports.html","Reports"]],divisions=["Civil Engineering","Geotechnical"];
+  const storeKey="momentAccessControlV1",pages=[["dashboard.html","Dashboard"],["clock-in-out.html","Clock In/Out"],["schedule.html","Schedule"],["my-hours.html","My Hours"],["job-calendar.html","Calendar"],["lab-work.html","Lab Pipeline"],["lab-manual.html","Lab Manual"],["correspondence.html","Correspondence"],["documents.html","Documents"],["index.html","Boring Logs"],["Custom Plan Builder 3 - Copy.html","Maps"],["lab-inventory.html","Custody"],["payroll.html","Payroll"],["contacts.html","Contacts"],["me.html","Me"],["proposals.html","Proposals"]],divisions=["Civil Engineering","Geotechnical"];
   const read=()=>{try{const value=JSON.parse(localStorage.getItem(storeKey)||"{}");return{ownerHash:value.ownerHash||"",ownerCode:value.ownerCode||"",workers:Array.isArray(value.workers)?value.workers:[]}}catch{return{ownerHash:"",ownerCode:"",workers:[]}}};
   let data=read();
   const save=()=>localStorage.setItem(storeKey,JSON.stringify(data));
@@ -7,7 +7,7 @@
   const safe=value=>String(value??"").replace(/[&<>'"]/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[char]);
   const permissionOptions=(selected=[],name="permission")=>pages.map(([href,label])=>`<label class="permission-option"><input type="checkbox" name="${name}" value="${href}" ${selected.includes(href)?"checked":""}>${label}</label>`).join("");
   const pills=(values,all,name,type)=>all.map(value=>`<label class="access-pill"><input type="checkbox" name="${name}" value="${value}" ${values.includes(value)?"checked":""}>${type==="page"?(pages.find(page=>page[0]===value)?.[1]||value):value}</label>`).join("");
-  function normalize(worker){worker.role||="employee";worker.title||="Worker";worker.email||="";worker.phone||="";worker.color||="#2f6f58";worker.divisions=Array.isArray(worker.divisions)?worker.divisions:["Geotechnical"];worker.permissions=Array.isArray(worker.permissions)?worker.permissions:[];return worker}
+  function normalize(worker){worker.role||="employee";worker.title||="Worker";worker.email||="";worker.phone||="";worker.color||="#2f6f58";worker.divisions=Array.isArray(worker.divisions)?worker.divisions:["Geotechnical"];worker.permissions=Array.isArray(worker.permissions)?worker.permissions:[];worker.permissions=worker.permissions.map(value=>value==="reports.html"?"proposals.html":value);return worker}
   function render(){
     data.workers.forEach(normalize);
     document.querySelector("#workerCount").textContent=`${data.workers.length} team member${data.workers.length===1?"":"s"}`;

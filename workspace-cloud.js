@@ -8,6 +8,7 @@
   const DEVICE_ACCOUNT_KEY = "momentWorkspaceAccountV2";
   const RELOAD_KEY = "momentWorkspaceReloadV2";
   const BOOT_KEY = "momentWorkspaceBootV2";
+  const KEY_TIMES_KEY = "momentWorkspaceKeyTimesV3";
   const DATA_KEYS = [
     "boringLogAppState",
     "moment-lab-custody-v1",
@@ -15,6 +16,7 @@
     "moment-job-calendar-v1",
     "moment-scheduling-contacts-v1",
     "moment-scheduling-team-v1",
+    "moment-proposals-v1",
     "momentAccessControlV1"
   ];
   let activeAccountId = "";
@@ -37,28 +39,83 @@
     return id ? `account-${id}` : "";
   };
   const snapshot = () => ({
-    version: 2,
+    version: 3,
     accountId: activeAccountId || accountIdFor(localStorage.getItem(TOKEN_KEY) || ""),
+    keyUpdatedAt: readKeyTimes(),
     storage: Object.fromEntries(DATA_KEYS.flatMap(key => {
       const value = localStorage.getItem(key);
       return value === null ? [] : [[key, value]];
     }))
   });
+  const readKeyTimes = () => {
+    try { return JSON.parse(localStorage.getItem(KEY_TIMES_KEY) || "{}"); } catch { return {}; }
+  };
+  const markKeyChanged = key => {
+    const times = readKeyTimes();
+    times[key] = new Date().toISOString();
+    nativeSetItem.call(localStorage, KEY_TIMES_KEY, JSON.stringify(times));
+  };
   const normalizeCloudState = state => {
-    if (state?.version === 2 && state.storage) return state;
+    if (state?.version >= 2 && state.storage) return state;
     if (state && (Array.isArray(state.projects) || Array.isArray(state.borings))) {
       return { version: 2, storage: { boringLogAppState: JSON.stringify(state) } };
     }
     return { version: 2, storage: {} };
   };
+  const mergeArrayById = (older = [], newer = []) => {
+    if (!Array.isArray(older) || !Array.isArray(newer)) return newer;
+    const result = older.map(item => item && typeof item === "object" ? { ...item } : item);
+    newer.forEach((item, index) => {
+      if (!item || typeof item !== "object") { if (!result.includes(item)) result.push(item); return; }
+      const identity = item.id || item.sourceProjectId || item.projectNumber || item.sampleNumber;
+      const match = identity
+        ? result.findIndex(candidate => candidate && typeof candidate === "object" && (candidate.id || candidate.sourceProjectId || candidate.projectNumber || candidate.sampleNumber) === identity)
+        : index < result.length ? index : -1;
+      if (match >= 0) result[match] = mergeObjects(result[match], item);
+      else result.push(item);
+    });
+    return result;
+  };
+  const mergeObjects = (older, newer) => {
+    if (!older || typeof older !== "object") return newer;
+    if (!newer || typeof newer !== "object") return newer === undefined ? older : newer;
+    if (Array.isArray(older) || Array.isArray(newer)) return mergeArrayById(older, newer);
+    const result = { ...older };
+    Object.keys(newer).forEach(key => {
+      const next = newer[key];
+      result[key] = next && typeof next === "object" && result[key] && typeof result[key] === "object"
+        ? mergeObjects(result[key], next)
+        : next;
+    });
+    return result;
+  };
+  const mergeStoredJson = (localValue, cloudValue, preferLocal) => {
+    if (localValue == null) return cloudValue;
+    if (cloudValue == null) return localValue;
+    try {
+      const local = JSON.parse(localValue), cloud = JSON.parse(cloudValue);
+      return JSON.stringify(preferLocal ? mergeObjects(cloud, local) : mergeObjects(local, cloud));
+    } catch { return preferLocal ? localValue : cloudValue; }
+  };
   const applySnapshot = state => {
     const normalized = normalizeCloudState(state);
+    const localTimes = readKeyTimes();
+    const cloudTimes = normalized.keyUpdatedAt || {};
+    const mergedTimes = { ...cloudTimes, ...localTimes };
     applying = true;
     try {
       DATA_KEYS.forEach(key => {
-        if (Object.prototype.hasOwnProperty.call(normalized.storage, key)) nativeSetItem.call(localStorage, key, normalized.storage[key]);
-        else nativeRemoveItem.call(localStorage, key);
+        const hasCloudValue = Object.prototype.hasOwnProperty.call(normalized.storage, key);
+        const localValue = localStorage.getItem(key);
+        if (!hasCloudValue) return; // A partial/older cloud snapshot must never erase device work.
+        const preferLocal = Boolean(localTimes[key] && (!cloudTimes[key] || localTimes[key] > cloudTimes[key]));
+        const value = key === "moment-lab-custody-v1" || key === "boringLogAppState"
+          ? mergeStoredJson(localValue, normalized.storage[key], preferLocal)
+          : preferLocal && localValue !== null ? localValue : normalized.storage[key];
+        nativeSetItem.call(localStorage, key, value);
+        mergedTimes[key] = preferLocal ? localTimes[key] : (cloudTimes[key] || localTimes[key] || new Date().toISOString());
       });
+      nativeSetItem.call(localStorage, KEY_TIMES_KEY, JSON.stringify(mergedTimes));
     } finally { applying = false; }
   };
   const request = async (path, options = {}, token = localStorage.getItem(TOKEN_KEY) || "") => {
@@ -98,11 +155,17 @@
   };
   Storage.prototype.setItem = function(key, value) {
     nativeSetItem.call(this, key, value);
-    if (this === localStorage && DATA_KEYS.includes(String(key)) && !applying && activeAccountId) scheduleSave();
+    if (this === localStorage && DATA_KEYS.includes(String(key)) && !applying) {
+      markKeyChanged(String(key));
+      if (activeAccountId) scheduleSave();
+    }
   };
   Storage.prototype.removeItem = function(key) {
     nativeRemoveItem.call(this, key);
-    if (this === localStorage && DATA_KEYS.includes(String(key)) && !applying && activeAccountId) scheduleSave();
+    if (this === localStorage && DATA_KEYS.includes(String(key)) && !applying) {
+      markKeyChanged(String(key));
+      if (activeAccountId) scheduleSave();
+    }
   };
 
   async function activate(token = localStorage.getItem(TOKEN_KEY) || "") {
@@ -118,7 +181,9 @@
       const before = JSON.stringify(snapshot().storage);
       applySnapshot(rows[0].state);
       nativeSetItem.call(localStorage, DEVICE_ACCOUNT_KEY, accountId);
-      return { loaded: true, changed: before !== JSON.stringify(snapshot().storage) };
+      const changed = before !== JSON.stringify(snapshot().storage);
+      if (changed || Number(rows[0].state.version || 0) < 3) await save();
+      return { loaded: true, changed };
     }
     nativeSetItem.call(localStorage, DEVICE_ACCOUNT_KEY, accountId);
     await save();

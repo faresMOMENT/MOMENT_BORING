@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Moment Engineering Proposals</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <link rel="stylesheet" href="proposals.css">
+  <script defer src="app-shell.js"></script>
+  <script defer src="proposals.js"></script>
+</head>
+<body data-page="Proposals" data-group="Projects">
+  <nav class="app-tabs" aria-label="Main pages"></nav>
+  <main class="proposal-workspace">
+    <header class="page-head">
+      <div><p class="eyebrow">Business development</p><h1>Proposal Builder</h1><p>Create a proposal for work that has not been scheduled or sampled yet.</p></div>
+      <div class="head-actions"><span class="save-state" id="saveState">Ready</span><button class="primary" id="downloadPdf" type="button">Download PDF</button></div>
+    </header>
+    <section class="eligibility-note"><strong>Eligible projects only</strong><span>The list excludes projects already on the calendar or containing sample records.</span></section>
+    <div class="builder-layout">
+      <section class="editor-panel" aria-label="Proposal editor">
+        <label class="field full"><span>Project</span><select id="projectSelect"></select><small id="projectHelp"></small></label>
+        <div class="form-grid">
+          <label class="field"><span>Client</span><input id="client" autocomplete="organization"></label>
+          <label class="field"><span>Job no.</span><input id="jobNumber"></label>
+          <label class="field full"><span>Project address</span><input id="address" autocomplete="street-address"></label>
+          <label class="field"><span>Proposal date</span><input id="proposalDate" type="date"></label>
+          <label class="field"><span>Prepared by</span><input id="preparedBy" value="Moment Engineering"></label>
+          <label class="field full"><span>Proposed work</span><textarea id="scope" rows="3"></textarea></label>
+        </div>
+        <div class="section-title"><div><span>Project images</span><small>Add or replace the three images shown in the proposal.</small></div></div>
+        <div class="image-uploads">
+          <div class="image-upload" data-image-slot="property"><div class="image-upload-preview"></div><strong>Property photo</strong><div><label class="upload-button">Choose image<input type="file" accept="image/*" data-image-input="property"></label><button type="button" data-remove-image="property">Remove</button></div></div>
+          <div class="image-upload" data-image-slot="hazard"><div class="image-upload-preview"></div><strong>Hazard map</strong><div><label class="upload-button">Choose image<input type="file" accept="image/*" data-image-input="hazard"></label><button type="button" data-remove-image="hazard">Remove</button></div></div>
+          <div class="image-upload" data-image-slot="sitePlan"><div class="image-upload-preview"></div><strong>Site plan</strong><div><label class="upload-button">Choose image<input type="file" accept="image/*" data-image-input="sitePlan"></label><button type="button" data-remove-image="sitePlan">Remove</button></div></div>
+        </div>
+        <div class="section-title"><div><span>Cost breakdown</span><small>Amounts update the preview instantly.</small></div><button class="text-button" id="addLine" type="button">+ Add service</button></div>
+        <div id="lineItems" class="line-items"></div>
+        <div class="form-grid compact-grid">
+          <label class="field"><span>Overhead &amp; admin (%)</span><input id="overhead" type="number" min="0" step="0.1" value="25"></label>
+          <label class="field"><span>Subconsultant markup (%)</span><input id="markup" type="number" min="0" step="0.1" value="15"></label>
+          <label class="field"><span>Retainer (%)</span><input id="retainer" type="number" min="0" max="100" step="1" value="50"></label>
+        </div>
+        <label class="field full"><span>Notes <small>(one note per line)</small></span><textarea id="notes" rows="8"></textarea></label>
+      </section>
+      <section class="preview-panel" aria-label="Live PDF preview">
+        <div class="preview-bar"><div><strong>Live preview</strong><span>Letter size · 1 page</span></div><button class="secondary" id="printProposal" type="button">Print / Save PDF</button></div>
+        <div class="paper-stage"><article class="proposal-paper" id="proposalPaper"></article></div>
+      </section>
+    </div>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

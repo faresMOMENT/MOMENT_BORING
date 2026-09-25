@@ -9,6 +9,7 @@
   <script defer src="app-shell.js"></script>
   <script defer src="scheduler.js"></script>
   <style>@media(min-width:1500px){.scheduler-head,.scheduler-layout,.recent-section{max-width:1680px}.scheduler-layout{grid-template-columns:minmax(390px,.7fr) minmax(650px,1.3fr)}}</style>
+  <style>.project-picker-actions{padding:12px 18px;border-bottom:1px solid #e2e7e2;background:#f8faf8}.project-picker-actions button{width:100%;min-height:40px;border:1px solid #bad0c5;border-radius:9px;background:#fff;color:#2f6f58;font:600 12px inherit;cursor:pointer}#manualProjectDialog{width:min(620px,calc(100% - 24px));padding:0;border:0;border-radius:16px;box-shadow:0 24px 70px rgba(20,35,27,.28)}#manualProjectDialog::backdrop{background:rgba(21,32,26,.48)}.dialog-head{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #e2e7e2}.dialog-head span{color:#2f7159;font-size:10px;letter-spacing:.1em;text-transform:uppercase}.dialog-head h2{margin:4px 0 0;font-size:21px}.dialog-head>button{border:0;background:transparent;color:#727d76;font-size:25px}.paste-project{grid-column:1/-1;padding:12px;border:1px solid #dce3dd;border-radius:10px;background:#f6f9f7}.paste-project textarea{min-height:105px;background:#fff}.paste-actions{display:flex;justify-content:flex-end;margin-top:8px}.paste-actions button,.dialog-actions button{min-height:40px;padding:8px 13px;border-radius:8px;font:600 12px inherit;cursor:pointer}.paste-actions button,.dialog-actions .cancel{border:1px solid #cdd8d1;background:#fff;color:#2f6f58}.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.dialog-actions .save-project{border:1px solid #2f6f58;background:#2f6f58;color:#fff}.dialog-error{min-height:18px;margin:8px 0 0;color:#a43b32;font-size:12px}@media(max-width:560px){.dialog-actions{align-items:stretch;flex-direction:column-reverse}.dialog-actions button{width:100%}}</style>
 </head>
 <body data-page="Scheduler" data-group="My Day">
   <nav class="app-tabs" aria-label="Main pages"></nav>
@@ -17,6 +18,7 @@
     <div class="scheduler-layout">
       <section class="project-picker">
         <div class="section-head"><div><h2>Projects</h2><p id="projectCount">0 available</p></div><input id="projectSearch" type="search" placeholder="Search projects"></div>
+        <div class="project-picker-actions"><button id="addManualProject" type="button">+ Add project manually</button></div>
         <div id="schedulerProjects" class="scheduler-projects"></div>
       </section>
       <section class="schedule-panel">
@@ -39,5 +41,19 @@
     </div>
     <section class="recent-section"><div class="section-head"><div><h2>Recently scheduled</h2><p>Upcoming project work</p></div></div><div id="recentSchedules" class="recent-schedules"></div></section>
   </main>
+  <dialog id="manualProjectDialog">
+    <div class="dialog-head"><div><span>New project</span><h2>Add project manually</h2></div><button id="closeManualProject" type="button" aria-label="Close">×</button></div>
+    <form id="manualProjectForm">
+      <div class="form-grid">
+        <div class="paste-project"><label>Paste project text<textarea id="schedulerProjectPaste" placeholder="Paste project info here, then click Auto Fill. Example labels: Project No, Project Name, Address, Client, Contact."></textarea></label><div class="paste-actions"><button id="autoFillSchedulerProject" type="button">Auto Fill</button></div></div>
+        <label>Project name<input name="name" placeholder="Project name"></label>
+        <label>Project number<input name="number" placeholder="Job number"></label>
+        <label class="wide">Project address<input name="address" placeholder="Street, city, state, ZIP"></label>
+        <label class="wide">Client / owner<input name="client" placeholder="Client or owner name"></label>
+      </div>
+      <p class="dialog-error" id="manualProjectError"></p>
+      <div class="dialog-actions"><button class="cancel" id="cancelManualProject" type="button">Cancel</button><button class="save-project" type="submit">Save &amp; select project</button></div>
+    </form>
+  </dialog>
 </body>
 </html>
