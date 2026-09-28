@@ -110,11 +110,9 @@
         const localValue = localStorage.getItem(key);
         if (!hasCloudValue) return; // A partial/older cloud snapshot must never erase device work.
         const preferLocal = Boolean(localTimes[key] && (!cloudTimes[key] || localTimes[key] > cloudTimes[key]));
-        // Boring logs are one authoritative document. Deep-merging their nested
-        // arrays can revive deleted logs/samples from another device.
-        const value = key === "moment-lab-custody-v1"
-          ? mergeStoredJson(localValue, normalized.storage[key], preferLocal)
-          : preferLocal && localValue !== null ? localValue : normalized.storage[key];
+        // Each workspace key is an authoritative document. Deep-merging nested
+        // arrays revives deleted records and repeatedly appends stale samples.
+        const value = preferLocal && localValue !== null ? localValue : normalized.storage[key];
         nativeSetItem.call(localStorage, key, value);
         mergedTimes[key] = preferLocal ? localTimes[key] : (cloudTimes[key] || localTimes[key] || new Date().toISOString());
       });

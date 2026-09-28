@@ -1548,41 +1548,12 @@
       if (saved) {
         try {
           const current = JSON.parse(saved);
-          const backup = JSON.parse(localStorage.getItem(storageBackupKey) || "null");
-          return normalizeData(syncArrivedInventoryProjects(mergeRecoveredLabData(backup, current)));
+          // Backups are for explicit recovery only. Automatically merging an
+          // old backup revives deleted projects and samples on every page load.
+          return normalizeData(syncArrivedInventoryProjects(current));
         } catch (error) {}
       }
       return normalizeData(syncArrivedInventoryProjects({ homes: [] }));
-    }
-
-    // Recovery copies may contain worksheet/material fields omitted by a stale
-    // cloud snapshot. Merge them underneath current data so nothing entered by
-    // the user disappears, while current values still win on conflicts.
-    function mergeRecoveredLabData(older, newer) {
-      if (!older || typeof older !== "object") return newer;
-      if (!newer || typeof newer !== "object") return older;
-      if (Array.isArray(older) || Array.isArray(newer)) {
-        if (!Array.isArray(older) || !Array.isArray(newer)) return newer;
-        const merged = older.map(item => item && typeof item === "object" ? { ...item } : item);
-        newer.forEach((item, index) => {
-          if (!item || typeof item !== "object") { if (!merged.includes(item)) merged.push(item); return; }
-          const identity = item.id || item.sourceProjectId || item.projectNumber || item.sampleNumber;
-          const match = identity
-            ? merged.findIndex(candidate => candidate && typeof candidate === "object" && (candidate.id || candidate.sourceProjectId || candidate.projectNumber || candidate.sampleNumber) === identity)
-            : index < merged.length ? index : -1;
-          if (match >= 0) merged[match] = mergeRecoveredLabData(merged[match], item);
-          else merged.push(item);
-        });
-        return merged;
-      }
-      const merged = { ...older };
-      Object.keys(newer).forEach(key => {
-        const value = newer[key];
-        merged[key] = value && typeof value === "object" && merged[key] && typeof merged[key] === "object"
-          ? mergeRecoveredLabData(merged[key], value)
-          : value;
-      });
-      return merged;
     }
 
     function syncArrivedInventoryProjects(labData) {
@@ -1621,14 +1592,19 @@
           Object.assign(home, fields);
           if (!home.dateSampling) home.dateSampling = projectBorings[0]?.info?.date || "";
           if (!Array.isArray(home.samples)) home.samples = [];
-          const existingSampleKeys = new Set(home.samples.map(sample => String(sample.id || sample.sampleNumber || "")));
-          samples.forEach(sample => {
-            const key = String(sample.id || sample.sampleNumber || "");
-            if (key && !existingSampleKeys.has(key)) {
-              home.samples.push(sample);
-              existingSampleKeys.add(key);
-            }
+          // Boring-log samples are authoritative for this linked project.
+          // Preserve manually entered lab samples, but replace older synced
+          // samples so stale cloud copies cannot accumulate on every load.
+          const manualSamples = home.samples.filter(sample => !sample.boringId && !sample.syncedFromBoring);
+          const seen = new Set();
+          const syncedSamples = samples.filter(sample => {
+            const key = String(sample.id || `${sample.boringId}|${sample.sampleNumber}|${sample.depth}|${sample.classification}`);
+            if (seen.has(key)) return false;
+            seen.add(key);
+            sample.syncedFromBoring = true;
+            return true;
           });
+          home.samples = [...manualSamples, ...syncedSamples];
         } else {
           labData.homes.push({ id: project.id, ...fields, dateSampling: projectBorings[0]?.info?.date || "", samples, updatedAt: project.updatedAt || new Date().toISOString(), technician: "Fares Krichati", labManager: "Corey Mims", engineer: "Fahad Masud", projectStatus: "Received", completedAt: "", tests: {}, notes: "Synced from inventory" });
         }
