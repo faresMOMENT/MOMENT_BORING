@@ -670,12 +670,14 @@
       function labeled(names, includeContinuation = false) {
         for (let index = 0; index < lines.length; index += 1) {
           for (const name of names) {
+            const exactLabel = new RegExp(`^${name}\\s*[:#-]?\\s*$`, "i").test(lines[index]);
             const match = lines[index].match(new RegExp(`(?:^|\\s)${name}\\s*[:#-]\\s*(.*)$`, "i"));
-            if (!match) continue;
-            let value = match[1].trim().replace(new RegExp(`\\s+(?:${labels})\\s*[:#-]?.*$`, "i"), "").trim();
+            if (!match && !exactLabel) continue;
+            let value = (match?.[1] || "").trim().replace(new RegExp(`\\s+(?:${labels})\\s*[:#-]?.*$`, "i"), "").trim();
             if (!value && lines[index + 1] && !new RegExp(`^(?:${labels})\\b`, "i").test(lines[index + 1])) value = lines[index + 1];
             if (includeContinuation && value) {
-              for (let next = index + 1; next < Math.min(index + 4, lines.length); next += 1) {
+              const continuationStart = value === lines[index + 1] ? index + 2 : index + 1;
+              for (let next = continuationStart; next < Math.min(index + 4, lines.length); next += 1) {
                 if (new RegExp(`^(?:${labels})\\b`, "i").test(lines[next]) || sectionHeading.test(lines[next])) break;
                 value += ` ${lines[next]}`;
               }
@@ -752,11 +754,23 @@
       });
 
       const address = labeled(["Project Address", "Site Address", "Address", "Location"]);
+      const joined = lines.join(" ").replace(/\s+/g, " ").trim();
+      const parenthesizedJob = joined.match(/\(([A-Z0-9]{3,}[A-Z0-9-]*-\d{2,})\)/i)?.[1] || "";
+      const withoutJob = joined.replace(/\([A-Z0-9]{3,}[A-Z0-9-]*-\d{2,}\)/ig, "").trim();
+      const dashedParts = withoutJob.split(/\s+(?:-|–|—|\|)\s+/).map(part => part.trim()).filter(Boolean);
+      const streetPattern = /\d{1,6}\s+.*?\b(?:st|street|ave|avenue|rd|road|dr|drive|way|blvd|boulevard|lane|ln|ct|court|place|pl|circle|cir|terrace|ter|trail|trl|pkwy|parkway|hwy|highway|via)\b/i;
+      const dashedAddress = dashedParts.find(part => streetPattern.test(part)) || "";
+      const dashedClient = dashedParts.find(part => part !== dashedAddress && !streetPattern.test(part)) || "";
+      const parsedAddress = address || dashedAddress;
+      const parsedClient = labeled(["Client Name", "Client"], true) || dashedClient;
+      const parsedNumber = labeled(["Project Number", "Project No", "Project #", "Job Number", "Job No"]) || parenthesizedJob
+        || (joined.match(/\b[A-Z0-9]{3,}[A-Z0-9-]*-\d{2,}\b/i)?.[0] || "");
+      const parsedName = labeled(["Project Name", "Project Title"]) || parsedClient || parsedAddress;
       return {
-        projectName: labeled(["Project Name", "Project Title"]) || address,
-        projectNumber: labeled(["Project Number", "Project No", "Project #", "Job Number", "Job No"]),
-        clientName: labeled(["Client Name", "Client"], true),
-        address,
+        projectName: parsedName,
+        projectNumber: parsedNumber,
+        clientName: parsedClient,
+        address: parsedAddress,
         county,
         dateSampling: normalizeDate(labeled(["Sampling Date", "Date Sampling"])),
         labCheckInDate: normalizeDate(labeled(["Date Received in Lab", "Received in Lab", "Lab Check-in Date", "Lab Received Date", "Date Received"])),

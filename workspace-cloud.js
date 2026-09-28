@@ -17,6 +17,7 @@
     "moment-scheduling-contacts-v1",
     "moment-scheduling-team-v1",
     "moment-proposals-v1",
+    "moment-project-maps-v1",
     "momentAccessControlV1"
   ];
   let activeAccountId = "";
@@ -109,7 +110,9 @@
         const localValue = localStorage.getItem(key);
         if (!hasCloudValue) return; // A partial/older cloud snapshot must never erase device work.
         const preferLocal = Boolean(localTimes[key] && (!cloudTimes[key] || localTimes[key] > cloudTimes[key]));
-        const value = key === "moment-lab-custody-v1" || key === "boringLogAppState"
+        // Boring logs are one authoritative document. Deep-merging their nested
+        // arrays can revive deleted logs/samples from another device.
+        const value = key === "moment-lab-custody-v1"
           ? mergeStoredJson(localValue, normalized.storage[key], preferLocal)
           : preferLocal && localValue !== null ? localValue : normalized.storage[key];
         nativeSetItem.call(localStorage, key, value);
@@ -141,6 +144,7 @@
     try {
       await request(`${TABLE}?on_conflict=id`, {
         method: "POST",
+        keepalive: true,
         headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify({ id, state: snapshot(), updated_at: new Date().toISOString(), updated_by: localStorage.getItem(USER_KEY) || "unknown" })
       }, token);
@@ -151,7 +155,7 @@
   };
   const scheduleSave = () => {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => save().catch(error => console.error("Workspace auto-sync failed.", error)), 700);
+    saveTimer = setTimeout(() => save().catch(error => console.error("Workspace auto-sync failed.", error)), 250);
   };
   Storage.prototype.setItem = function(key, value) {
     nativeSetItem.call(this, key, value);
@@ -195,13 +199,6 @@
     if (!token) return;
     const accountId = accountIdFor(token);
     try {
-      const recent = JSON.parse(sessionStorage.getItem(BOOT_KEY) || "null");
-      if (recent?.accountId === accountId && Date.now() - recent.loadedAt < 300000) {
-        activeAccountId = accountId;
-        return;
-      }
-    } catch {}
-    try {
       const result = await activate(token);
       sessionStorage.setItem(BOOT_KEY, JSON.stringify({ accountId, loadedAt: Date.now() }));
       const page = (location.pathname.split("/").pop() || "index.html").toLowerCase();
@@ -217,4 +214,7 @@
   }
 
   window.MomentWorkspaceCloud = { activate, boot, save, scheduleSave, snapshot, stateIdFor, normalizeCloudState };
+  window.addEventListener("pagehide", () => {
+    if (activeAccountId) save().catch(() => {});
+  });
 })();

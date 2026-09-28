@@ -222,6 +222,12 @@
       background: var(--panel);
     }
 
+    .back-button {
+      width: auto;
+      padding: 0 12px;
+      white-space: nowrap;
+    }
+
     .page {
       display: none;
     }
@@ -2127,7 +2133,7 @@
       .topbar .back-button {
         grid-column: 1;
         grid-row: 1;
-        width: 38px;
+        width: auto;
         height: 38px;
       }
 
@@ -2575,7 +2581,7 @@
   </style>
 </head>
 <body>
-  <link rel="stylesheet" href="app-shell.css"><script src="app-shell.js"></script>
+  <link rel="stylesheet" href="app-shell.css"><script src="workspace-cloud.js"></script><script src="app-shell.js"></script>
   <nav class="app-tabs" aria-label="Main pages">
     <img class="app-logo" src="moment-engineering-logo.png" alt="Moment Engineering">
     <a class="active" href="index.html">Boring Logs</a><a href="job-calendar.html">Calendar</a><a href="lab-inventory.html">Inventory</a><a href="lab-work.html">Lab Work</a><a href="lab-manual.html">Lab Manual</a><a href="contacts.html">Contacts</a><a href="me.html">Me</a>
@@ -2585,7 +2591,7 @@
   </nav>
   <main class="app">
     <header class="topbar home-mode" id="topbar">
-      <button class="icon-button back-button" type="button" title="Back" hidden>&lt;</button>
+      <button class="icon-button back-button" type="button" title="Back to projects" aria-label="Back to projects" hidden>&larr; Back</button>
       <div class="brand home-brand">
         <strong>MOMENT</strong>
         <span>Field Tools</span>
@@ -2769,6 +2775,7 @@
 
       <section class="page" id="workspacePage">
         <div class="boring-selector">
+          <button class="secondary" type="button" id="workspaceBackButton">&larr; Back</button>
           <div id="boringSelector"></div>
           <button class="secondary" type="button" data-add-boring>+ Add Boring</button>
           <button class="danger" type="button" id="deleteBoringButton">Delete Boring</button>
@@ -2834,7 +2841,7 @@
             </div>
             <div class="field">
               <label>Start Time</label>
-              <input data-info-field="startTime" placeholder="e.g. 07:30">
+              <input data-info-field="startTime" type="time">
             </div>
           </div>
 
@@ -2847,9 +2854,23 @@
                 <option value="no">No</option>
               </select>
             </div>
+            <div class="field">
+              <label>Termination Reason</label>
+              <select data-info-field="terminationReason">
+                <option value=""></option>
+                <option>Planned depth reached</option>
+                <option>Auger refusal</option>
+                <option>Rock encountered</option>
+                <option>Obstruction encountered</option>
+                <option>Groundwater encountered</option>
+                <option>Access limitation</option>
+                <option>Safety concern</option>
+                <option>Other</option>
+              </select>
+            </div>
             <div class="field wide">
-              <label>Termination Notes / Reason</label>
-              <textarea data-info-field="terminationNotes" placeholder="If planned depth was not reached, note refusal, obstruction, access, groundwater, safety, or other reason."></textarea>
+              <label>Notes</label>
+              <textarea data-info-field="terminationNotes" placeholder="Add any additional field notes or details about the termination."></textarea>
             </div>
             <button class="primary" type="button" id="saveInfoButton">Save Info & Continue</button>
           </div>
@@ -3444,7 +3465,7 @@ with check (id = 'account-' || auth.uid()::text);`;
           setSyncStatus(`Auto-save failed: ${readableSupabaseError(error)}`);
           console.error(error);
         });
-      }, 900);
+      }, 250);
     }
 
     async function supabaseRequest(path, options = {}, retrying = false) {
@@ -3506,6 +3527,7 @@ with check (id = 'account-' || auth.uid()::text);`;
       try {
         await supabaseRequest(`${supabaseTable}?on_conflict=id`, {
           method: "POST",
+          keepalive: true,
           headers: { Prefer: "resolution=merge-duplicates,return=representation" },
           body: JSON.stringify({
             id: supabaseStateId(),
@@ -3670,6 +3692,7 @@ with check (id = 'account-' || auth.uid()::text);`;
         casingSize: "",
         startTime: "",
         plannedDepthReached: "yes",
+        terminationReason: "",
         terminationNotes: "",
         groundwaterDepth: "",
         groundwaterTime: "",
@@ -3685,6 +3708,7 @@ with check (id = 'account-' || auth.uid()::text);`;
         id,
         totalDepth: "",
         plannedDepthReached: "yes",
+        terminationReason: "",
         terminationNotes: "",
         groundwaterDepth: "",
         groundwaterTime: "",
@@ -3802,8 +3826,8 @@ with check (id = 'account-' || auth.uid()::text);`;
       document.querySelector("#activeProjectNo").textContent = project?.number || "No project number";
       document.querySelector("#activeProjectClient").textContent = project?.client || "No client";
       document.querySelector("#editProjectButton").disabled = !project;
-      document.querySelector("#activeProjectChip").textContent = project ? `Active project: ${project.number || project.name}` : "No active project";
-      document.querySelector(".mobile-title strong").textContent = projectDisplay(project);
+      document.querySelector("#activeProjectChip").textContent = project ? (project.address || project.name || project.number) : "No active project";
+      document.querySelector(".mobile-title strong").textContent = project?.address || projectDisplay(project);
       renderSchedulingTeam();
       renderOutput();
       renderCompaction();
@@ -4461,7 +4485,7 @@ with check (id = 'account-' || auth.uid()::text);`;
       document.querySelector("#sheetGroundwaterMethod").textContent = info.groundwaterMethod === "Not encountered"
         ? "Not encountered"
         : [info.groundwaterMethod, info.date].filter(Boolean).join(" - ") || "-";
-      document.querySelector("#sheetTermination").textContent = info.plannedDepthReached === "no" ? "Planned depth not reached" : "Planned depth reached";
+      document.querySelector("#sheetTermination").textContent = info.terminationReason || (info.plannedDepthReached === "no" ? "Planned depth not reached" : "Planned depth reached");
       document.querySelector("#sheetNotes").textContent = info.terminationNotes || "-";
 
       if (!boring) {
@@ -4622,8 +4646,7 @@ with check (id = 'account-' || auth.uid()::text);`;
       }
 
       function terminationText() {
-        if (info.plannedDepthReached !== "no") return "Planned depth reached";
-        return /refusal/i.test(info.terminationNotes || "") ? "Refusal" : "Planned depth not reached";
+        return info.terminationReason || (info.plannedDepthReached !== "no" ? "Planned depth reached" : "Planned depth not reached");
       }
 
       function sampleText(sample) {
@@ -5123,6 +5146,15 @@ with check (id = 'account-' || auth.uid()::text);`;
     });
 
     backButton.addEventListener("click", () => setPage("home"));
+    document.querySelector("#workspaceBackButton").addEventListener("click", () => setPage("home"));
+    window.addEventListener("pagehide", () => {
+      if (canUseCloudStorage() && !applyingCloudState) saveCloudState({ fromAutoSave: true }).catch(() => {});
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden" && canUseCloudStorage() && !applyingCloudState) {
+        saveCloudState({ fromAutoSave: true }).catch(() => {});
+      }
+    });
 
     document.querySelector("#manualProjectButton").addEventListener("click", () => {
       document.querySelector("#manualProjectForm").classList.toggle("active");
