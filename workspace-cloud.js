@@ -113,6 +113,10 @@
         // Each workspace key is an authoritative document. Deep-merging nested
         // arrays revives deleted records and repeatedly appends stale samples.
         const value = preferLocal && localValue !== null ? localValue : normalized.storage[key];
+        if (localValue !== null && localValue !== value) {
+          // Retain each displaced copy for explicit recovery, never auto-merge it.
+          nativeSetItem.call(localStorage, `moment-recovery:${Date.now()}:${key}`, localValue);
+        }
         nativeSetItem.call(localStorage, key, value);
         mergedTimes[key] = preferLocal ? localTimes[key] : (cloudTimes[key] || localTimes[key] || new Date().toISOString());
       });
@@ -196,6 +200,14 @@
     const token = localStorage.getItem(TOKEN_KEY) || "";
     if (!token) return;
     const accountId = accountIdFor(token);
+    // Page navigation reuses a recent account check; edits still save immediately.
+    try {
+      const recent = JSON.parse(sessionStorage.getItem(BOOT_KEY) || "null");
+      if (recent?.accountId === accountId && Date.now() - recent.loadedAt < 60000) {
+        activeAccountId = accountId;
+        return;
+      }
+    } catch {}
     try {
       const result = await activate(token);
       sessionStorage.setItem(BOOT_KEY, JSON.stringify({ accountId, loadedAt: Date.now() }));

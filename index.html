@@ -2581,7 +2581,7 @@
   </style>
 </head>
 <body>
-  <link rel="stylesheet" href="app-shell.css"><script src="workspace-cloud.js"></script><script src="app-shell.js"></script>
+  <link rel="stylesheet" href="app-shell.css"><script src="workspace-cloud.js"></script><script src="workspace-data.js"></script><script src="app-shell.js"></script>
   <nav class="app-tabs" aria-label="Main pages">
     <img class="app-logo" src="moment-engineering-logo.png" alt="Moment Engineering">
     <a class="active" href="index.html">Boring Logs</a><a href="job-calendar.html">Calendar</a><a href="lab-inventory.html">Inventory</a><a href="lab-work.html">Lab Work</a><a href="lab-manual.html">Lab Manual</a><a href="contacts.html">Contacts</a><a href="me.html">Me</a>
@@ -2600,7 +2600,7 @@
         <span>Boring Log</span>
         <strong>Select a project</strong>
       </div>
-      <a class="top-link" id="inventoryTopLink" href="lab-inventory.html" target="_blank" rel="noopener">Sample Inventory</a>
+      <a class="top-link" id="inventoryTopLink" href="lab-inventory.html">Sample Inventory</a>
     </header>
 
     <aside class="desktop-sidebar">
@@ -2757,7 +2757,7 @@
                   <span><h3>Inspection</h3><small>No records yet</small></span>
                   <span>&gt;</span>
                 </button>
-                <a class="tool-card" href="lab-inventory.html" target="_blank" rel="noopener">
+                <a class="tool-card" href="lab-inventory.html">
                   <span class="tool-icon">SI</span>
                   <span><h3>Sample Inventory</h3><small>Synced with boring logs</small></span>
                   <span>&gt;</span>
@@ -3316,6 +3316,20 @@ with check (id = 'account-' || auth.uid()::text);`;
     }
 
     function setAuthenticated(userName, password = currentPassword) {
+      // This tool shares the workspace session; it never presents a second login.
+      if (!userName && localStorage.getItem(accessTokenKey)) {
+        let profile = null;
+        try {
+          const session = JSON.parse(localStorage.getItem('momentWorkerSessionV1') || 'null');
+          const access = JSON.parse(localStorage.getItem('momentAccessControlV1') || '{}');
+          profile = (access.workers || []).find(worker => worker.id === session?.id);
+        } catch {}
+        userName = profile?.name || 'Administrator';
+      }
+      if (!userName) {
+        location.replace('worker-login.html');
+        return;
+      }
       currentUser = userName || "";
       currentPassword = currentUser ? password : "";
       if (currentUser) {
@@ -3418,6 +3432,7 @@ with check (id = 'account-' || auth.uid()::text);`;
     }
 
     function applyState(stored = {}) {
+      stored = window.MomentWorkspaceData.normalize(stored);
       projects.splice(0, projects.length, ...(Array.isArray(stored.projects) ? stored.projects : []));
       borings.splice(0, borings.length, ...(Array.isArray(stored.borings) ? stored.borings : []));
       compactionReports.splice(0, compactionReports.length, ...(Array.isArray(stored.compactionReports) ? stored.compactionReports : []));
@@ -3454,7 +3469,7 @@ with check (id = 'account-' || auth.uid()::text);`;
     function saveState(options = {}) {
       const state = exportState();
       localStorage.setItem(storageKey, JSON.stringify(state));
-      if (options.sync !== false) scheduleCloudSave();
+      if (options.sync !== false && !window.MomentWorkspaceCloud) scheduleCloudSave();
     }
 
     function scheduleCloudSave() {
@@ -3493,6 +3508,11 @@ with check (id = 'account-' || auth.uid()::text);`;
     }
 
     async function loadCloudState() {
+      if (window.MomentWorkspaceCloud) {
+        const result = await window.MomentWorkspaceCloud.activate();
+        loadState(); renderRows(); renderProjects(); updateSettingsView();
+        return result.loaded;
+      }
       applyingCloudState = true;
       try {
         const rows = await supabaseRequest(`${supabaseTable}?id=eq.${encodeURIComponent(supabaseStateId())}&select=state,updated_at&limit=1`);
@@ -3513,6 +3533,12 @@ with check (id = 'account-' || auth.uid()::text);`;
     }
 
     async function saveCloudState(options = {}) {
+      if (window.MomentWorkspaceCloud) {
+        saveState({ sync: false });
+        await window.MomentWorkspaceCloud.save();
+        setSyncStatus("Workspace saved.");
+        return;
+      }
       if (!currentUser) throw new Error("Log in before syncing data.");
       if (!currentAccessToken && currentRefreshToken) await refreshSupabaseSession();
       if (!currentAccessToken) throw new Error("Your Supabase session is missing. Log out, then log back in before syncing.");
@@ -3574,7 +3600,8 @@ with check (id = 'account-' || auth.uid()::text);`;
         const stored = JSON.parse(localStorage.getItem(storageKey) || "{}");
         applyState(stored);
       } catch {
-        localStorage.removeItem(storageKey);
+        // Keep unreadable data available for recovery rather than erasing it.
+        console.error("Saved boring records could not be read; the original copy has been preserved.");
       }
     }
 
@@ -5902,7 +5929,7 @@ with check (id = 'account-' || auth.uid()::text);`;
     if (documentParams.get("download") === "boring-simple" && activeBoring()) {
       setTimeout(() => downloadBoringPdf("simple"), 120);
     }
-    if (currentUser) {
+    if (currentUser && !window.MomentWorkspaceCloud) {
       Promise.resolve()
         .then(() => (!currentAccessToken && currentRefreshToken ? refreshSupabaseSession() : null))
         .then(() => loadCloudState())

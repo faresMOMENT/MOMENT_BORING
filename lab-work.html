@@ -1415,7 +1415,7 @@
   </style>
 </head>
 <body>
-  <link rel="stylesheet" href="app-shell.css"><script src="app-shell.js"></script>
+  <link rel="stylesheet" href="app-shell.css"><script src="workspace-data.js"></script><script src="app-shell.js"></script>
   <nav class="app-tabs" aria-label="Main pages">
     <img class="app-logo" src="moment-engineering-logo.png" alt="Moment Engineering">
     <a href="index.html">Boring Logs</a><a href="job-calendar.html">Calendar</a><a href="lab-inventory.html">Inventory</a><a class="active" href="lab-work.html">Lab Work</a><a href="lab-manual.html">Lab Manual</a><a href="contacts.html">Contacts</a><a href="me.html">Me</a>
@@ -1423,6 +1423,7 @@
   <div class="laptop-only-message">Lab Work is only available in laptop view.</div>
   <div class="app-shell">
     <main class="page">
+      <header class="workspace-page-heading"><span>Laboratory</span><h1>Lab Pipeline</h1><p>Track received samples, testing, and reports.</p></header>
       <div class="pipeline-tabs-bar">
         <div class="county-tabs" id="countyTabs" aria-label="Lab Pipeline categories"></div>
         <button class="btn" type="button" id="addHomeBtn">+ New Sample</button>
@@ -1441,9 +1442,9 @@
 
       <section class="panel">
         <div class="panel-header">
-          <h2>Lab Work</h2>
+          <h2>Projects in the lab</h2>
           <input id="searchInput" placeholder="Search client, project number...">
-          <select id="sortSelect" aria-label="Sort houses">
+          <select id="sortSelect" aria-label="Sort projects">
             <option value="newest">Newest in lab</option>
             <option value="completion-low">Lowest completion</option>
             <option value="completion-high">Highest completion</option>
@@ -1533,7 +1534,7 @@
     const state = {
       search: "",
       sort: "newest",
-      category: "Home",
+      category: sessionStorage.getItem("momentLabCategory") || "Home",
       projectStatusFilter: "all",
       expandedHomes: new Set(),
       expandedCustody: new Set(),
@@ -1558,7 +1559,7 @@
 
     function syncArrivedInventoryProjects(labData) {
       let boringState = {};
-      try { boringState = JSON.parse(localStorage.getItem("boringLogAppState") || "{}"); } catch (error) { return labData; }
+      try { boringState = window.MomentWorkspaceData.normalize(JSON.parse(localStorage.getItem("boringLogAppState") || "{}")); } catch (error) { return labData; }
       if (!Array.isArray(boringState.projects) || !Array.isArray(boringState.borings)) return labData;
       if (!Array.isArray(labData.homes)) labData.homes = [];
       if (!Array.isArray(labData.upcomingProjects)) labData.upcomingProjects = [];
@@ -1589,13 +1590,15 @@
         if (home) {
           // Custody remains the source for project identity, but the lab tracker
           // owns sampling dates, worksheet rows, statuses, tests, and notes.
+          if (home.countyUpdatedAt && home.countyUpdatedAt > (project.countyUpdatedAt || "")) fields.county = home.county;
           Object.assign(home, fields);
           if (!home.dateSampling) home.dateSampling = projectBorings[0]?.info?.date || "";
           if (!Array.isArray(home.samples)) home.samples = [];
           // Boring-log samples are authoritative for this linked project.
           // Preserve manually entered lab samples, but replace older synced
           // samples so stale cloud copies cannot accumulate on every load.
-          const manualSamples = home.samples.filter(sample => !sample.boringId && !sample.syncedFromBoring);
+          const sourceKeys = new Set(samples.map(sample => JSON.stringify([sample.sampleNumber, sample.depth, sample.method])));
+          const manualSamples = window.MomentWorkspaceData.uniqueSamples(home.samples.filter(sample => !sample.boringId && !sample.syncedFromBoring && !sourceKeys.has(JSON.stringify([sample.sampleNumber, sample.depth, sample.method]))));
           const seen = new Set();
           const syncedSamples = samples.filter(sample => {
             const key = String(sample.id || `${sample.boringId}|${sample.sampleNumber}|${sample.depth}|${sample.classification}`);
@@ -1678,7 +1681,7 @@
       const project = (source.projects || []).find(item => item.id === home.sourceProjectId || item.id === home.id)
         || (number && (source.projects || []).find(item => String(item.number || "").trim().toLowerCase() === number));
       if (!project) return;
-      if (field === "county") project.county = home.county;
+      if (field === "county") { project.county = home.county; project.countyUpdatedAt = home.updatedAt; home.countyUpdatedAt = home.updatedAt; }
       else {
         const boring = (source.borings || []).find(item => item.projectId === project.id && item.id === sample.boringId);
         const original = boring?.samples?.find(item => (item.id || `${boring.id}-${item.number || item.depth}`) === sample.id);
@@ -1834,7 +1837,7 @@
         return `<select ${common} aria-label="Classification">${sampleOptions(soilClassifications.map(([symbol, name]) => [symbol, `${symbol} - ${name}`]), value)}</select>`;
       }
       if (type === "method") {
-        return `<select ${common} aria-label="Method">${sampleOptions(["Core", "Bag", "SPT", "Other"].map(item => [item, item]), value)}</select>`;
+        return `<span class="sample-method" title="Sampling method is managed in Custody or Boring Logs">${escapeHtml(value || "Sample")}</span>`;
       }
       if (type === "textarea") {
         return `<textarea ${common} placeholder="Add sample notes">${escapeHtml(value)}</textarea>`;
@@ -1928,9 +1931,7 @@
               <input data-new-sample-field="depth" data-new-sample-home="${home.id}" list="labDepthOptions" inputmode="decimal" autocomplete="off">
             </label>
             <label>Method
-              <select data-new-sample-field="method" data-new-sample-home="${home.id}">
-                ${sampleOptions(["Core", "Bag", "SPT", "Other"].map(item => [item, item]), "Core")}
-              </select>
+              <span class="sample-method">Set method in Custody or Boring Logs</span>
             </label>
             <label>Remarks
               <input data-new-sample-field="remarks" data-new-sample-home="${home.id}" autocomplete="off">
@@ -2305,7 +2306,7 @@
         : 0;
       const upcomingCount = state.data.upcomingProjects.length;
       document.getElementById("summaryStrip").innerHTML = [
-        `<div class="metric"><span>Active Samples</span><strong>${homes.length}</strong><small><span>Completed</span><b>${completed}</b></small></div>`,
+        `<div class="metric"><span>Active Projects</span><strong>${homes.length}</strong><small><span>Completed</span><b>${completed}</b></small></div>`,
         `<div class="metric"><span>Avg Days In Lab</span><strong>${averageDays}</strong></div>`,
         `<div class="metric"><span>Testing Completion</span><strong>${testCompletion}%</strong></div>`,
         `<div class="metric"><span>Overdue Reports</span><strong style="color: var(--accent);">${overdue}</strong></div>`,
@@ -2413,7 +2414,7 @@
       const tests = requiredTests(home);
       const labTests = ensureLabTests(home);
       if (!tests.length) {
-        return `<div class="inline-empty">No required lab tests are marked in custody for this house.</div>`;
+        return `<div class="inline-empty">Choose the required tests in custody details.</div>`;
       }
       return `
         <div>
@@ -2479,7 +2480,7 @@
     function renderSamples(home) {
       const samples = home.samples || [];
       if (!samples.length) {
-        return `<div class="inline-empty">No samples added for this house yet.</div>`;
+        return `<div class="inline-empty">No samples added for this project yet.</div>`;
       }
       return `
         <div>
@@ -3675,7 +3676,7 @@
       const documentCompletion = documentCompletionForHome(home);
       const projectDocuments = ensureDocumentChecklist(home);
       const dueStatus = reportDueStatus(home, completion);
-      const title = home.address || "Untitled home";
+      const title = home.address || "Untitled project";
       const isExpanded = state.expandedHomes.has(home.id);
       const samples = home.samples || [];
       const bagCount = bagSamples([home]).length;
@@ -3784,7 +3785,7 @@
             </div>
             ${homes.map(renderHome).join("")}
           </div>`
-        : `<div class="empty">No houses match this search.</div>`;
+        : `<div class="empty">No projects match this view.</div>`;
     }
 
     document.addEventListener("input", event => {
@@ -3842,10 +3843,12 @@
         const home = state.data.homes.find(item => item.id === event.target.dataset.custodyHome);
         if (!home) return;
         home[custodyFieldName] = event.target.value;
+        if (custodyFieldName === "county" && counties.includes(state.category)) { state.category = home.county; sessionStorage.setItem("momentLabCategory", state.category); }
         if (custodyFieldName === "dateSampling") home.reportDueDate = reportDueDateFor(event.target.value);
         home.updatedAt = new Date().toISOString();
         saveData();
         syncEditedSource(home, custodyFieldName);
+        saveData();
         return;
       }
 
@@ -3857,11 +3860,12 @@
         project.updatedAt = new Date().toISOString();
         saveData();
         syncEditedSource(project, upcomingField);
+        saveData();
         return;
       }
 
       const sampleFieldName = event.target.dataset.sampleField;
-      if (!sampleFieldName) return;
+      if (!sampleFieldName || sampleFieldName === "method") return;
       const { home, sample } = findSample(event.target.dataset.sampleHome, event.target.dataset.sampleId, event.target.dataset.sampleIndex);
       if (!home || !sample) return;
       sample[sampleFieldName] = event.target.value;
@@ -3918,6 +3922,7 @@
 
       const sampleFieldName = event.target.dataset.sampleField;
       if (sampleFieldName) {
+        if (sampleFieldName === "method") return;
         const { home, sample } = findSample(event.target.dataset.sampleHome, event.target.dataset.sampleId, event.target.dataset.sampleIndex);
         if (!home || !sample) return;
         sample[sampleFieldName] = event.target.value;
@@ -3937,6 +3942,7 @@
         home.updatedAt = new Date().toISOString();
         saveData();
         syncEditedSource(home, custodyFieldName);
+        saveData();
         render();
         return;
       }
@@ -3962,6 +3968,7 @@
         project.updatedAt = new Date().toISOString();
         saveData();
         syncEditedSource(project, upcomingField);
+        saveData();
         render();
         return;
       }
@@ -4068,6 +4075,7 @@
       const categoryBtn = event.target.closest("[data-category-tab]");
       if (categoryBtn) {
         state.category = categoryBtn.dataset.categoryTab;
+        sessionStorage.setItem("momentLabCategory", state.category);
         render();
         return;
       }
@@ -4245,7 +4253,7 @@
           sampleNumber: values.sampleNumber || "",
           classification: values.classification || "",
           depth: values.depth || "",
-          method: values.method || "Core",
+          method: "Sample",
           remarks: values.remarks || "",
           labStatus: "Not Started",
           labWork: ""

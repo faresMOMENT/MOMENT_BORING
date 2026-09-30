@@ -15,6 +15,11 @@
   const boringLogsLink=nav.querySelector('a[href="index.html"]');
   if(boringLogsLink)boringLogsLink.insertAdjacentHTML('afterend',item('Custom Plan Builder 3 - Copy.html','Maps','log'));
   const page=decodeURIComponent(location.pathname.split('/').pop()||'index.html').toLowerCase();
+  if (!['worker-login.html','access-denied.html'].includes(page)
+      && !localStorage.getItem('boringLogSupabaseAccessToken')) {
+    location.replace('worker-login.html');
+    return;
+  }
   const schedulerLabel=nav.querySelector('a[href="schedule.html"] span');
   if(schedulerLabel)schedulerLabel.textContent='Scheduler';
   ['clock-in-out.html','my-hours.html','correspondence.html'].forEach(href=>nav.querySelector(`a[href="${href}"]`)?.remove());
@@ -55,6 +60,7 @@
   document.body.classList.add('has-moment-menu'); document.body.append(toggle);
   document.body.classList.remove('moment-page-loading','moment-loading-visible');document.body.classList.add('moment-page-ready');document.body.removeAttribute('aria-busy');
   };
-  const start=()=>Promise.resolve(cloudReady).finally(init);
+  // Navigation is local UI and must never wait for a network request.
+  const start=()=>init();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
