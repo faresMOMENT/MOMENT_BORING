@@ -1668,6 +1668,27 @@
       };
     }
 
+    // Keep editable shared fields in the source record so the next inventory
+    // refresh does not restore the previous county or sampling method.
+    function syncEditedSource(home, field, sample) {
+      if (field !== "county" && !(field === "method" && sample?.boringId)) return;
+      const key = "boringLogAppState";
+      const source = JSON.parse(localStorage.getItem(key) || "{}");
+      const number = String(home.projectNumber || "").trim().toLowerCase();
+      const project = (source.projects || []).find(item => item.id === home.sourceProjectId || item.id === home.id)
+        || (number && (source.projects || []).find(item => String(item.number || "").trim().toLowerCase() === number));
+      if (!project) return;
+      if (field === "county") project.county = home.county;
+      else {
+        const boring = (source.borings || []).find(item => item.projectId === project.id && item.id === sample.boringId);
+        const original = boring?.samples?.find(item => (item.id || `${boring.id}-${item.number || item.depth}`) === sample.id);
+        if (!original) return;
+        original.type = sample.method;
+      }
+      project.updatedAt = home.updatedAt;
+      localStorage.setItem(key, JSON.stringify(source));
+    }
+
     function saveData() {
       const previous = localStorage.getItem(storageKey);
       if (previous) localStorage.setItem(storageBackupKey, previous);
@@ -3824,6 +3845,7 @@
         if (custodyFieldName === "dateSampling") home.reportDueDate = reportDueDateFor(event.target.value);
         home.updatedAt = new Date().toISOString();
         saveData();
+        syncEditedSource(home, custodyFieldName);
         return;
       }
 
@@ -3834,6 +3856,7 @@
         project[upcomingField] = event.target.value;
         project.updatedAt = new Date().toISOString();
         saveData();
+        syncEditedSource(project, upcomingField);
         return;
       }
 
@@ -3844,6 +3867,7 @@
       sample[sampleFieldName] = event.target.value;
       home.updatedAt = new Date().toISOString();
       saveData();
+      syncEditedSource(home, sampleFieldName, sample);
     });
 
     document.addEventListener("change", event => {
@@ -3899,6 +3923,7 @@
         sample[sampleFieldName] = event.target.value;
         home.updatedAt = new Date().toISOString();
         saveData();
+        syncEditedSource(home, sampleFieldName, sample);
         render();
         return;
       }
@@ -3911,6 +3936,7 @@
         if (custodyFieldName === "dateSampling") home.reportDueDate = reportDueDateFor(event.target.value);
         home.updatedAt = new Date().toISOString();
         saveData();
+        syncEditedSource(home, custodyFieldName);
         render();
         return;
       }
@@ -3935,6 +3961,7 @@
         project[upcomingField] = event.target.value;
         project.updatedAt = new Date().toISOString();
         saveData();
+        syncEditedSource(project, upcomingField);
         render();
         return;
       }
