@@ -4,7 +4,7 @@
   function uniqueSamples(samples = []) {
     const seen = new Set();
     return samples.filter(sample => {
-      const key = signature(sample);
+      const key = JSON.stringify([sample.id || null, signature(sample)]);
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -14,7 +14,8 @@
     if (!Array.isArray(source?.borings)) return source;
     const borings = new Map();
     source.borings.forEach(boring => {
-      const key = JSON.stringify([boring.projectId, boring.id]);
+      const { samples, ...details } = boring;
+      const key = JSON.stringify([boring.projectId, boring.id, signature(details)]);
       if (borings.has(key)) {
         const existing = borings.get(key);
         existing.samples = uniqueSamples([...(existing.samples || []), ...(boring.samples || [])]);

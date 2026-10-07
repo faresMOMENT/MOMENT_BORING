@@ -2581,7 +2581,7 @@
   </style>
 </head>
 <body>
-  <link rel="stylesheet" href="app-shell.css"><script src="workspace-cloud.js"></script><script src="workspace-data.js"></script><script src="app-shell.js"></script>
+  <link rel="stylesheet" href="app-shell.css?v=20261007"><script src="workspace-cloud.js?v=20261007"></script><script src="workspace-data.js?v=20261007"></script><script src="app-shell.js?v=20261007"></script>
   <nav class="app-tabs" aria-label="Main pages">
     <img class="app-logo" src="moment-engineering-logo.png" alt="Moment Engineering">
     <a class="active" href="index.html">Boring Logs</a><a href="job-calendar.html">Calendar</a><a href="lab-inventory.html">Inventory</a><a href="lab-work.html">Lab Work</a><a href="lab-manual.html">Lab Manual</a><a href="contacts.html">Contacts</a><a href="me.html">Me</a>
@@ -2675,8 +2675,8 @@
         <div class="home-shell">
           <section class="home-hero">
             <div class="section-kicker">Boring Log Dashboard</div>
-            <h1>Start a field log from a project.</h1>
-            <p>Select an imported project or add one manually, then create boring logs, samples, layers, and a PDF-style output from the same workspace.</p>
+            <h1>Boring Logs</h1>
+            <p>Manage projects, field samples, and boring reports.</p>
             <div class="home-actions">
               <button class="primary" type="button" id="hubspotButton">Pull Projects</button>
               <button class="secondary" type="button" id="manualProjectButton">+ Add manual project</button>
@@ -3442,6 +3442,9 @@ with check (id = 'account-' || auth.uid()::text);`;
       activeCompactionId = stored.activeCompactionId || null;
       if (!projects.some(project => project.id === activeProjectId)) activeProjectId = projects[0]?.id || null;
       borings.forEach(boring => {
+        boring.info = { ...blankInfo(boring.id), ...(boring.info || {}) };
+        if (!Array.isArray(boring.layers)) boring.layers = [];
+        if (!Array.isArray(boring.samples)) boring.samples = [];
         if (!boring.projectId && activeProjectId) boring.projectId = activeProjectId;
         const oldId = boring.id;
         const numberedId = String(oldId || "").match(/^(?:lab\s*|b-?)(\d+)$/i);
@@ -3456,6 +3459,7 @@ with check (id = 'account-' || auth.uid()::text);`;
         }
         (boring.samples || []).forEach(sample => {
           if (!sample.id) sample.id = newId();
+          if (!Array.isArray(sample.blows)) sample.blows = ["", "", ""];
         });
       });
       if (!borings.some(boring => boring.id === activeBoringId)) activeBoringId = boringsForActiveProject()[0]?.id || null;
@@ -3535,9 +3539,9 @@ with check (id = 'account-' || auth.uid()::text);`;
     async function saveCloudState(options = {}) {
       if (window.MomentWorkspaceCloud) {
         saveState({ sync: false });
-        await window.MomentWorkspaceCloud.save();
-        setSyncStatus("Workspace saved.");
-        return;
+        const result = await window.MomentWorkspaceCloud.save();
+        setSyncStatus(window.MomentWorkspaceCloud.getStatus().message);
+        return result;
       }
       if (!currentUser) throw new Error("Log in before syncing data.");
       if (!currentAccessToken && currentRefreshToken) await refreshSupabaseSession();
@@ -3575,7 +3579,7 @@ with check (id = 'account-' || auth.uid()::text);`;
       setSyncStatus("Saving this device to Supabase...");
       try {
         await saveCloudState();
-        setSyncStatus(localStorage.getItem(syncKey) || "Cloud saved.");
+        setSyncStatus(window.MomentWorkspaceCloud?.getStatus().message || localStorage.getItem(syncKey) || "Cloud saved.");
       } catch (error) {
         setSyncStatus(`Supabase sync failed: ${readableSupabaseError(error)}`);
         console.error(error);
@@ -3588,7 +3592,7 @@ with check (id = 'account-' || auth.uid()::text);`;
       setSyncStatus("Loading cloud data from Supabase...");
       try {
         const loaded = await loadCloudState();
-        setSyncStatus(loaded ? (localStorage.getItem(syncKey) || "Cloud loaded.") : "No cloud data has been saved yet. Save from the computer first.");
+        setSyncStatus(window.MomentWorkspaceCloud?.getStatus().message || (loaded ? (localStorage.getItem(syncKey) || "Cloud loaded.") : "No cloud data has been saved yet."));
       } catch (error) {
         setSyncStatus(`Supabase load failed: ${readableSupabaseError(error)}`);
         console.error(error);

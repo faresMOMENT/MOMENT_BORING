@@ -1342,23 +1342,7 @@
       .upcoming-header > :nth-child(4) { display: none; }
     }
 
-    @media (max-width: 760px) {
-      body > :not(.laptop-only-message):not(.app-tabs):not(.moment-menu-toggle) { display: none !important; }
-      .app-tabs { position: relative; padding: 8px; gap: 2px; font-size: 13px; }
-      .app-tabs a { padding: 9px 10px; }
-      .laptop-only-message { min-height: calc(100vh - 57px); display: grid; place-items: center; padding: 28px; background: #fff; color: #202722; text-align: center; font-size: 18px; font-weight: 400; }
-      .page { padding: 16px; }
-      .topbar, .nav-actions { align-items: flex-start; }
-      .summary-strip { grid-template-columns: 1fr; }
-      .panel-header { grid-template-columns: 1fr; }
-      .home-list-header { display: none; }
-      .home-header { grid-template-columns: 24px 1fr; }
-      .home-header > :nth-child(n+4) { display: none; }
-      .detail-stats { grid-template-columns: repeat(2, 1fr); }
-      .upcoming-list-header { display: none; }
-      .upcoming-header { grid-template-columns: 1fr; }
-      .upcoming-header > :nth-child(n) { display: grid; }
-    }
+
 
     body.embedded {
       padding: 0;
@@ -1415,12 +1399,12 @@
   </style>
 </head>
 <body>
-  <link rel="stylesheet" href="app-shell.css"><script src="workspace-data.js"></script><script src="app-shell.js"></script>
+  <link rel="stylesheet" href="app-shell.css?v=20261007"><script src="workspace-cloud.js?v=20261007"></script><script src="workspace-data.js?v=20261007"></script><script src="app-shell.js?v=20261007"></script>
   <nav class="app-tabs" aria-label="Main pages">
     <img class="app-logo" src="moment-engineering-logo.png" alt="Moment Engineering">
     <a href="index.html">Boring Logs</a><a href="job-calendar.html">Calendar</a><a href="lab-inventory.html">Inventory</a><a class="active" href="lab-work.html">Lab Work</a><a href="lab-manual.html">Lab Manual</a><a href="contacts.html">Contacts</a><a href="me.html">Me</a>
   </nav>
-  <div class="laptop-only-message">Lab Work is only available in laptop view.</div>
+  
   <div class="app-shell">
     <main class="page">
       <header class="workspace-page-heading"><span>Laboratory</span><h1>Lab Pipeline</h1><p>Track received samples, testing, and reports.</p></header>
@@ -1597,8 +1581,8 @@
           // Boring-log samples are authoritative for this linked project.
           // Preserve manually entered lab samples, but replace older synced
           // samples so stale cloud copies cannot accumulate on every load.
-          const sourceKeys = new Set(samples.map(sample => JSON.stringify([sample.sampleNumber, sample.depth, sample.method])));
-          const manualSamples = window.MomentWorkspaceData.uniqueSamples(home.samples.filter(sample => !sample.boringId && !sample.syncedFromBoring && !sourceKeys.has(JSON.stringify([sample.sampleNumber, sample.depth, sample.method]))));
+          const sourceIds = new Set(samples.map(sample => sample.id));
+          const manualSamples = window.MomentWorkspaceData.uniqueSamples(home.samples.filter(sample => !sample.boringId && !sample.syncedFromBoring && !sourceIds.has(sample.id)));
           const seen = new Set();
           const syncedSamples = samples.filter(sample => {
             const key = String(sample.id || `${sample.boringId}|${sample.sampleNumber}|${sample.depth}|${sample.classification}`);

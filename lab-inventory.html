@@ -198,7 +198,7 @@
   </style>
 </head>
 <body>
-  <link rel="stylesheet" href="app-shell.css"><script src="workspace-data.js"></script><script src="app-shell.js"></script>
+  <link rel="stylesheet" href="app-shell.css?v=20261007"><script src="workspace-cloud.js?v=20261007"></script><script src="workspace-data.js?v=20261007"></script><script src="app-shell.js?v=20261007"></script>
   <nav class="app-tabs" aria-label="Main pages">
     <img class="app-logo" src="moment-engineering-logo.png" alt="Moment Engineering">
     <a href="index.html">Boring Logs</a><a href="job-calendar.html">Calendar</a><a class="active" href="lab-inventory.html">Inventory</a><a href="lab-work.html">Lab Work</a><a href="lab-manual.html">Lab Manual</a><a href="contacts.html">Contacts</a><a href="me.html">Me</a>
@@ -545,6 +545,11 @@
     }
 
     async function saveInventoryState(stored) {
+      if (window.MomentWorkspaceCloud) {
+        localStorage.setItem(storageKey, JSON.stringify(stored));
+        const result = await window.MomentWorkspaceCloud.save();
+        return { savedLocally: true, savedCloud: Boolean(result.saved) };
+      }
       let savedLocally = true;
       try {
         localStorage.setItem(storageKey, JSON.stringify(stored));
@@ -576,6 +581,11 @@
     }
 
     async function loadInventoryCloudState() {
+      if (window.MomentWorkspaceCloud) {
+        const result = await window.MomentWorkspaceCloud.save();
+        state.data = loadData(); render();
+        return result.loaded;
+      }
       if (!localStorage.getItem(sessionKey) && !localStorage.getItem(accessTokenKey) && !localStorage.getItem(refreshTokenKey)) return false;
       const rows = await supabaseRequest(`${supabaseTable}?id=eq.${encodeURIComponent(supabaseStateId())}&select=state,updated_at&limit=1`);
       const record = rows?.[0];

@@ -2,7 +2,7 @@
   const cloudReady = window.MomentWorkspaceCloud
     ? window.MomentWorkspaceCloud.boot()
     : new Promise(resolve => {
-        const script=document.createElement('script');script.src='workspace-cloud.js';script.onload=()=>window.MomentWorkspaceCloud.boot().finally(resolve);script.onerror=resolve;document.head.append(script);
+        const script=document.createElement('script');script.src='workspace-cloud.js?v=20261007';script.onload=()=>window.MomentWorkspaceCloud.boot().finally(resolve);script.onerror=resolve;document.head.append(script);
       });
   const init = () => {
   const icons={log:'<path d="M6 3.5h9l3 3V20.5H6z"/><path d="M15 3.5v4h4M9 12h6M9 16h6"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',calendar:'<rect x="3.5" y="5.5" width="17" height="15" rx="2"/><path d="M8 3v5M16 3v5M3.5 10h17"/>',hours:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',dashboard:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',pipeline:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v18M4 9h16"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/>',documents:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',custody:'<path d="M8 4h8M9 3h6v3H9z"/><rect x="5" y="5" width="14" height="16" rx="2"/><path d="m9 14 2 2 4-5"/>',inventory:'<path d="m4 7 8-4 8 4-8 4zM4 7v10l8 4 8-4V7M12 11v10"/>',lab:'<path d="M9 3h6M10 3v6l-5 8.5A2.3 2.3 0 0 0 7 21h10a2.3 2.3 0 0 0 2-3.5L14 9V3M8 15h8"/>',manual:'<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5zM20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5z"/>',contacts:'<circle cx="9" cy="8" r="3"/><path d="M3.5 19v-1.5A4.5 4.5 0 0 1 8 13h2a4.5 4.5 0 0 1 4.5 4.5V19M16 5.5a3 3 0 0 1 0 5.5M17 13a4.5 4.5 0 0 1 3.5 4.4V19"/>',me:'<circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>',payroll:'<path d="M12 2v20M17 6.5H9.5a3 3 0 0 0 0 6h5a3 3 0 0 1 0 6H6"/>',reports:'<path d="M5 20V10M12 20V4M19 20v-7"/>'};
@@ -27,7 +27,7 @@
   if(pipelineLink&&custodyLink)pipelineLink.after(custodyLink);
   const accessStore=(()=>{try{return JSON.parse(localStorage.getItem('momentAccessControlV1')||'{}')}catch{return{}}})();
   const savedSession=(()=>{try{return JSON.parse(localStorage.getItem('momentWorkerSessionV1')||'null')}catch{return null}})();
-  let profile={id:'owner',name:'Fares',role:'admin',permissions:['*'],active:true};
+  let profile={id:'owner',name:localStorage.getItem('boringLogCurrentUser')||'Administrator',role:'admin',permissions:['*'],active:true};
   if(savedSession?.id&&savedSession.id!=='owner')profile=(accessStore.workers||[]).find(worker=>worker.id===savedSession.id)||null;
   if(!profile||profile.active===false){if(page!=='worker-login.html')location.replace('worker-login.html');return;}
   const permitted=href=>profile.role==='admin'||profile.permissions?.includes('*')||profile.permissions?.some(permission=>{const saved=String(permission).toLowerCase(),target=String(href).toLowerCase();return saved===target||(target==='proposals.html'&&saved==='reports.html');});
@@ -58,6 +58,47 @@
   document.addEventListener('click',event=>{if(document.body.classList.contains('menu-open')&&!nav.contains(event.target)&&!toggle.contains(event.target))closeMenu();});
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.body.classList.contains('menu-open')){closeMenu();toggle.focus();}});
   document.body.classList.add('has-moment-menu'); document.body.append(toggle);
+  const syncPanel=document.createElement('div');
+  syncPanel.className='workspace-sync';
+  syncPanel.innerHTML='<span class="workspace-sync-dot" aria-hidden="true"></span><span role="status" aria-live="polite" class="workspace-sync-message">Checking saved data…</span><button type="button" class="workspace-sync-action">Sync now</button>';
+  nav.querySelector('.menu-footer').before(syncPanel);
+  const updateSync=detail=>{
+    syncPanel.dataset.state=detail.state;
+    syncPanel.querySelector('.workspace-sync-message').textContent=detail.message;
+    syncPanel.querySelector('button').textContent=detail.state==='conflict'?'Review edits':detail.state==='signed-out'?'Sign in':'Sync now';
+    syncPanel.querySelector('button').disabled=detail.state==='saving';
+    toggle.querySelector('.moment-menu-label small').textContent=detail.message;
+  };
+  window.addEventListener('moment-sync-status',event=>updateSync(event.detail));
+  if(window.MomentWorkspaceCloud)updateSync(window.MomentWorkspaceCloud.getStatus());
+  Promise.resolve(cloudReady).then(()=>{if(window.MomentWorkspaceCloud)updateSync(window.MomentWorkspaceCloud.getStatus());});
+  syncPanel.querySelector('button').addEventListener('click',async()=>{
+    const cloud=window.MomentWorkspaceCloud;
+    if(cloud.getStatus().state==='signed-out'){location.href='worker-login.html';return;}
+    if(cloud.getStatus().state==='conflict'){
+      const dialog=document.createElement('dialog');dialog.className='workspace-conflict';
+      dialog.innerHTML='<h2>Review conflicting edits</h2><p>Both devices changed the same information. Other changes will be combined automatically. Recovery copies are kept on this device.</p><div class="workspace-conflict-list"></div><div class="workspace-conflict-actions"><button type="button" data-choice="local">Keep this device’s conflicting edits</button><button type="button" data-choice="remote">Keep cloud’s conflicting edits</button><button type="button" data-choice="cancel">Decide later</button></div>';
+      for(const conflict of cloud.getConflicts()){
+        const row=document.createElement('article');
+        const heading=document.createElement('strong');heading.textContent=conflict.path;
+        const local=document.createElement('p');local.textContent=`This device: ${JSON.stringify(conflict.local) ?? 'Deleted'}`;
+        const remote=document.createElement('p');remote.textContent=`Cloud: ${JSON.stringify(conflict.remote) ?? 'Deleted'}`;
+        row.append(heading,local,remote);dialog.querySelector('.workspace-conflict-list').append(row);
+      }
+      document.body.append(dialog);dialog.showModal();
+      dialog.addEventListener('click',async event=>{const choice=event.target.dataset.choice;if(!choice)return;dialog.close();dialog.remove();if(choice!=='cancel')await cloud.resolveConflicts(choice).catch(()=>{});});
+      dialog.addEventListener('cancel',()=>dialog.remove());return;
+    }
+    await cloud.save().catch(()=>{});
+  });
+  window.addEventListener('moment-workspace-updated',()=>{
+    if(document.visibilityState!=='visible'||document.activeElement?.matches('input,select,textarea')||document.querySelector('dialog[open]')){
+      let notice=document.querySelector('.workspace-update-notice');
+      if(!notice){notice=document.createElement('button');notice.type='button';notice.className='workspace-update-notice';notice.textContent='New data received · refresh this page';notice.addEventListener('click',()=>location.reload());document.body.append(notice);}
+      return;
+    }
+    location.reload();
+  });
   document.body.classList.remove('moment-page-loading','moment-loading-visible');document.body.classList.add('moment-page-ready');document.body.removeAttribute('aria-busy');
   };
   // Navigation is local UI and must never wait for a network request.

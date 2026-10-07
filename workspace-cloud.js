@@ -1,230 +1,130 @@
+/* Shared, conflict-aware synchronization for every workspace page. */
 (() => {
-  const SUPABASE_URL = "https://fuivzblvhjuuzhygdeln.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_Kcy_SCyyVSeYWRJLLcV1IA_I1dHFSYe";
-  const TABLE = "field_app_state";
-  const TOKEN_KEY = "boringLogSupabaseAccessToken";
-  const REFRESH_KEY = "boringLogSupabaseRefreshToken";
-  const USER_KEY = "boringLogCurrentUser";
-  const DEVICE_ACCOUNT_KEY = "momentWorkspaceAccountV2";
-  const RELOAD_KEY = "momentWorkspaceReloadV2";
-  const BOOT_KEY = "momentWorkspaceBootV2";
-  const KEY_TIMES_KEY = "momentWorkspaceKeyTimesV3";
-  const DATA_KEYS = [
-    "boringLogAppState",
-    "moment-lab-custody-v1",
-    "moment-lab-custody-archive-v1",
-    "moment-job-calendar-v1",
-    "moment-scheduling-contacts-v1",
-    "moment-scheduling-team-v1",
-    "moment-proposals-v1",
-    "moment-project-maps-v1",
-    "momentAccessControlV1"
-  ];
-  let activeAccountId = "";
-  let applying = false;
-  let saveTimer = 0;
-  let saveInFlight = false;
-  let saveAgain = false;
-
-  const nativeSetItem = Storage.prototype.setItem;
-  const nativeRemoveItem = Storage.prototype.removeItem;
-  const readTokenPayload = token => {
-    try {
-      const body = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-      return JSON.parse(decodeURIComponent(atob(body).split("").map(char => `%${char.charCodeAt(0).toString(16).padStart(2, "0")}`).join("")));
-    } catch { return {}; }
-  };
-  const accountIdFor = token => readTokenPayload(token).sub || "";
-  const stateIdFor = token => {
-    const id = accountIdFor(token);
-    return id ? `account-${id}` : "";
-  };
-  const snapshot = () => ({
-    version: 3,
-    accountId: activeAccountId || accountIdFor(localStorage.getItem(TOKEN_KEY) || ""),
-    keyUpdatedAt: readKeyTimes(),
-    storage: Object.fromEntries(DATA_KEYS.flatMap(key => {
-      const value = localStorage.getItem(key);
-      return value === null ? [] : [[key, value]];
-    }))
-  });
-  const readKeyTimes = () => {
-    try { return JSON.parse(localStorage.getItem(KEY_TIMES_KEY) || "{}"); } catch { return {}; }
-  };
-  const markKeyChanged = key => {
-    const times = readKeyTimes();
-    times[key] = new Date().toISOString();
-    nativeSetItem.call(localStorage, KEY_TIMES_KEY, JSON.stringify(times));
-  };
-  const normalizeCloudState = state => {
-    if (state?.version >= 2 && state.storage) return state;
-    if (state && (Array.isArray(state.projects) || Array.isArray(state.borings))) {
-      return { version: 2, storage: { boringLogAppState: JSON.stringify(state) } };
-    }
-    return { version: 2, storage: {} };
-  };
-  const mergeArrayById = (older = [], newer = []) => {
-    if (!Array.isArray(older) || !Array.isArray(newer)) return newer;
-    const result = older.map(item => item && typeof item === "object" ? { ...item } : item);
-    newer.forEach((item, index) => {
-      if (!item || typeof item !== "object") { if (!result.includes(item)) result.push(item); return; }
-      const identity = item.id || item.sourceProjectId || item.projectNumber || item.sampleNumber;
-      const match = identity
-        ? result.findIndex(candidate => candidate && typeof candidate === "object" && (candidate.id || candidate.sourceProjectId || candidate.projectNumber || candidate.sampleNumber) === identity)
-        : index < result.length ? index : -1;
-      if (match >= 0) result[match] = mergeObjects(result[match], item);
-      else result.push(item);
-    });
-    return result;
-  };
-  const mergeObjects = (older, newer) => {
-    if (!older || typeof older !== "object") return newer;
-    if (!newer || typeof newer !== "object") return newer === undefined ? older : newer;
-    if (Array.isArray(older) || Array.isArray(newer)) return mergeArrayById(older, newer);
-    const result = { ...older };
-    Object.keys(newer).forEach(key => {
-      const next = newer[key];
-      result[key] = next && typeof next === "object" && result[key] && typeof result[key] === "object"
-        ? mergeObjects(result[key], next)
-        : next;
-    });
-    return result;
-  };
-  const mergeStoredJson = (localValue, cloudValue, preferLocal) => {
-    if (localValue == null) return cloudValue;
-    if (cloudValue == null) return localValue;
-    try {
-      const local = JSON.parse(localValue), cloud = JSON.parse(cloudValue);
-      return JSON.stringify(preferLocal ? mergeObjects(cloud, local) : mergeObjects(local, cloud));
-    } catch { return preferLocal ? localValue : cloudValue; }
-  };
-  const applySnapshot = state => {
-    const normalized = normalizeCloudState(state);
-    const localTimes = readKeyTimes();
-    const cloudTimes = normalized.keyUpdatedAt || {};
-    const mergedTimes = { ...cloudTimes, ...localTimes };
-    applying = true;
-    try {
-      DATA_KEYS.forEach(key => {
-        const hasCloudValue = Object.prototype.hasOwnProperty.call(normalized.storage, key);
-        const localValue = localStorage.getItem(key);
-        if (!hasCloudValue) return; // A partial/older cloud snapshot must never erase device work.
-        const preferLocal = Boolean(localTimes[key] && (!cloudTimes[key] || localTimes[key] > cloudTimes[key]));
-        // Each workspace key is an authoritative document. Deep-merging nested
-        // arrays revives deleted records and repeatedly appends stale samples.
-        const value = preferLocal && localValue !== null ? localValue : normalized.storage[key];
-        if (localValue !== null && localValue !== value) {
-          // Retain each displaced copy for explicit recovery, never auto-merge it.
-          nativeSetItem.call(localStorage, `moment-recovery:${Date.now()}:${key}`, localValue);
-        }
-        nativeSetItem.call(localStorage, key, value);
-        mergedTimes[key] = preferLocal ? localTimes[key] : (cloudTimes[key] || localTimes[key] || new Date().toISOString());
-      });
-      nativeSetItem.call(localStorage, KEY_TIMES_KEY, JSON.stringify(mergedTimes));
-    } finally { applying = false; }
-  };
-  const request = async (path, options = {}, token = localStorage.getItem(TOKEN_KEY) || "") => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
-    let response;
-    try {
-      response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-        ...options,
-        signal: controller.signal,
-        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(options.headers || {}) }
-      });
-    } finally { clearTimeout(timeout); }
-    if (!response.ok) throw new Error((await response.text()) || `Workspace sync failed (${response.status})`);
-    return response.status === 204 ? null : response.json();
-  };
-  const save = async () => {
-    const token = localStorage.getItem(TOKEN_KEY) || "";
-    const id = stateIdFor(token);
-    if (!id || applying) return;
-    if (saveInFlight) { saveAgain = true; return; }
-    saveInFlight = true;
-    try {
-      await request(`${TABLE}?on_conflict=id`, {
-        method: "POST",
-        keepalive: true,
-        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-        body: JSON.stringify({ id, state: snapshot(), updated_at: new Date().toISOString(), updated_by: localStorage.getItem(USER_KEY) || "unknown" })
-      }, token);
-    } finally {
-      saveInFlight = false;
-      if (saveAgain) { saveAgain = false; scheduleSave(); }
-    }
-  };
-  const scheduleSave = () => {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => save().catch(error => console.error("Workspace auto-sync failed.", error)), 250);
-  };
-  Storage.prototype.setItem = function(key, value) {
-    nativeSetItem.call(this, key, value);
-    if (this === localStorage && DATA_KEYS.includes(String(key)) && !applying) {
-      markKeyChanged(String(key));
-      if (activeAccountId) scheduleSave();
-    }
-  };
-  Storage.prototype.removeItem = function(key) {
-    nativeRemoveItem.call(this, key);
-    if (this === localStorage && DATA_KEYS.includes(String(key)) && !applying) {
-      markKeyChanged(String(key));
-      if (activeAccountId) scheduleSave();
-    }
-  };
-
-  async function activate(token = localStorage.getItem(TOKEN_KEY) || "") {
-    const accountId = accountIdFor(token);
-    const stateId = stateIdFor(token);
-    if (!accountId || !stateId) return { loaded: false };
-    const previousAccount = localStorage.getItem(DEVICE_ACCOUNT_KEY) || "";
-    const switchingAccounts = Boolean(previousAccount && previousAccount !== accountId);
-    if (switchingAccounts) applySnapshot({ version: 2, storage: {} });
-    activeAccountId = accountId;
-    const rows = await request(`${TABLE}?id=eq.${encodeURIComponent(stateId)}&select=state,updated_at&limit=1`, {}, token);
-    if (rows?.[0]?.state) {
-      const before = JSON.stringify(snapshot().storage);
-      applySnapshot(rows[0].state);
-      nativeSetItem.call(localStorage, DEVICE_ACCOUNT_KEY, accountId);
-      const changed = before !== JSON.stringify(snapshot().storage);
-      if (changed || Number(rows[0].state.version || 0) < 3) await save();
-      return { loaded: true, changed };
-    }
-    nativeSetItem.call(localStorage, DEVICE_ACCOUNT_KEY, accountId);
-    await save();
-    return { loaded: false, created: true };
+ if(window.MomentWorkspaceCloud)return;
+ const URL='https://fuivzblvhjuuzhygdeln.supabase.co',API_KEY='sb_publishable_Kcy_SCyyVSeYWRJLLcV1IA_I1dHFSYe',TABLE='field_app_state';
+ const TOKEN='boringLogSupabaseAccessToken',REFRESH='boringLogSupabaseRefreshToken',ACCOUNT='momentWorkspaceAccountV2',TIMES='momentWorkspaceKeyTimesV3';
+ const DATA_KEYS=['boringLogAppState','moment-lab-custody-v1','moment-lab-custody-archive-v1','moment-job-calendar-v1','moment-scheduling-contacts-v1','moment-scheduling-team-v1','moment-proposals-v1','moment-project-maps-v1','momentAccessControlV1'];
+ const nativeSet=Storage.prototype.setItem,nativeRemove=Storage.prototype.removeItem;
+ let account='',base=null,running=null,refreshing=null,timer=0,applying=false,resolution='',conflicts=[],lastStatus={state:'checking',message:'Checking saved data…'};
+ const parse=(v,f={})=>{try{return JSON.parse(v)??f}catch{return f}};
+ const payload=token=>{try{return parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')))}catch{return{}}};
+ const stateIdFor=token=>payload(token||'').sub?`account-${payload(token).sub}`:'';
+ const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b),stamp=()=>new Date().toISOString();
+ const editing=()=>Boolean(document.activeElement?.matches?.('input,select,textarea')||document.querySelector?.('dialog[open]'));
+ const status=(state,message)=>{lastStatus={state,message,accountId:account};window.dispatchEvent(new CustomEvent('moment-sync-status',{detail:lastStatus}));};
+ const storage=()=>Object.fromEntries(DATA_KEYS.map(key=>[key,localStorage.getItem(key)]));
+ const normalizeCloudState=state=>state?.storage?state:{version:2,storage:state?.projects||state?.borings?{boringLogAppState:JSON.stringify(state)}:{}};
+ const snapshot=()=>({version:4,accountId:account,keyUpdatedAt:parse(localStorage.getItem(TIMES)),storage:storage()});
+ const remember=(label,values)=>{try{nativeSet.call(localStorage,`moment-recovery:${Date.now()}:${label}`,JSON.stringify({accountId:account,storage:values}))}catch{}};
+ const identity=item=>item&&typeof item==='object'&&item.id!=null?JSON.stringify([item.projectId||'',String(item.id)]):null;
+ function merge(b,l,r,path='',found=[],choice=''){
+  if(equal(l,r))return l;if(equal(l,b))return r;if(equal(r,b))return l;
+  if(Array.isArray(l)&&Array.isArray(r)&&(b===undefined||Array.isArray(b))){
+   const arrays=[b||[],l,r];
+   if(arrays.every(a=>a.every(identity)&&new Set(a.map(identity)).size===a.length)){
+    const maps=arrays.map(a=>new Map(a.map(i=>[identity(i),i]))),ids=new Set([...maps[2].keys(),...maps[1].keys(),...maps[0].keys()]);
+    return [...ids].map(id=>merge(maps[0].get(id),maps[1].get(id),maps[2].get(id),`${path}/${id}`,found,choice)).filter(i=>i!==undefined);
+   }
   }
-
-  async function boot() {
-    const token = localStorage.getItem(TOKEN_KEY) || "";
-    if (!token) return;
-    const accountId = accountIdFor(token);
-    // Page navigation reuses a recent account check; edits still save immediately.
-    try {
-      const recent = JSON.parse(sessionStorage.getItem(BOOT_KEY) || "null");
-      if (recent?.accountId === accountId && Date.now() - recent.loadedAt < 60000) {
-        activeAccountId = accountId;
-        return;
-      }
-    } catch {}
-    try {
-      const result = await activate(token);
-      sessionStorage.setItem(BOOT_KEY, JSON.stringify({ accountId, loadedAt: Date.now() }));
-      const page = (location.pathname.split("/").pop() || "index.html").toLowerCase();
-      if (result.changed && page !== "worker-login.html" && sessionStorage.getItem(RELOAD_KEY) !== activeAccountId) {
-        sessionStorage.setItem(RELOAD_KEY, activeAccountId);
-        location.reload();
-      } else {
-        sessionStorage.removeItem(RELOAD_KEY);
-      }
-    } catch (error) {
-      console.error("Workspace cloud load failed.", error);
-    }
+  if(l&&r&&typeof l==='object'&&typeof r==='object'&&!Array.isArray(l)&&!Array.isArray(r)&&(b===undefined||(b&&typeof b==='object'&&!Array.isArray(b)))){
+   const result={};for(const key of new Set([...Object.keys(b||{}),...Object.keys(l),...Object.keys(r)])){const v=merge(b?.[key],l[key],r[key],`${path}/${key}`,found,choice);if(v!==undefined)result[key]=v;}return result;
   }
-
-  window.MomentWorkspaceCloud = { activate, boot, save, scheduleSave, snapshot, stateIdFor, normalizeCloudState };
-  window.addEventListener("pagehide", () => {
-    if (activeAccountId) save().catch(() => {});
+  if(choice)return choice==='local'?l:r;found.push({path,local:l,remote:r});return l;
+ }
+ function mergeStorage(baseline,local,remote,choice=''){
+  const found=[],merged={};
+  for(const key of new Set([...Object.keys(baseline),...Object.keys(local),...Object.keys(remote)])){
+   const b=baseline[key]??null,l=local[key]??null,r=remote[key]??null;
+   try{const v=merge(b===null?undefined:JSON.parse(b),l===null?undefined:JSON.parse(l),r===null?undefined:JSON.parse(r),key,found,choice);merged[key]=v===undefined?null:JSON.stringify(v)}catch{merged[key]=merge(b,l,r,key,found,choice)}
+  }return{storage:merged,conflicts:found};
+ }
+ async function refreshToken(){
+  if(refreshing)return refreshing;
+  refreshing=(async()=>{
+   const refresh=localStorage.getItem(REFRESH);if(!refresh)throw new Error('Sign in again to sync. Your edits are saved on this device.');
+   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);let response;
+   try{response=await fetch(`${URL}/auth/v1/token?grant_type=refresh_token`,{method:'POST',signal:controller.signal,headers:{apikey:API_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:refresh})})}finally{clearTimeout(timeout)}
+   const result=await response.json();if(!response.ok||!result.access_token)throw new Error('Sign in again to sync. Your edits are saved on this device.');
+   if(account&&payload(result.access_token).sub!==account)throw new Error('Account changed. Saved edits were preserved.');
+   nativeSet.call(localStorage,TOKEN,result.access_token);if(result.refresh_token)nativeSet.call(localStorage,REFRESH,result.refresh_token);return result.access_token;
+  })().finally(()=>{refreshing=null});return refreshing;
+ }
+ async function request(path,options={},retry=true){
+  let token=localStorage.getItem(TOKEN)||'';if(!token)throw new Error('Sign in to sync between devices.');
+  if(payload(token).exp&&payload(token).exp*1000<Date.now()+30000)token=await refreshToken();
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);let response;
+  try{response=await fetch(`${URL}/rest/v1/${path}`,{...options,signal:controller.signal,headers:{apikey:API_KEY,Authorization:`Bearer ${token}`,'Content-Type':'application/json',...options.headers}})}finally{clearTimeout(timeout)}
+  if(response.status===401&&retry){await refreshToken();return request(path,options,false)}
+  if(!response.ok){const e=new Error(response.status===403?'Cloud access was denied. Your edits remain on this device.':`Cloud sync failed (${response.status}). Your edits remain on this device.`);e.status=response.status;throw e;}
+  return response.status===204?null:response.json();
+ }
+ function apply(values){const changed=[];applying=true;try{for(const key of DATA_KEYS){if(!Object.hasOwn(values,key))continue;const v=values[key];if(localStorage.getItem(key)===v)continue;if(v===null)nativeRemove.call(localStorage,key);else nativeSet.call(localStorage,key,v);changed.push(key)}}finally{applying=false}return changed;}
+ async function baselineStore(action,value){
+  if(typeof indexedDB==='undefined'){
+   if(action==='read')return parse(localStorage.getItem(`momentSyncBaseV4:${account}`),null);
+   nativeSet.call(localStorage,`momentSyncBaseV4:${account}`,JSON.stringify(value));return;
+  }
+  return new Promise((resolve,reject)=>{
+   const open=indexedDB.open('moment-workspace-sync-v4',1);
+   open.onupgradeneeded=()=>open.result.createObjectStore('baselines');
+   open.onerror=()=>reject(open.error);
+   open.onsuccess=()=>{
+    const db=open.result,tx=db.transaction('baselines',action==='read'?'readonly':'readwrite'),store=tx.objectStore('baselines');
+    const request=action==='read'?store.get(account):store.put(value,account);
+    let result;
+    request.onsuccess=()=>{result=request.result;};
+    tx.oncomplete=()=>{db.close();resolve(action==='read'?(result||parse(localStorage.getItem(`momentSyncBaseV4:${account}`),null)):undefined);};
+    tx.onerror=()=>{db.close();reject(tx.error);};
+    tx.onabort=()=>{db.close();reject(tx.error);};
+   };
   });
+ }
+ async function cacheBaseline(values){await baselineStore('write',values);base=values;}
+ async function synchronize(){
+  const token=localStorage.getItem(TOKEN)||'',id=stateIdFor(token),nextAccount=payload(token).sub||'';
+  if(!id){status('signed-out','Sign in to sync between devices');return{loaded:false,saved:false}}
+  if(navigator.onLine===false){status('offline','Saved on this device · waiting for connection');return{loaded:false,saved:false}}
+  if(account!==nextAccount){const previous=localStorage.getItem(ACCOUNT);account=nextAccount;if(previous&&previous!==account){remember(`account-${previous}`,storage());apply(Object.fromEntries(DATA_KEYS.map(key=>[key,null])));nativeRemove.call(localStorage,TIMES)}base=await baselineStore('read');nativeSet.call(localStorage,ACCOUNT,account)}
+  status('saving','Syncing changes…');
+  for(let attempt=0;attempt<5;attempt++){
+   const rows=await request(`${TABLE}?id=eq.${encodeURIComponent(id)}&select=state,updated_at&limit=1`),row=rows?.[0],cloud=normalizeCloudState(row?.state),remote=Object.fromEntries(DATA_KEYS.map(key=>[key,cloud.storage?.[key]??null])),local=storage();
+   if(!base){const lt=parse(localStorage.getItem(TIMES)),ct=cloud.keyUpdatedAt||{},initial={};for(const key of DATA_KEYS)initial[key]=local[key]===null||(lt[key]&&ct[key]&&lt[key]<=ct[key])?local[key]:remote[key]===null?null:local[key]===remote[key]?local[key]:null;base=initial;}
+   const result=mergeStorage(base,local,remote,resolution);conflicts=result.conflicts;
+   if(conflicts.length){remember('conflict-device',local);remember('conflict-cloud',remote);status('conflict',`${conflicts.length} conflicting edits · review before syncing`);return{loaded:Boolean(row),saved:false,conflicts}}
+   const merged=result.storage;
+   if(!equal(merged,local)&&editing()){
+    status('pending','Saved on this device · finish editing to receive cloud updates');
+    return{loaded:Boolean(row),saved:false,deferred:true};
+   }
+   if(!equal(merged,remote)){
+    const updatedAt=new Date(Math.max(Date.now(),Date.parse(row?.updated_at || '')+1||0)).toISOString(),state={version:4,accountId:account,storage:merged,keyUpdatedAt:{...(cloud.keyUpdatedAt||{}),...parse(localStorage.getItem(TIMES))}};
+    const saved=row?await request(`${TABLE}?id=eq.${encodeURIComponent(id)}&updated_at=${row.updated_at===null?'is.null':`eq.${encodeURIComponent(row.updated_at)}`}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({state,updated_at:updatedAt,updated_by:localStorage.getItem('boringLogCurrentUser')||'Workspace user'})}):await request(`${TABLE}?on_conflict=id`,{method:'POST',headers:{Prefer:'resolution=ignore-duplicates,return=representation'},body:JSON.stringify({id,state,updated_at:updatedAt,updated_by:localStorage.getItem('boringLogCurrentUser')||'Workspace user'})});
+    if(!saved?.length)continue;
+   }
+   const current=storage(),after=mergeStorage(local,current,merged,'local').storage;if(!equal(current,after))remember('before-cloud-update',current);
+   if(!equal(current,after)&&editing()){
+    // Keep the baseline for the view the user actually edited. Unseen remote
+    // additions remain remote changes, rather than becoming accidental deletions.
+    await cacheBaseline(local);resolution='';
+    status('pending','Cloud updates waiting · finish editing to sync');
+    return{loaded:Boolean(row),saved:false,deferred:true};
+   }
+   const changed=apply(after);await cacheBaseline(merged);resolution='';
+   if(changed.length)window.dispatchEvent(new CustomEvent('moment-workspace-updated',{detail:{keys:changed}}));
+   if(!equal(after,merged)){status('pending','New edits saved on this device · syncing next');scheduleSave()}else status('saved',`Cloud saved · ${new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`);
+   return{loaded:Boolean(row),saved:true,changed:changed.length>0};
+  }throw new Error('Another device is still saving. Your edits are kept here; retrying shortly.');
+ }
+ function save(){if(running)return running;running=synchronize().catch(e=>{status(e.message.includes('Sign in')?'signed-out':'error',e.message);throw e}).finally(()=>{running=null});return running;}
+ function scheduleSave(){clearTimeout(timer);timer=setTimeout(()=>save().catch(()=>{}),450)}
+ Storage.prototype.setItem=function(key,value){const previous=this.getItem(key);try{nativeSet.call(this,key,value)}catch(error){if(this===localStorage&&DATA_KEYS.includes(String(key)))status('error','Device storage is full. Keep this page open and export your work before refreshing.');throw error;}if(this===localStorage&&DATA_KEYS.includes(String(key))&&!applying&&previous!==String(value)){const times=parse(localStorage.getItem(TIMES));times[key]=stamp();nativeSet.call(localStorage,TIMES,JSON.stringify(times));status('pending','Saved on this device · waiting for cloud');scheduleSave()}};
+ Storage.prototype.removeItem=function(key){const previous=this.getItem(key);nativeRemove.call(this,key);if(this===localStorage&&DATA_KEYS.includes(String(key))&&!applying&&previous!==null){status('pending','Saved on this device · waiting for cloud');scheduleSave()}};
+ const boot=()=>save().catch(()=>({saved:false}));
+ window.MomentWorkspaceCloud={boot,activate:save,save,scheduleSave,snapshot,stateIdFor,normalizeCloudState,getStatus:()=>lastStatus,getConflicts:()=>conflicts,resolveConflicts:choice=>{if(!['local','remote'].includes(choice))throw new Error('Choose which conflicting edits to keep.');resolution=choice;return save()},mergeStorage};
+ window.addEventListener('online',boot);window.addEventListener('offline',()=>status('offline','Saved on this device · waiting for connection'));window.addEventListener('focus',()=>{if(!running)boot()});
+ window.addEventListener('storage',event=>{if(DATA_KEYS.includes(event.key))window.dispatchEvent(new CustomEvent('moment-workspace-updated',{detail:{keys:[event.key]}}))});
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')boot();else if(base&&!equal(storage(),base))save().catch(()=>{})});
+ document.addEventListener('focusout',scheduleSave);
+ document.addEventListener('close',scheduleSave,true);
+ setInterval(()=>{if(document.visibilityState==='visible'&&!running&&!conflicts.length)boot()},20000);
 })();
