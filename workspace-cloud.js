@@ -10,7 +10,7 @@
  const payload=token=>{try{return parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')))}catch{return{}}};
  const stateIdFor=token=>payload(token||'').sub?`account-${payload(token).sub}`:'';
  const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b),stamp=()=>new Date().toISOString();
- const editing=()=>!document.querySelector?.('#accountForm')&&Boolean(document.activeElement?.matches?.('input,select,textarea')||document.querySelector?.('dialog[open]'));
+ const editing=()=>!document.querySelector?.('#accountLoginForm')&&Boolean(document.activeElement?.matches?.('input,select,textarea')||document.querySelector?.('dialog[open]'));
  const status=(state,message)=>{lastStatus={state,message,accountId:account,accountEmail:payload(localStorage.getItem(TOKEN)||'').email||''};window.dispatchEvent(new CustomEvent('moment-sync-status',{detail:lastStatus}));};
  const storage=()=>Object.fromEntries(DATA_KEYS.map(key=>[key,localStorage.getItem(key)]));
  const normalizeCloudState=state=>state?.storage?state:{version:2,storage:state?.projects||state?.borings?{boringLogAppState:JSON.stringify(state)}:{}};
@@ -120,7 +120,21 @@
  Storage.prototype.setItem=function(key,value){const previous=this.getItem(key);try{nativeSet.call(this,key,value)}catch(error){if(this===localStorage&&DATA_KEYS.includes(String(key)))status('error','Device storage is full. Keep this page open and export your work before refreshing.');throw error;}if(this===localStorage&&DATA_KEYS.includes(String(key))&&!applying&&previous!==String(value)){const times=parse(localStorage.getItem(TIMES));times[key]=stamp();nativeSet.call(localStorage,TIMES,JSON.stringify(times));status('pending','Saved on this device · waiting for cloud');scheduleSave()}};
  Storage.prototype.removeItem=function(key){const previous=this.getItem(key);nativeRemove.call(this,key);if(this===localStorage&&DATA_KEYS.includes(String(key))&&!applying&&previous!==null){status('pending','Saved on this device · waiting for cloud');scheduleSave()}};
  const boot=()=>save().catch(()=>({saved:false}));
- window.MomentWorkspaceCloud={boot,activate:save,save,scheduleSave,snapshot,stateIdFor,normalizeCloudState,getStatus:()=>lastStatus,getConflicts:()=>conflicts,resolveConflicts:choice=>{if(!['local','remote'].includes(choice))throw new Error('Choose which conflicting edits to keep.');resolution=choice;return save()},mergeStorage};
+ async function activate(){
+  if(running)await running;
+  const token=localStorage.getItem(TOKEN)||'',id=stateIdFor(token);
+  if(!id)throw new Error('Sign in to load your Supabase workspace.');
+  if(navigator.onLine===false)throw new Error('Connect to the internet to load your Supabase workspace.');
+  account=payload(token).sub;
+  status('saving','Loading your saved Supabase workspace…');
+  const rows=await request(`${TABLE}?id=eq.${encodeURIComponent(id)}&select=state,updated_at&limit=1`);
+  const cloud=normalizeCloudState(rows?.[0]?.state),values=Object.fromEntries(DATA_KEYS.map(key=>[key,cloud.storage?.[key]??null]));
+  if(!equal(storage(),values))remember('before-account-cloud-load',storage());
+  apply(values);await cacheBaseline(values);nativeSet.call(localStorage,ACCOUNT,account);conflicts=[];resolution='';
+  status('saved','Supabase workspace loaded');
+  return{loaded:true,saved:true};
+ }
+ window.MomentWorkspaceCloud={boot,activate,save,scheduleSave,snapshot,stateIdFor,normalizeCloudState,getStatus:()=>lastStatus,getConflicts:()=>conflicts,resolveConflicts:choice=>{if(!['local','remote'].includes(choice))throw new Error('Choose which conflicting edits to keep.');resolution=choice;return save()},mergeStorage};
  window.addEventListener('online',boot);window.addEventListener('offline',()=>status('offline','Saved on this device · waiting for connection'));window.addEventListener('focus',()=>{if(!running)boot()});
  window.addEventListener('pageshow',boot);
  window.addEventListener('storage',event=>{if(DATA_KEYS.includes(event.key))window.dispatchEvent(new CustomEvent('moment-workspace-updated',{detail:{keys:[event.key]}}))});

@@ -55,7 +55,10 @@
           accountAction="signin";accountButton.textContent="Sign in as administrator";actionToggle.textContent="Create a new program account";return;
         }
         localStorage.setItem(keys.user,email);localStorage.setItem(keys.password,password);localStorage.setItem(keys.token,result.access_token);localStorage.setItem(keys.refresh,result.refresh_token||"");
-        if(window.MomentWorkspaceCloud)await window.MomentWorkspaceCloud.activate(result.access_token);
+        if(window.MomentWorkspaceCloud){
+          const synced=await window.MomentWorkspaceCloud.activate(result.access_token);
+          if(!synced.saved)throw new Error(window.MomentWorkspaceCloud.getStatus().message+' Open the current workspace to review pending edits before continuing.');
+        }
         const identity=result.user?.id||email.toLowerCase(),onboarded=readJson(keys.onboarded,{}),firstVisit=accountAction==="signup"||!onboarded[identity]||!readAccess().ownerHash;
         if(firstVisit){onboarded[identity]=true;localStorage.setItem(keys.onboarded,JSON.stringify(onboarded));setProfile("owner",email);location.href="admin.html";return}
         status.textContent="Account verified. Enter your profile code to continue.";
@@ -67,6 +70,11 @@
       event.preventDefault();
       const status=document.querySelector("#loginStatus");
       if(!localStorage.getItem(keys.token)){status.textContent="Sign in with the program account first.";selectMode("account");return}
+      if(window.MomentWorkspaceCloud){
+        status.textContent="Loading your account’s latest saved data…";
+        try{const synced=await window.MomentWorkspaceCloud.activate();if(!synced.saved){status.textContent=window.MomentWorkspaceCloud.getStatus().message;return;}}
+        catch(error){status.textContent=friendlyError(error);return;}
+      }
       const current=readAccess();status.textContent="Checking code…";
       const entered=await hash(document.querySelector("#accessCode").value);
       if(current.ownerHash&&entered===current.ownerHash){setProfile("owner","Fares");location.href="admin.html";return}
