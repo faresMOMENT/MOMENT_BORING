@@ -42,3 +42,5 @@ body.has-moment-menu .home-header>.row-cell{min-width:0}
  body.has-moment-menu .detail-hero{grid-template-columns:minmax(0,1fr) minmax(380px,1fr);gap:18px}
  body.has-moment-menu .custody-dropdown>summary{padding:10px 13px}
 }
+
+.workspace-sync-account{grid-column:2;color:var(--workspace-muted);overflow-wrap:anywhere;font-size:10px}

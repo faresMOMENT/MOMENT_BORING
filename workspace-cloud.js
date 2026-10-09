@@ -10,8 +10,8 @@
  const payload=token=>{try{return parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')))}catch{return{}}};
  const stateIdFor=token=>payload(token||'').sub?`account-${payload(token).sub}`:'';
  const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b),stamp=()=>new Date().toISOString();
- const editing=()=>Boolean(document.activeElement?.matches?.('input,select,textarea')||document.querySelector?.('dialog[open]'));
- const status=(state,message)=>{lastStatus={state,message,accountId:account};window.dispatchEvent(new CustomEvent('moment-sync-status',{detail:lastStatus}));};
+ const editing=()=>!document.querySelector?.('#accountForm')&&Boolean(document.activeElement?.matches?.('input,select,textarea')||document.querySelector?.('dialog[open]'));
+ const status=(state,message)=>{lastStatus={state,message,accountId:account,accountEmail:payload(localStorage.getItem(TOKEN)||'').email||''};window.dispatchEvent(new CustomEvent('moment-sync-status',{detail:lastStatus}));};
  const storage=()=>Object.fromEntries(DATA_KEYS.map(key=>[key,localStorage.getItem(key)]));
  const normalizeCloudState=state=>state?.storage?state:{version:2,storage:state?.projects||state?.borings?{boringLogAppState:JSON.stringify(state)}:{}};
  const snapshot=()=>({version:4,accountId:account,keyUpdatedAt:parse(localStorage.getItem(TIMES)),storage:storage()});
@@ -53,7 +53,7 @@
   let token=localStorage.getItem(TOKEN)||'';if(!token)throw new Error('Sign in to sync between devices.');
   if(payload(token).exp&&payload(token).exp*1000<Date.now()+30000)token=await refreshToken();
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);let response;
-  try{response=await fetch(`${URL}/rest/v1/${path}`,{...options,signal:controller.signal,headers:{apikey:API_KEY,Authorization:`Bearer ${token}`,'Content-Type':'application/json',...options.headers}})}finally{clearTimeout(timeout)}
+  try{response=await fetch(`${URL}/rest/v1/${path}`,{...options,cache:'no-store',signal:controller.signal,headers:{apikey:API_KEY,Authorization:`Bearer ${token}`,'Content-Type':'application/json',...options.headers}})}finally{clearTimeout(timeout)}
   if(response.status===401&&retry){await refreshToken();return request(path,options,false)}
   if(!response.ok){const e=new Error(response.status===403?'Cloud access was denied. Your edits remain on this device.':`Cloud sync failed (${response.status}). Your edits remain on this device.`);e.status=response.status;throw e;}
   return response.status===204?null:response.json();
@@ -122,6 +122,7 @@
  const boot=()=>save().catch(()=>({saved:false}));
  window.MomentWorkspaceCloud={boot,activate:save,save,scheduleSave,snapshot,stateIdFor,normalizeCloudState,getStatus:()=>lastStatus,getConflicts:()=>conflicts,resolveConflicts:choice=>{if(!['local','remote'].includes(choice))throw new Error('Choose which conflicting edits to keep.');resolution=choice;return save()},mergeStorage};
  window.addEventListener('online',boot);window.addEventListener('offline',()=>status('offline','Saved on this device · waiting for connection'));window.addEventListener('focus',()=>{if(!running)boot()});
+ window.addEventListener('pageshow',boot);
  window.addEventListener('storage',event=>{if(DATA_KEYS.includes(event.key))window.dispatchEvent(new CustomEvent('moment-workspace-updated',{detail:{keys:[event.key]}}))});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')boot();else if(base&&!equal(storage(),base))save().catch(()=>{})});
  document.addEventListener('focusout',scheduleSave);
