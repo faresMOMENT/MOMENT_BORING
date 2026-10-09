@@ -4701,6 +4701,7 @@ with check (id = 'account-' || auth.uid()::text);`;
 
       function drawWrappedLimit(text, x, y, w, size = 9, style = "normal", lineHeight = 11, maxHeight = 999) {
         setFont(size, style);
+        pdf.setTextColor(dark);
         const maxLines = Math.max(1, Math.floor(maxHeight / lineHeight));
         const lines = pdf.splitTextToSize(String(text || ""), w).slice(0, maxLines);
         if (lines.length === maxLines && pdf.splitTextToSize(String(text || ""), w).length > maxLines) {
@@ -4847,58 +4848,35 @@ with check (id = 'account-' || auth.uid()::text);`;
         pdf.setDrawColor(20, 24, 20);
       }
 
-      function drawHeader() {
-        pdf.setDrawColor(20, 24, 20);
-        pdf.setLineWidth(1.4);
-        const headH = 36;
-        const brandW = 164;
-        const titleW = 212;
-        const projectW = width - brandW - titleW;
-        pdf.rect(left, top, width, headH);
-        pdf.line(left + brandW, top, left + brandW, top + headH);
-        pdf.line(left + brandW + titleW, top, left + brandW + titleW, top + headH);
-        drawText("MOMENT ENGINEERING", left + 8, top + 16, { size: 10.5, style: "bold" });
-        drawText("Geotechnical Laboratory", left + 8, top + 28, { size: 8.5 });
-        drawCentered(`BORING LOG${boring?.id ? ` · ${boring.id}` : ""}`, left + brandW, top, titleW, headH, 14, "bold");
-        drawText("Project No.", left + brandW + titleW + 8, top + 14, { size: 9 });
-        drawText(project?.number || "-", left + brandW + titleW + 8, top + 28, { size: 10, style: "bold" });
-
-        const rowY = top + headH;
-        const rowH = 20;
-        const half = width / 2;
-        drawCell(left, rowY, half, rowH, info.projectTitle || project?.name || "-", { label: "Project", size: 10 });
-        drawCell(left + half, rowY, half, rowH, info.date || "-", { label: "Date", size: 10 });
-        drawCell(left, rowY + rowH, width, rowH, project?.address || "-", { label: "Project address", size: 10 });
-        drawCell(left, rowY + rowH * 2, half, rowH, (info.loggerDriller || "").split("/")[0]?.trim() || "-", { label: "Logger", size: 10 });
-        drawCell(left + half, rowY + rowH * 2, half, rowH, (info.loggerDriller || "").split("/")[1]?.trim() || "-", { label: "Driller", size: 10 });
-        drawCell(left, rowY + rowH * 3, half, rowH, info.drillMethod || "-", { label: "Drill method", size: 10 });
-        drawCell(left + half, rowY + rowH * 3, half, rowH, info.rigType || "-", { label: "Rig / hammer", size: 10 });
-        drawCell(left, rowY + rowH * 4, half, rowH, info.surfaceElevation || "-", { label: "Surface elevation", size: 10 });
-        drawCell(left + half, rowY + rowH * 4, half, rowH, info.totalDepth ? `${info.totalDepth} ft` : "-", { label: "Total depth", size: 10 });
-        drawCell(left, rowY + rowH * 5, half, rowH, info.boreholeDiameter || "-", { label: "Borehole diameter", size: 10 });
-        drawCell(left + half, rowY + rowH * 5, half, rowH, groundwaterText(), { label: "Groundwater", size: 10 });
-        return rowY + rowH * 6 + 2;
+      function metadataCell(x,y,w,label,value){
+        pdf.setFillColor(248,247,244);pdf.setDrawColor(205,205,198);pdf.setLineWidth(.4);pdf.rect(x,y,w,27,'FD');
+        pdf.setTextColor(115,120,115);setFont(5.8);pdf.text(label.toUpperCase(),x+6,y+8);
+        drawWrappedLimit(String(value || '-'),x+6,y+20,w-12,7.8,'bold',9,15);
       }
-
-      const cols = [42, 44, 34, 344, 76];
-      const xs = [left];
-      cols.slice(0, -1).forEach(col => xs.push(xs.at(-1) + col));
-      const tableHeadH = 28;
-
-      function drawTableHeader(y) {
-        pdf.setLineWidth(1.2);
-        pdf.rect(left, y, width, tableHeadH);
-        let cursorX = left;
-        cols.forEach((col, index) => {
-          if (index) pdf.line(cursorX, y, cursorX, y + tableHeadH);
-          cursorX += col;
-        });
-        drawCentered("Depth", xs[0], y, cols[0], tableHeadH, 8.5, "bold");
-        drawCentered("Graphic", xs[1], y, cols[1], tableHeadH, 7.6, "bold");
-        drawCentered("USCS", xs[2], y, cols[2], tableHeadH, 8.2, "bold");
-        drawCentered("Material description", xs[3], y, cols[3], tableHeadH, 8.5, "bold");
-        drawCentered("Samples /\nBlows / N", xs[4], y, cols[4], tableHeadH, 8.5, "bold");
-        return y + tableHeadH;
+      function drawHeader() {
+        pdf.setTextColor(30,62,47);setFont(16,'bold');pdf.text('MOMENT ENGINEERING',left,top+4);
+        pdf.setTextColor(90,95,90);setFont(7.5);pdf.text('Geotechnical & Civil Engineering Consultants',left,top+17);
+        pdf.setTextColor(30,62,47);setFont(12,'bold');pdf.text('Log of Boring - '+(boring?.id || ''),left+width,top+2,{align:'right'});
+        setFont(7);pdf.text(info.date || '-',left+width,top+15,{align:'right'});
+        pdf.setDrawColor(30,62,47);pdf.setLineWidth(2);pdf.line(left,top+32,left+width,top+32);
+        pdf.setDrawColor(199,126,58);pdf.setLineWidth(1.4);pdf.line(left,top+36,left+138,top+36);
+        const rows=[
+          [['Project',info.projectTitle || project?.name],['Job no.',project?.number],['Client',project?.client]],
+          [['Logger / driller',info.loggerDriller],['Drill method',info.drillMethod],['Rig / hammer',info.rigType]],
+          [['Total depth',info.totalDepth ? info.totalDepth+' ft' : ''],['Borehole dia.',info.boreholeDiameter],['Groundwater',groundwaterText()]],
+          [['Surface elev.',info.surfaceElevation],['GW method',info.groundwaterMethod],['Termination',terminationText()]]
+        ];
+        let y=top+44;for(const row of rows){row.forEach(([label,value],i)=>metadataCell(left+i*width/3,y,width/3,label,value));y+=27;}
+        metadataCell(left,y,width,'Site address',project?.address);return y+39;
+      }
+      const cols = [30,48,44,42,30,240,70,36];
+      const xs = [left];cols.slice(0,-1).forEach(col=>xs.push(xs.at(-1)+col));
+      const tableHeadH=25;
+      function drawTableHeader(y){
+        pdf.setFillColor(30,62,47);pdf.rect(left,y,width,tableHeadH,'F');
+        const labels=['DEPTH\n(FT)','LITHOLOGY','SAMPLE\nTYPE / #','BLOWS\n/ N','USCS','SOIL / ROCK DESCRIPTION','REMARKS','MOIST\n(%)'];
+        labels.forEach((label,i)=>{pdf.setTextColor(255,255,255);drawCentered(label,xs[i],y,cols[i],tableHeadH,6.1,'bold');});
+        return y+tableHeadH;
       }
 
       function drawContinuationHeader() {
@@ -4918,10 +4896,10 @@ with check (id = 'account-' || auth.uid()::text);`;
           ? layerSamples.map(sample => `Sample @ ${sample.depth || "-"} ft: ${fullSampleNote(sample)}`)
           : [];
         const materialText = [isFull ? fullLayerNote(layer) : layerNote(layer), ...sampleDescriptions].filter(Boolean).join("\n\n");
-        const materialLines = pdf.splitTextToSize(materialText, cols[3] - 12);
+        const materialLines = pdf.splitTextToSize(materialText, cols[5] - 12);
         const sampleBlocks = layerSamples.map(sampleText).filter(Boolean);
         const sampleLineGroups = sampleBlocks.map(block => {
-          return block.split("\n").flatMap(lineText => pdf.splitTextToSize(lineText, cols[4] - 10));
+          return block.split("\n").flatMap(lineText => pdf.splitTextToSize(lineText, cols[2] - 10));
         });
         const sampleLines = sampleLineGroups.flatMap((block, index) => index ? ["", ...block] : block);
         const baseH = Math.max(52, materialLines.length * 10 + 14, sampleLines.length * 9 + 14);
@@ -4942,7 +4920,7 @@ with check (id = 'account-' || auth.uid()::text);`;
           pdf.addPage();
           y = drawTableHeader(drawContinuationHeader());
         }
-        pdf.setLineWidth(.9);
+        pdf.setDrawColor(190,195,190);pdf.setLineWidth(.4);
         pdf.rect(left, y, width, rowH);
         let cursorX = left;
         cols.forEach((col, index) => {
@@ -4951,21 +4929,11 @@ with check (id = 'account-' || auth.uid()::text);`;
         });
         drawWrappedLimit(`${layer.from}-${layer.to} ft`, xs[0] + 5, y + 15, cols[0] - 8, Math.max(7, 8.5 * rowScale), "normal", 9.5 * rowScale, rowH - 10);
         drawPattern(layer.uscs, xs[1], y, cols[1], rowH);
-        drawText(layer.uscs || "-", xs[2] + 5, y + 15, { size: Math.max(7, 8.5 * rowScale), style: "bold" });
-        drawWrappedLimit(materialText, xs[3] + 6, y + 15, cols[3] - 12, materialFont, "normal", materialLineHeight, rowH - 12);
-        if (sampleLineGroups.length) {
-          let sampleY = y + sampleFont + 5;
-          sampleLineGroups.forEach(blockLines => {
-            blockLines.forEach((lineText, index) => {
-              if (sampleY > y + rowH - 4) return;
-              drawText(lineText, xs[4] + 5, sampleY, { size: sampleFont, style: index === 1 || index === 2 ? "bold" : "normal" });
-              sampleY += sampleLineHeight;
-            });
-            sampleY += 2;
-          });
-        } else {
-          drawText("-", xs[4] + 5, y + 15, { size: 8.5 });
-        }
+        drawText(layer.uscs || "-", xs[4] + 5, y + 15, { size: Math.max(7, 8.5 * rowScale), style: "bold" });
+        drawWrappedLimit(materialText, xs[5] + 6, y + 15, cols[5] - 12, materialFont, "normal", materialLineHeight, rowH - 12);
+        const rowSamples=samplesInLayer(layer);
+        const texts=[rowSamples.map(sample=>[sample.number || '-',sample.type || 'Sample'].join('\n')).join('\n\n'),rowSamples.map(sample=>(sample.blows || []).some(Boolean) ? (sample.blows || []).filter(Boolean).join('-')+'\nN: '+sampleN(sample) : '-').join('\n\n'),rowSamples.map(sample=>sample.notes || '').filter(Boolean).join('\n'),rowSamples.map(sample=>sample.moistureContent ?? sample.moisturePercent ?? '').filter(value=>value!=='').join('\n')];
+        [2,3,6,7].forEach((column,i)=>drawWrappedLimit(texts[i] || '-',xs[column]+4,y+12,cols[column]-8,7,'normal',9,rowH-8));
         y += rowH;
       });
 
@@ -4973,14 +4941,13 @@ with check (id = 'account-' || auth.uid()::text);`;
         pdf.addPage();
         y = drawContinuationHeader();
       }
-      y = Math.min(y + 14, bottom - 58);
-      y += drawLabeledLine("Termination", terminationText(), left, y, 10.5, width) + 7;
-      const methodText = info.groundwaterMethod === "Not encountered" ? "Not encountered" : [info.groundwaterMethod, info.date].filter(Boolean).join(" - ") || "-";
-      y += drawLabeledLine("Groundwater method / stabilized reading", methodText, left, y, 10.5, width) + 7;
-      setFont(10.5, "bold");
-      pdf.text("Notes:", left, y);
-      const notesX = left + pdf.getTextWidth("Notes:") + 5;
-      drawWrappedLimit(info.terminationNotes || "-", notesX, y, width - (notesX - left), 10.5, "normal", 12, bottom - y);
+      y = Math.min(y+9,bottom-65);
+      pdf.setFillColor(245,243,238);pdf.rect(left,y,width,18,'F');pdf.setFillColor(199,126,58);pdf.rect(left,y,3,18,'F');
+      drawWrappedLimit('Terminated at '+(info.totalDepth || '-')+' ft - '+terminationText(),left+8,y+12,width-16,7.5,'bold',9,16);
+      y+=26;pdf.setDrawColor(205,205,198);pdf.setFillColor(250,249,246);pdf.rect(left,y,width,38,'FD');
+      drawText('ABBREVIATIONS & NOTES',left+7,y+10,{size:6.5,style:'bold'});
+      drawWrappedLimit('SPT = Standard Penetration Test; N = blows/ft; USCS = Unified Soil Classification System.',left+7,y+20,width-14,6.2,'normal',8,8);
+      drawWrappedLimit(info.terminationNotes || 'Descriptions represent conditions at the boring location; conditions may vary between locations.',left+7,y+30,width-14,6.2,'normal',8,8);
 
       if (isFull) {
         const detailEntries = [];
@@ -5028,6 +4995,7 @@ with check (id = 'account-' || auth.uid()::text);`;
         }
       }
 
+      const pages=pdf.getNumberOfPages();for(let page=1;page<=pages;page++){pdf.setPage(page);pdf.setDrawColor(205,205,198);pdf.setLineWidth(.4);pdf.line(left,770,left+width,770);setFont(6.5);pdf.setTextColor(100,105,100);pdf.text('Job '+(project?.number || '-')+'  |  '+(boring?.id || '')+'  |  Sheet '+page+' of '+pages,left+width,782,{align:'right'});}
       pdf.save(pdfFileName(mode));
     }
 
