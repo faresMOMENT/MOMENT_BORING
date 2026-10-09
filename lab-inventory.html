@@ -198,7 +198,7 @@
   </style>
 </head>
 <body>
-  <link rel="stylesheet" href="app-shell.css?v=20261009"><script src="workspace-cloud.js?v=20261009b"></script><script src="workspace-data.js?v=20261007"></script><script src="app-shell.js?v=20261009"></script>
+  <link rel="stylesheet" href="app-shell.css?v=20261009"><script src="workspace-cloud.js?v=20261009b"></script><script src="workspace-data.js?v=20261009samples"></script><script src="app-shell.js?v=20261009c"></script>
   <nav class="app-tabs" aria-label="Main pages">
     <img class="app-logo" src="moment-engineering-logo.png" alt="Moment Engineering">
     <a href="index.html">Boring Logs</a><a href="job-calendar.html">Calendar</a><a class="active" href="lab-inventory.html">Inventory</a><a href="lab-work.html">Lab Work</a><a href="lab-manual.html">Lab Manual</a><a href="contacts.html">Contacts</a><a href="me.html">Me</a>
@@ -369,7 +369,7 @@
             const layer = layerForSampleDepth(Array.isArray(boring.layers) ? boring.layers : [], sample.depth);
             return {
               id: sample.id || `${boring.id}-${sample.number || sample.depth || Math.random()}`,
-              sampleNumber: `${boring.id}-${sample.number || "sample"}`,
+              sampleNumber: window.MomentWorkspaceData.sampleLabel(boring, sample),
               boringId: boring.id,
               depth: sample.depth || "",
               classification: sample.uscs || layer?.uscs || "",

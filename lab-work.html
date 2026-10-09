@@ -1399,7 +1399,7 @@
   </style>
 </head>
 <body>
-  <link rel="stylesheet" href="app-shell.css?v=20261009"><script src="workspace-cloud.js?v=20261009b"></script><script src="workspace-data.js?v=20261007"></script><script src="app-shell.js?v=20261009"></script>
+  <link rel="stylesheet" href="app-shell.css?v=20261009"><script src="workspace-cloud.js?v=20261009b"></script><script src="workspace-data.js?v=20261009samples"></script><script src="app-shell.js?v=20261009c"></script>
   <nav class="app-tabs" aria-label="Main pages">
     <img class="app-logo" src="moment-engineering-logo.png" alt="Moment Engineering">
     <a href="index.html">Boring Logs</a><a href="job-calendar.html">Calendar</a><a href="lab-inventory.html">Inventory</a><a class="active" href="lab-work.html">Lab Work</a><a href="lab-manual.html">Lab Manual</a><a href="contacts.html">Contacts</a><a href="me.html">Me</a>
@@ -1563,12 +1563,13 @@
         if (!home && jobNumber) home = labData.homes.find(item => String(item.projectNumber || "").trim().toLowerCase() === jobNumber);
         const samples = projectBorings.flatMap(boring => (boring.samples || []).map(sample => ({
           id: sample.id || `${boring.id}-${sample.number || sample.depth}`,
-          sampleNumber: `${boring.id}-${sample.number || "sample"}`,
+          sampleNumber: window.MomentWorkspaceData.sampleLabel(boring, sample),
           boringId: boring.id,
           depth: sample.depth || "",
           classification: sample.uscs || "",
           method: sample.type || "Sample",
-          remarks: sample.notes || ""
+          remarks: sample.notes || "",
+          labWork: sample.labWork || ""
         })));
         const fields = { sourceProjectId: project.id, projectName: project.name || project.address || project.number || "", projectNumber: project.number || "", clientName: project.client || "", address: project.address || "", county: project.county || "Other County", labCheckInDate: project.labCheckInDate };
         if (home) {
@@ -1658,7 +1659,8 @@
     // Keep editable shared fields in the source record so the next inventory
     // refresh does not restore the previous county or sampling method.
     function syncEditedSource(home, field, sample) {
-      if (field !== "county" && !(field === "method" && sample?.boringId)) return;
+      const sampleFields = { sampleNumber: "number", depth: "depth", classification: "uscs", remarks: "notes", labWork: "labWork", method: "type" };
+      if (field !== "county" && !(sampleFields[field] && sample?.boringId)) return;
       const key = "boringLogAppState";
       const source = JSON.parse(localStorage.getItem(key) || "{}");
       const number = String(home.projectNumber || "").trim().toLowerCase();
@@ -1670,7 +1672,10 @@
         const boring = (source.borings || []).find(item => item.projectId === project.id && item.id === sample.boringId);
         const original = boring?.samples?.find(item => (item.id || `${boring.id}-${item.number || item.depth}`) === sample.id);
         if (!original) return;
-        original.type = sample.method;
+        let value = sample[field];
+        if (field === "sampleNumber" && String(value).startsWith(`${boring.id}-`)) value = String(value).slice(boring.id.length + 1);
+        original[sampleFields[field]] = value;
+        original.updatedAt = home.updatedAt;
       }
       project.updatedAt = home.updatedAt;
       localStorage.setItem(key, JSON.stringify(source));

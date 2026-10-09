@@ -1,4 +1,9 @@
 (() => {
+  // A fast cloud response can arrive before the page's DOM and listeners exist.
+  // Retain that notification so the already-created page model cannot stay stale.
+  let earlyCloudUpdate=false;
+  const rememberEarlyUpdate=()=>{earlyCloudUpdate=true;};
+  window.addEventListener('moment-workspace-updated',rememberEarlyUpdate);
   const cloudReady = window.MomentWorkspaceCloud
     ? window.MomentWorkspaceCloud.boot()
     : new Promise(resolve => {
@@ -101,6 +106,8 @@
     }
     location.reload();
   });
+  window.removeEventListener('moment-workspace-updated',rememberEarlyUpdate);
+  if(earlyCloudUpdate)window.dispatchEvent(new CustomEvent('moment-workspace-updated'));
   document.body.classList.remove('moment-page-loading','moment-loading-visible');document.body.classList.add('moment-page-ready');document.body.removeAttribute('aria-busy');
   };
   // Navigation is local UI and must never wait for a network request.

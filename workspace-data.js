@@ -23,5 +23,10 @@
     });
     return { ...source, borings: [...borings.values()] };
   }
-  window.MomentWorkspaceData = { normalize, uniqueSamples };
+  const sampleLabel = (boring, sample) => {
+    const number = String(sample.number ?? '').trim();
+    if (!number) return boring.id + '-sample';
+    return /^\d+(?:\.\d+)?$/.test(number) ? boring.id + '-' + number : number;
+  };
+  window.MomentWorkspaceData = { normalize, uniqueSamples, sampleLabel };
 })();
