@@ -1660,14 +1660,22 @@
     // refresh does not restore the previous county or sampling method.
     function syncEditedSource(home, field, sample) {
       const sampleFields = { sampleNumber: "number", depth: "depth", classification: "uscs", remarks: "notes", labWork: "labWork", method: "type" };
-      if (field !== "county" && !(sampleFields[field] && sample?.boringId)) return;
+      const projectFields = { county: "county", clientName: "client", projectNumber: "number", projectName: "name", address: "address", labCheckInDate: "labCheckInDate" };
+      if (!projectFields[field] && field !== "dateSampling" && !(sampleFields[field] && sample?.boringId)) return;
       const key = "boringLogAppState";
       const source = JSON.parse(localStorage.getItem(key) || "{}");
       const number = String(home.projectNumber || "").trim().toLowerCase();
       const project = (source.projects || []).find(item => item.id === home.sourceProjectId || item.id === home.id)
         || (number && (source.projects || []).find(item => String(item.number || "").trim().toLowerCase() === number));
       if (!project) return;
-      if (field === "county") { project.county = home.county; project.countyUpdatedAt = home.updatedAt; home.countyUpdatedAt = home.updatedAt; }
+      home.sourceProjectId = project.id;
+      if (projectFields[field]) {
+        project[projectFields[field]] = home[field];
+        if (field === "county") { project.countyUpdatedAt = home.updatedAt; home.countyUpdatedAt = home.updatedAt; }
+      }
+      else if (field === "dateSampling") {
+        for (const boring of source.borings || []) if (boring.projectId === project.id) { boring.info = boring.info || {}; boring.info.date = home.dateSampling; }
+      }
       else {
         const boring = (source.borings || []).find(item => item.projectId === project.id && item.id === sample.boringId);
         const original = boring?.samples?.find(item => (item.id || `${boring.id}-${item.number || item.depth}`) === sample.id);
