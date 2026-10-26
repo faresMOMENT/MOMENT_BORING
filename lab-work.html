@@ -1220,7 +1220,8 @@
     }
 
     .md-table th, .md-table td {
-      min-width: 115px;
+      min-width: 245px;
+      height: 48px;
     }
 
     .md-table th:first-child, .md-table td:first-child {
@@ -1233,6 +1234,16 @@
 
     .md-table th:first-child {
       background: #eef3ef;
+    }
+
+    .md-table .compact-input { min-height: 38px; }
+    .md-table textarea.md-notes {
+      min-width: 0;
+      min-height: 38px;
+      overflow-y: hidden;
+      resize: none;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
     }
 
     .section-row td {
@@ -2512,7 +2523,7 @@
     }
 
     function mdColumns(home) {
-      const samples = (home.samples || []).slice(0, 12);
+      const samples = home.samples || [];
       if (samples.length) {
         return samples.map((sample, index) => ({
           id: sample.id || `sample-${index}`,
@@ -2621,6 +2632,9 @@
     }
 
     function mdInput(home, row, column, fallback = "") {
+      if (row === "soilNotes") {
+        return `<textarea class="compact-input md-notes" rows="1" data-md-cell-home="${home.id}" data-md-cell-row="${row}" data-md-cell-column="${column.id}" aria-label="Notes for ${escapeHtml(column.label)}">${escapeHtml(mdValue(home, row, column, fallback))}</textarea>`;
+      }
       if (row === "soilClass" && column.sample) {
         const selected = classificationSymbol(mdValue(home, row, column, fallback) || column.sample.classification);
         return `<select class="compact-input" data-md-cell-home="${home.id}" data-md-cell-row="${row}" data-md-cell-column="${column.id}" data-md-sample-id="${escapeHtml(column.sample.id || "")}" data-md-sample-index="${column.index}" aria-label="Soils Class">${sampleOptions(soilClassifications.map(([symbol, name]) => [symbol, `${symbol} - ${name}`]), selected)}</select>`;
@@ -2649,7 +2663,8 @@
             </div>
           </div>
           <div class="table-wrap">
-            <table class="md-table">
+            <table class="md-table" style="min-width: ${220 + columns.length * 245}px; table-layout: fixed;">
+              <colgroup><col style="width: 220px;">${columns.map(() => `<col style="width: 245px;">`).join("")}</colgroup>
               <thead>
                 <tr>
                   <th>Boring/Test Pit Depth (ft)</th>
@@ -3752,6 +3767,21 @@
       `;
     }
 
+    function resizeNotes(field) {
+      if (!field.getClientRects().length) return;
+      field.style.height = "auto";
+      const border = field.offsetHeight - field.clientHeight;
+      field.style.height = `${field.scrollHeight + border}px`;
+    }
+
+    function resizeVisibleNotes() {
+      document.querySelectorAll("textarea").forEach(resizeNotes);
+    }
+
+    window.addEventListener("resize", resizeVisibleNotes);
+    new MutationObserver(() => requestAnimationFrame(resizeVisibleNotes))
+      .observe(document.getElementById("houseLabWork"), { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+
     function render() {
       const homes = filteredHomes();
       const upcomingProjects = filteredUpcomingProjects();
@@ -3786,6 +3816,7 @@
     }
 
     document.addEventListener("input", event => {
+      if (event.target.tagName === "TEXTAREA") resizeNotes(event.target);
       if (event.target.dataset.suggestRestore) {
         event.target.dataset.suggestDirty = "true";
       }

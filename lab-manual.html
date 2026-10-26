@@ -1016,7 +1016,7 @@
     }
 
     function mdColumns(home) {
-      const samples = Array.isArray(home.samples) ? home.samples.slice(0, 12) : [];
+      const samples = Array.isArray(home.samples) ? home.samples : [];
       if (samples.length) {
         return samples.map((sample, index) => ({
           id: sample.id || `sample-${index}`,
